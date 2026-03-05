@@ -1018,6 +1018,8 @@
   "optBuiltin": "Integrado",
   "optQmd": "QMD",
   "citations": "Citações",
+  "memSearchProvider": "Provedor de Busca",
+  "memSearchFallback": "Fallback de Busca",
   "qmdCommand": "Comando",
   "qmdDataPath": "Caminho de Dados",
   "qmdMaxEntries": "Máx Entradas",

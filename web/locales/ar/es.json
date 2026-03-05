@@ -1018,6 +1018,8 @@
   "optBuiltin": "مدمج",
   "optQmd": "QMD",
   "citations": "الاقتباسات",
+  "memSearchProvider": "مزود البحث",
+  "memSearchFallback": "بحث احتياطي",
   "qmdCommand": "الأمر",
   "qmdDataPath": "مسار البيانات",
   "qmdMaxEntries": "أقصى إدخالات",

@@ -1018,6 +1018,8 @@
   "optBuiltin": "내장",
   "optQmd": "QMD",
   "citations": "인용",
+  "memSearchProvider": "검색 공급자",
+  "memSearchFallback": "검색 대체",
   "qmdCommand": "명령",
   "qmdDataPath": "데이터 경로",
   "qmdMaxEntries": "최대 항목 수",

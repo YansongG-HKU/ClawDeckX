@@ -20,6 +20,8 @@ export const MemorySection: React.FC<SectionProps> = ({ setField, getField, lang
       <ConfigSection title={es.memoryConfig} icon="neurology" iconColor="text-sky-500">
         <SelectField label={es.memoryProvider} tooltip={tip('memory.backend')} value={g(['backend']) || 'builtin'} onChange={v => s(['backend'], v)} options={BACKEND_OPTIONS} />
         <SelectField label={es.citations} tooltip={tip('memory.citations')} value={g(['citations']) || 'auto'} onChange={v => s(['citations'], v)} options={CITATIONS_OPTIONS} />
+        <TextField label={es.memSearchProvider || 'Search Provider'} tooltip={tip('memory.search.provider')} value={g(['search', 'provider']) || ''} onChange={v => s(['search', 'provider'], v)} placeholder="openai/text-embedding-3-small" />
+        <TextField label={es.memSearchFallback || 'Search Fallback'} tooltip={tip('memory.search.fallback')} value={g(['search', 'fallback']) || ''} onChange={v => s(['search', 'fallback'], v)} placeholder="builtin" />
       </ConfigSection>
 
       {g(['backend']) === 'qmd' && (

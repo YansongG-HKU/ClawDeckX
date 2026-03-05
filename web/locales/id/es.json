@@ -1018,6 +1018,8 @@
   "optBuiltin": "Bawaan",
   "optQmd": "QMD",
   "citations": "Kutipan",
+  "memSearchProvider": "Provider Pencarian",
+  "memSearchFallback": "Fallback Pencarian",
   "qmdCommand": "Perintah",
   "qmdDataPath": "Path Data",
   "qmdMaxEntries": "Maks Entri",

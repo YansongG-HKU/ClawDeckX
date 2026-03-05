@@ -1018,6 +1018,8 @@
   "optBuiltin": "内置 (Built-in)",
   "optQmd": "QMD",
   "citations": "引用 (Citations)",
+  "memSearchProvider": "搜索服务商",
+  "memSearchFallback": "搜索回退",
   "qmdCommand": "命令",
   "qmdDataPath": "数据路径",
   "qmdMaxEntries": "最大条目",

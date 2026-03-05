@@ -1018,6 +1018,8 @@
   "optBuiltin": "Встроенный",
   "optQmd": "QMD",
   "citations": "Цитирование",
+  "memSearchProvider": "Провайдер поиска",
+  "memSearchFallback": "Резервный поиск",
   "qmdCommand": "Команда",
   "qmdDataPath": "Путь к данным",
   "qmdMaxEntries": "Макс. записей",

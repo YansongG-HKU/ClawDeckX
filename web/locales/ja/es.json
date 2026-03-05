@@ -1018,6 +1018,8 @@
   "optBuiltin": "組み込み",
   "optQmd": "QMD",
   "citations": "引用",
+  "memSearchProvider": "検索プロバイダー",
+  "memSearchFallback": "検索フォールバック",
   "qmdCommand": "コマンド",
   "qmdDataPath": "データパス",
   "qmdMaxEntries": "最大エントリ数",
