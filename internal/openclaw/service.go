@@ -198,7 +198,7 @@ func (s *Service) Start() error {
 	}
 	switch s.DetectRuntime() {
 	case RuntimeSystemd:
-		return runCommand("sudo", "systemctl", "start", "openclaw-gateway")
+		return runCommand("systemctl", "--user", "start", "openclaw-gateway")
 	case RuntimeDocker:
 		name := s.ensureContainerName()
 		if name == "" {
@@ -238,7 +238,7 @@ func (s *Service) Stop() error {
 	}
 	switch s.DetectRuntime() {
 	case RuntimeSystemd:
-		return runCommand("sudo", "systemctl", "stop", "openclaw-gateway")
+		return runCommand("systemctl", "--user", "stop", "openclaw-gateway")
 	case RuntimeDocker:
 		name := s.ensureContainerName()
 		if name == "" {
@@ -295,7 +295,7 @@ func (s *Service) Restart() error {
 	logger.Gateway.Debug().Str("runtime", fmt.Sprintf("%v", rt)).Msg(i18n.T(i18n.MsgLogRestartDetectedRuntime))
 	switch rt {
 	case RuntimeSystemd:
-		return runCommand("sudo", "systemctl", "restart", "openclaw-gateway")
+		return runCommand("systemctl", "--user", "restart", "openclaw-gateway")
 	case RuntimeDocker:
 		name := s.ensureContainerName()
 		if name == "" {
@@ -356,7 +356,7 @@ func (s *Service) ensureContainerName() string {
 }
 
 func systemdActive(name string) bool {
-	return runOk("systemctl", "is-active", "--quiet", name)
+	return runOk("systemctl", "--user", "is-active", "--quiet", name)
 }
 
 func findDockerContainer() string {
@@ -697,17 +697,30 @@ func (s *Service) DaemonUninstall() error {
 
 // ── systemd ──
 
-const systemdUnitPath = "/etc/systemd/system/openclaw-gateway.service"
+const systemdServiceName = "openclaw-gateway"
+
+func systemdUserUnitPath() string {
+	home, _ := os.UserHomeDir()
+	if home == "" {
+		return ""
+	}
+	return filepath.Join(home, ".config", "systemd", "user", systemdServiceName+".service")
+}
 
 func (s *Service) daemonStatusSystemd() DaemonStatusResult {
-	res := DaemonStatusResult{Platform: "systemd", UnitFile: systemdUnitPath}
-	if _, err := os.Stat(systemdUnitPath); err == nil {
+	unitPath := systemdUserUnitPath()
+	res := DaemonStatusResult{Platform: "systemd", UnitFile: unitPath}
+	if unitPath == "" {
+		res.Detail = "cannot determine user home"
+		return res
+	}
+	if _, err := os.Stat(unitPath); err == nil {
 		res.Installed = true
 	}
-	if runOk("systemctl", "is-enabled", "--quiet", "openclaw-gateway") {
+	if runOk("systemctl", "--user", "is-enabled", "--quiet", systemdServiceName) {
 		res.Enabled = true
 	}
-	if systemdActive("openclaw-gateway") || systemdActive("openclaw") {
+	if systemdActive(systemdServiceName) || systemdActive("openclaw") {
 		res.Active = true
 	}
 	if res.Installed {
@@ -725,6 +738,11 @@ func (s *Service) daemonStatusSystemd() DaemonStatusResult {
 }
 
 func (s *Service) daemonInstallSystemd() error {
+	unitPath := systemdUserUnitPath()
+	if unitPath == "" {
+		return errors.New("cannot determine user home directory")
+	}
+
 	cmdName := ResolveOpenClawCmd()
 	if cmdName == "" {
 		return errors.New("openclaw command not found")
@@ -747,39 +765,45 @@ func (s *Service) daemonInstallSystemd() error {
 
 	unit := fmt.Sprintf(`[Unit]
 Description=OpenClaw Gateway
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
-Type=simple
 ExecStart=%s gateway run --bind %s --port %s
 Restart=always
 RestartSec=5
+KillMode=control-group
 WorkingDirectory=%s
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
 `, absCmd, bind, port, filepath.Dir(absCmd))
 
-	// Write unit file via sudo tee to handle permission
-	teeCmd := exec.Command("sudo", "tee", systemdUnitPath)
-	teeCmd.Stdin = strings.NewReader(unit)
-	if out, err := teeCmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("write unit file: %s", strings.TrimSpace(string(out)))
+	if err := os.MkdirAll(filepath.Dir(unitPath), 0755); err != nil {
+		return fmt.Errorf("create systemd user dir: %w", err)
 	}
-	if err := runCommand("sudo", "systemctl", "daemon-reload"); err != nil {
+	if err := os.WriteFile(unitPath, []byte(unit), 0644); err != nil {
+		return fmt.Errorf("write unit file: %w", err)
+	}
+	if err := runCommand("systemctl", "--user", "daemon-reload"); err != nil {
 		return fmt.Errorf("daemon-reload: %w", err)
 	}
-	if err := runCommand("sudo", "systemctl", "enable", "openclaw-gateway"); err != nil {
+	if err := runCommand("systemctl", "--user", "enable", systemdServiceName); err != nil {
 		return fmt.Errorf("enable: %w", err)
 	}
+	// Enable linger so user services survive logout
+	_ = runCommand("loginctl", "enable-linger", os.Getenv("USER"))
 	return nil
 }
 
 func (s *Service) daemonUninstallSystemd() error {
-	_ = runCommand("sudo", "systemctl", "stop", "openclaw-gateway")
-	_ = runCommand("sudo", "systemctl", "disable", "openclaw-gateway")
-	_ = runCommand("sudo", "rm", "-f", systemdUnitPath)
-	_ = runCommand("sudo", "systemctl", "daemon-reload")
+	_ = runCommand("systemctl", "--user", "stop", systemdServiceName)
+	_ = runCommand("systemctl", "--user", "disable", systemdServiceName)
+	unitPath := systemdUserUnitPath()
+	if unitPath != "" {
+		_ = os.Remove(unitPath)
+	}
+	_ = runCommand("systemctl", "--user", "daemon-reload")
 	return nil
 }
 
