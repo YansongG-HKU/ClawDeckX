@@ -63,8 +63,9 @@ jobs:
           CGO_ENABLED: 0
         run: |
           VERSION=$(node -p "require('./web/package.json').version" 2>/dev/null || echo "0.0.0")
+          COMPAT=$(node -p "require('./web/package.json').openclawCompat" 2>/dev/null || echo "")
           BUILD_NUM="${{ github.run_number }}"
-          LDFLAGS="-s -w -X ClawDeckX/internal/version.Version=${VERSION} -X ClawDeckX/internal/version.Build=${BUILD_NUM}"
+          LDFLAGS="-s -w -X ClawDeckX/internal/version.Version=${VERSION} -X ClawDeckX/internal/version.Build=${BUILD_NUM} -X ClawDeckX/internal/version.OpenClawCompat=${COMPAT}"
           go build -ldflags="${LDFLAGS}" -o dist/${{ matrix.output_name }} ./cmd/clawdeckx
 
       - name: Upload Build Artifact

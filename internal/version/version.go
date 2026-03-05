@@ -12,4 +12,4 @@ var Build = "dev"
 
 // OpenClawCompat is the minimum compatible OpenClaw version.
 // Source of truth: web/package.json → "openclawCompat" field.
-var OpenClawCompat = ">=2026.2.9"
+var OpenClawCompat = ">=2026.3.2"
