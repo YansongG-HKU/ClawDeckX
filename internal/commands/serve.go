@@ -632,6 +632,18 @@ func RunServe(args []string) int {
 		fmt.Printf("  |%s|\n", padLine(content))
 	}
 
+	// printLink prints a line containing a clickable URL using OSC 8 hyperlink escape sequences.
+	// The display width calculation uses the visible text only (excluding escape sequences).
+	printLink := func(prefix, url string) {
+		visible := prefix + url
+		visible = truncateToWidth(visible, boxWidth)
+		padding := boxWidth - displayWidth(visible)
+		if padding < 0 {
+			padding = 0
+		}
+		fmt.Printf("  |%s\033]8;;%s\033\\%s\033]8;;\033\\%s|\n", prefix, url, url, strings.Repeat(" ", padding))
+	}
+
 	topBorder := "  +" + strings.Repeat("-", boxWidth) + "+"
 	sectionBorder := "  +" + strings.Repeat("-", boxWidth) + "+"
 	subSectionBorder := "  +" + strings.Repeat("-", boxWidth) + "+"
@@ -707,20 +719,20 @@ func RunServe(args []string) int {
 	if cfg.Server.Bind == "0.0.0.0" || cfg.Server.Bind == "" {
 		printBi(i18n.MsgServeAccessUrls)
 		fmt.Println(subSectionBorder)
-		printLine(fmt.Sprintf("-> http://localhost:%d", cfg.Server.Port))
-		printLine(fmt.Sprintf("-> http://127.0.0.1:%d", cfg.Server.Port))
+		printLink("-> ", fmt.Sprintf("http://localhost:%d", cfg.Server.Port))
+		printLink("-> ", fmt.Sprintf("http://127.0.0.1:%d", cfg.Server.Port))
 
 		if addrs, err := net.InterfaceAddrs(); err == nil {
 			for _, a := range addrs {
 				if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil {
 					ip := ipnet.IP.String()
-					printLine(fmt.Sprintf("-> http://%s:%d", ip, cfg.Server.Port))
+					printLink("-> ", fmt.Sprintf("http://%s:%d", ip, cfg.Server.Port))
 				}
 			}
 		}
 
 	} else {
-		printLine(fmt.Sprintf("-> http://%s:%d", cfg.Server.Bind, cfg.Server.Port))
+		printLink("-> ", fmt.Sprintf("http://%s:%d", cfg.Server.Bind, cfg.Server.Port))
 	}
 
 	fmt.Printf("%s\n\n", bottomBorder)
