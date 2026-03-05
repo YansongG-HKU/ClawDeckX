@@ -1608,7 +1608,126 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
           </div>
         </div>
       )}
+
+      {/* ================================================================ */}
+      {/* ACP 持久绑定管理 */}
+      {/* ================================================================ */}
+      <AcpBindingsSection getField={getField} setField={setField} es={es} />
     </div>
+  );
+};
+
+// ============================================================================
+// ACP Persistent Bindings Sub-Section
+// ============================================================================
+const ACP_MODE_OPTIONS = (es: any) => [
+  { value: 'persistent', label: es.optPersistent || 'Persistent' },
+  { value: 'oneshot', label: es.optOneshot || 'Oneshot' },
+];
+const ACP_CHANNEL_OPTIONS = [
+  { value: 'discord', label: 'Discord' },
+  { value: 'telegram', label: 'Telegram' },
+];
+
+interface AcpBindingsSectionProps {
+  getField: (path: string[]) => any;
+  setField: (path: string[], value: any) => void;
+  es: any;
+}
+
+const AcpBindingsSection: React.FC<AcpBindingsSectionProps> = ({ getField, setField, es }) => {
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const [adding, setAdding] = useState(false);
+
+  const allBindings: any[] = getField(['bindings']) || [];
+  const acpBindings = allBindings
+    .map((b: any, i: number) => ({ ...b, _idx: i }))
+    .filter((b: any) => b.type === 'acp');
+
+  const updateBinding = (idx: number, patch: Record<string, any>) => {
+    const updated = [...allBindings];
+    updated[idx] = { ...updated[idx], ...patch };
+    setField(['bindings'], updated);
+  };
+  const updateBindingMatch = (idx: number, patch: Record<string, any>) => {
+    const updated = [...allBindings];
+    updated[idx] = { ...updated[idx], match: { ...updated[idx].match, ...patch } };
+    setField(['bindings'], updated);
+  };
+  const updateBindingAcp = (idx: number, patch: Record<string, any>) => {
+    const updated = [...allBindings];
+    updated[idx] = { ...updated[idx], acp: { ...updated[idx].acp, ...patch } };
+    setField(['bindings'], updated);
+  };
+  const deleteBinding = (idx: number) => {
+    const updated = allBindings.filter((_: any, i: number) => i !== idx);
+    setField(['bindings'], updated);
+    setEditingIdx(null);
+  };
+  const addBinding = () => {
+    const newBinding = {
+      type: 'acp' as const,
+      agentId: 'main',
+      match: { channel: 'discord', peer: { kind: 'dm' as const, id: '' } },
+      acp: { mode: 'persistent' },
+    };
+    setField(['bindings'], [...allBindings, newBinding]);
+    setEditingIdx(allBindings.length);
+    setAdding(false);
+  };
+
+  return (
+    <ConfigSection title={es.acpBindings || 'ACP Persistent Bindings'} icon="link" iconColor="text-violet-500" defaultOpen={false}>
+      {acpBindings.length === 0 && !adding && (
+        <p className="text-[11px] text-slate-400 dark:text-white/30 italic py-1">{es.acpBindingsEmpty || 'No ACP bindings configured.'}</p>
+      )}
+      {acpBindings.map((b: any) => {
+        const idx = b._idx;
+        const isEditing = editingIdx === idx;
+        const label = b.acp?.label || `${b.match?.channel || '?'}:${b.match?.peer?.id || '?'}`;
+        return (
+          <div key={idx} className="rounded-lg border border-slate-200 dark:border-white/[0.06] mb-2 overflow-hidden">
+            <div
+              className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/[0.03] transition-colors"
+              onClick={() => setEditingIdx(isEditing ? null : idx)}
+            >
+              <span className="material-symbols-outlined text-[14px] text-slate-400 dark:text-white/30 transition-transform" style={{ transform: isEditing ? 'rotate(90deg)' : 'rotate(0deg)' }}>
+                chevron_right
+              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
+              <span className="text-[12px] font-bold text-slate-700 dark:text-white/80 flex-1 truncate">{label}</span>
+              <span className="text-[10px] text-slate-400 dark:text-white/30 font-mono">{b.agentId || 'main'}</span>
+              <button
+                onClick={e => { e.stopPropagation(); deleteBinding(idx); }}
+                className="p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition-colors"
+                title={es.delete || 'Delete'}
+              >
+                <span className="material-symbols-outlined text-[14px]">close</span>
+              </button>
+            </div>
+            {isEditing && (
+              <div className="px-3 pb-3 pt-1 space-y-2 border-t border-slate-200/60 dark:border-white/[0.04]">
+                <TextField label={es.agentId || 'Agent ID'} value={b.agentId || ''} onChange={v => updateBinding(idx, { agentId: v })} placeholder="main" />
+                <SelectField label={es.acpChannel || 'Channel'} value={b.match?.channel || 'discord'} onChange={v => updateBindingMatch(idx, { channel: v })} options={ACP_CHANNEL_OPTIONS} />
+                <TextField label={es.acpAccountId || 'Account ID'} value={b.match?.accountId || ''} onChange={v => updateBindingMatch(idx, { accountId: v })} placeholder="default" />
+                <TextField label={es.acpPeerId || 'Peer ID'} value={b.match?.peer?.id || ''} onChange={v => updateBindingMatch(idx, { peer: { ...b.match?.peer, id: v } })} placeholder={es.acpPeerIdPh || 'Channel/Topic ID'} />
+                <SelectField label={es.acpMode || 'Mode'} value={b.acp?.mode || 'persistent'} onChange={v => updateBindingAcp(idx, { mode: v })} options={ACP_MODE_OPTIONS(es)} />
+                <TextField label={es.acpLabel || 'Label'} value={b.acp?.label || ''} onChange={v => updateBindingAcp(idx, { label: v })} placeholder={es.acpLabelPh || 'Optional label'} />
+                <TextField label={es.acpCwd || 'Working Directory'} value={b.acp?.cwd || ''} onChange={v => updateBindingAcp(idx, { cwd: v })} placeholder="/path/to/project" />
+                <TextField label={es.acpBackend || 'Backend'} value={b.acp?.backend || ''} onChange={v => updateBindingAcp(idx, { backend: v })} placeholder="acpx" />
+              </div>
+            )}
+          </div>
+        );
+      })}
+      <button
+        onClick={addBinding}
+        className="w-full py-2 border border-dashed border-violet-300 dark:border-violet-500/30 hover:border-violet-500 dark:hover:border-violet-400/60 rounded-lg text-[11px] font-bold text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-500/5 transition-all flex items-center justify-center gap-1.5"
+      >
+        <span className="material-symbols-outlined text-[14px]">add</span>
+        {es.acpAddBinding || 'Add ACP Binding'}
+      </button>
+    </ConfigSection>
   );
 };
 
