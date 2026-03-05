@@ -53,6 +53,12 @@ export const ToolsSection: React.FC<SectionProps> = ({ setField, getField, langu
         <NumberField label={es.pdfMaxPages || 'PDF Max Pages'} tooltip={tip('tools.pdf.maxPages')} value={g(['pdf', 'maxPages'])} onChange={v => s(['pdf', 'maxPages'], v)} placeholder="50" />
       </ConfigSection>
 
+      <ConfigSection title={es.perplexityWebSearch || 'Perplexity Web Search'} icon="travel_explore" iconColor="text-cyan-500" defaultOpen={false}>
+        <SwitchField label={es.enabled} tooltip={tip('tools.webSearch.enabled')} value={g(['webSearch', 'enabled']) === true} onChange={v => s(['webSearch', 'enabled'], v)} />
+        <TextField label={es.perplexityModel || 'Model'} tooltip={tip('tools.webSearch.model')} value={g(['webSearch', 'model']) || ''} onChange={v => s(['webSearch', 'model'], v)} placeholder="sonar" />
+        <TextField label={es.perplexityApiKey || 'API Key'} tooltip={tip('tools.webSearch.apiKey')} value={g(['webSearch', 'apiKey']) || ''} onChange={v => s(['webSearch', 'apiKey'], v)} placeholder="pplx-..." />
+      </ConfigSection>
+
       <ConfigSection title={es.elevatedTools} icon="admin_panel_settings" iconColor="text-amber-500" defaultOpen={false}>
         <ArrayField label={es.allowedElevated} tooltip={tip('tools.elevated.allow')} value={g(['elevated', 'allow']) || []} onChange={v => s(['elevated', 'allow'], v)} placeholder={es.phToolName} />
       </ConfigSection>
