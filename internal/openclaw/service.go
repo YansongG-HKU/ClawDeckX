@@ -662,10 +662,12 @@ func (s *Service) DaemonStatus() DaemonStatusResult {
 }
 
 // DaemonInstall registers openclaw as an OS-level service.
+// It first cleans up any legacy service registrations before installing.
 func (s *Service) DaemonInstall() error {
 	if s.IsRemote() {
 		return errors.New("cannot install daemon on remote gateway")
 	}
+	s.cleanupLegacyServices()
 	switch runtime.GOOS {
 	case "linux":
 		return s.daemonInstallSystemd()
@@ -675,6 +677,30 @@ func (s *Service) DaemonInstall() error {
 		return s.daemonInstallWindows()
 	default:
 		return errors.New("unsupported OS for daemon install")
+	}
+}
+
+// cleanupLegacyServices removes old-style service registrations that are no longer used.
+func (s *Service) cleanupLegacyServices() {
+	switch runtime.GOOS {
+	case "linux":
+		// Clean up old system-level systemd unit if it exists
+		const legacySystemdPath = "/etc/systemd/system/openclaw-gateway.service"
+		if _, err := os.Stat(legacySystemdPath); err == nil {
+			output.Debugf("Found legacy system-level systemd unit at %s, cleaning up\n", legacySystemdPath)
+			_ = runCommand("sudo", "systemctl", "stop", "openclaw-gateway")
+			_ = runCommand("sudo", "systemctl", "disable", "openclaw-gateway")
+			_ = runCommand("sudo", "rm", "-f", legacySystemdPath)
+			_ = runCommand("sudo", "systemctl", "daemon-reload")
+		}
+	case "windows":
+		// Clean up old sc.exe Windows service if it exists
+		const legacyServiceName = "OpenClawGateway"
+		if out, err := runOutput("sc", "query", legacyServiceName); err == nil && strings.Contains(strings.ToUpper(out), legacyServiceName) {
+			output.Debugf("Found legacy Windows service %s, cleaning up\n", legacyServiceName)
+			_ = runCommand("sc", "stop", legacyServiceName)
+			_ = runCommand("sc", "delete", legacyServiceName)
+		}
 	}
 }
 
