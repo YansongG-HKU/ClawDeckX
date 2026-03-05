@@ -468,6 +468,29 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
             <TextField label={es.ackReaction || 'Ack Reaction'} value={g(['ackReaction']) || ''} onChange={v => s(['ackReaction'], v)} placeholder="👀" tooltip={tip('ackReaction')} />
             <TextField label={es.proxy || 'Proxy'} value={g(['proxy']) || ''} onChange={v => s(['proxy'], v)} placeholder="http://host:port" tooltip={tip('proxy')} />
             <NumberField label={es.timeoutSeconds || 'Timeout (s)'} value={g(['timeoutSeconds'])} onChange={v => s(['timeoutSeconds'], v)} placeholder="60" tooltip={es.tipTgTimeout} />
+            <SwitchField label={es.dmTopics || 'DM Topics'} value={g(['dmTopics']) === true} onChange={v => s(['dmTopics'], v)} tooltip={es.tipDmTopics} />
+            {/* Telegram Topics */}
+            {(() => {
+              const rawTopics = g(['topics']);
+              const topics: any[] = Array.isArray(rawTopics) ? rawTopics : [];
+              return topics.length > 0 ? (
+                <div className="pt-2 pb-1">
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-white/40">{es.topicBindings || 'Topic Bindings'}</span>
+                  {topics.map((t: any, i: number) => (
+                    <div key={i} className="flex gap-2 items-center mt-1">
+                      <TextField label={es.topicId || 'Topic ID'} value={t.topicId || ''} onChange={v => { const next = [...topics]; next[i] = { ...next[i], topicId: v }; s(['topics'], next); }} placeholder="123" />
+                      <TextField label={es.agentId || 'Agent ID'} value={t.agentId || ''} onChange={v => { const next = [...topics]; next[i] = { ...next[i], agentId: v }; s(['topics'], next); }} placeholder="agent-1" />
+                      <button className="text-red-500 hover:text-red-700 text-xs mt-4" onClick={() => { s(['topics'], topics.filter((_: any, j: number) => j !== i)); }}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              ) : null;
+            })()}
+            <button className="text-xs text-blue-500 hover:text-blue-700 mt-1" onClick={() => {
+              const rawTopics = g(['topics']);
+              const topics: any[] = Array.isArray(rawTopics) ? rawTopics : [];
+              s(['topics'], [...topics, { topicId: '', agentId: '' }]);
+            }}>+ {es.addTopicBinding || 'Add Topic Binding'}</button>
           </>
         )}
 
