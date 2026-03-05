@@ -47,6 +47,8 @@
   "apiTypeTip": "API 協議型別",
   "authMethod": "認證方式",
   "authMethodTip": "認證方式",
+  "customHeaders": "自訂請求標頭",
+  "tipCustomHeaders": "每次請求此服務商時傳送的自訂 HTTP 標頭",
   "models": "模型",
   "setPrimary": "設為主模型",
   "fallback": "備用模型",

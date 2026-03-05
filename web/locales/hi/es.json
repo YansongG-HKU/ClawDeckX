@@ -47,6 +47,8 @@
   "apiTypeTip": "API प्रोटोकॉल प्रकार",
   "authMethod": "प्रमाणीकरण विधि",
   "authMethodTip": "प्रमाणीकरण विधि",
+  "customHeaders": "कस्टम हेडर",
+  "tipCustomHeaders": "इस प्रदाता को हर अनुरोध के साथ भेजे जाने वाले कस्टम HTTP हेडर",
   "models": "मॉडल",
   "setPrimary": "प्राथमिक सेट करें",
   "fallback": "फॉलबैक मॉडल",

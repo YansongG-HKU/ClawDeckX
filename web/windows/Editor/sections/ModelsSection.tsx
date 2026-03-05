@@ -794,6 +794,7 @@ export const ModelsSection: React.FC<SectionProps> = ({ config, setField, getFie
                 <PasswordField label={es.lblApiKey} value={cfg.apiKey || ''} onChange={v => setField(['models', 'providers', name, 'apiKey'], v)} placeholder={es.phApiKeySk} tooltip={es.apiKeyTip} />
                 <SelectField label={es.lblApi} value={cfg.api || 'openai-completions'} onChange={v => setField(['models', 'providers', name, 'api'], v)} options={API_OPTIONS} tooltip={es.apiTypeTip} />
                 <SelectField label={es.authMethod} value={cfg.auth || 'api-key'} onChange={v => setField(['models', 'providers', name, 'auth'], v)} options={AUTH_OPTIONS} tooltip={es.authMethodTip} />
+                <KeyValueField label={es.customHeaders || 'Custom Headers'} value={cfg.headers || {}} onChange={v => setField(['models', 'providers', name, 'headers'], v)} tooltip={es.tipCustomHeaders} keyPlaceholder="Header-Name" valuePlaceholder="value" />
                 {/* 模型列表 */}
                 <div className="mt-2 pt-2 border-t border-slate-100 dark:border-white/[0.04]">
                   <div className="flex items-center justify-between mb-1.5">

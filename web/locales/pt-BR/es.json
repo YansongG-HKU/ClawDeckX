@@ -47,6 +47,8 @@
   "apiTypeTip": "Tipo de protocolo da API",
   "authMethod": "Método de Auth",
   "authMethodTip": "Método de autenticação",
+  "customHeaders": "Headers Personalizados",
+  "tipCustomHeaders": "Headers HTTP personalizados enviados com cada requisição a este provedor",
   "models": "Modelos",
   "setPrimary": "Definir como Primário",
   "fallback": "Modelo de Fallback",

@@ -47,6 +47,8 @@
   "apiTypeTip": "نوع بروتوكول API",
   "authMethod": "طريقة المصادقة",
   "authMethodTip": "طريقة المصادقة",
+  "customHeaders": "رؤوس مخصصة",
+  "tipCustomHeaders": "رؤوس HTTP مخصصة تُرسل مع كل طلب لهذا المزود",
   "models": "النماذج",
   "setPrimary": "تعيين كأساسي",
   "fallback": "نموذج احتياطي",

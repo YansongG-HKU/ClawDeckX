@@ -47,6 +47,8 @@
   "apiTypeTip": "API protocol type",
   "authMethod": "Auth Method",
   "authMethodTip": "Authentication method",
+  "customHeaders": "Custom Headers",
+  "tipCustomHeaders": "Custom HTTP headers sent with every request to this provider",
   "models": "Models",
   "setPrimary": "Set as Primary",
   "fallback": "Fallback Model",

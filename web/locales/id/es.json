@@ -47,6 +47,8 @@
   "apiTypeTip": "Jenis protokol API",
   "authMethod": "Metode Auth",
   "authMethodTip": "Metode autentikasi",
+  "customHeaders": "Header Kustom",
+  "tipCustomHeaders": "Header HTTP kustom yang dikirim dengan setiap permintaan ke provider ini",
   "models": "Model",
   "setPrimary": "Atur sebagai Utama",
   "fallback": "Model Fallback",

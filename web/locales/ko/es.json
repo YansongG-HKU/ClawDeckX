@@ -47,6 +47,8 @@
   "apiTypeTip": "API 프로토콜 유형",
   "authMethod": "인증 방식",
   "authMethodTip": "인증 방식",
+  "customHeaders": "커스텀 헤더",
+  "tipCustomHeaders": "이 공급자에 대한 모든 요청에 전송되는 커스텀 HTTP 헤더",
   "models": "모델",
   "setPrimary": "기본 모델로 설정",
   "fallback": "대체 모델",

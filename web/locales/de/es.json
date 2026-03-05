@@ -47,6 +47,8 @@
   "apiTypeTip": "API-Protokolltyp",
   "authMethod": "Auth-Methode",
   "authMethodTip": "Authentifizierungsmethode",
+  "customHeaders": "Benutzerdefinierte Header",
+  "tipCustomHeaders": "Benutzerdefinierte HTTP-Header, die bei jeder Anfrage an diesen Anbieter gesendet werden",
   "models": "Modelle",
   "setPrimary": "Als Primär setzen",
   "fallback": "Ersatzmodell",

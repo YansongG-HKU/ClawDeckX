@@ -47,6 +47,8 @@
   "apiTypeTip": "APIプロトコルタイプ",
   "authMethod": "認証方式",
   "authMethodTip": "認証方式",
+  "customHeaders": "カスタムヘッダー",
+  "tipCustomHeaders": "このプロバイダーへのリクエストに付加するカスタムHTTPヘッダー",
   "models": "モデル",
   "setPrimary": "プライマリに設定",
   "fallback": "フォールバックモデル",
