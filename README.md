@@ -103,27 +103,6 @@ Seamlessly manage both local and remote OpenClaw gateways. Switch between gatewa
 
 ## 🚀 Quick Start
 
-### Docker Install | Docker 一键安装
-
-```bash
-# Download and start / 下载并启动
-curl -fsSL https://raw.githubusercontent.com/ClawDeckX/ClawDeckX/main/docker-compose.yml -o docker-compose.yml
-docker compose up -d
-```
-
-Open your browser at `http://localhost:18791`. The first run will auto-generate an admin account — credentials will be shown in the container logs.
-
-浏览器打开 `http://localhost:18791`，首次启动会自动生成管理员账户，凭据将显示在容器日志中。
-
-```bash
-# View credentials / 查看初始凭据
-docker logs clawdeckx
-```
-
-> **Note:** By default, the container connects to an OpenClaw Gateway on the host machine at port `18789`. Edit `docker-compose.yml` to change `OCD_OPENCLAW_GATEWAY_HOST` and `OCD_OPENCLAW_GATEWAY_PORT` as needed.
->
-> **说明：** 默认连接宿主机 `18789` 端口的 OpenClaw Gateway，可在 `docker-compose.yml` 中修改 `OCD_OPENCLAW_GATEWAY_HOST` 和 `OCD_OPENCLAW_GATEWAY_PORT`。
-
 ### One-Click Install | 一键安装
 
 ```bash
@@ -157,6 +136,29 @@ Download the binary from [Releases](https://github.com/ClawDeckX/ClawDeckX/relea
 | `--user` | `-u` | Initial admin username (first run only) | 初始管理员用户名（仅首次） |
 | `--pass` | | Initial admin password (min 6 chars) | 初始管理员密码（至少 6 位） |
 | `--debug` | | Enable debug logging | 启用调试日志 |
+
+<br>
+
+### Docker Install | Docker 一键安装
+
+```bash
+# Download and start / 下载并启动
+curl -fsSL https://raw.githubusercontent.com/ClawDeckX/ClawDeckX/main/docker-compose.yml -o docker-compose.yml
+docker compose up -d
+```
+
+Open your browser at `http://localhost:18791`. The first run will auto-generate an admin account — credentials will be shown in the container logs.
+
+浏览器打开 `http://localhost:18791`，首次启动会自动生成管理员账户，凭据将显示在容器日志中。
+
+```bash
+# View credentials / 查看初始凭据
+docker logs clawdeckx
+```
+
+> **Note:** By default, the container connects to an OpenClaw Gateway on the host machine at port `18789`. Edit `docker-compose.yml` to change `OCD_OPENCLAW_GATEWAY_HOST` and `OCD_OPENCLAW_GATEWAY_PORT` as needed.
+>
+> **说明：** 默认连接宿主机 `18789` 端口的 OpenClaw Gateway，可在 `docker-compose.yml` 中修改 `OCD_OPENCLAW_GATEWAY_HOST` 和 `OCD_OPENCLAW_GATEWAY_PORT`。
 
 <br>
 
