@@ -38,7 +38,7 @@
   },
   "maint": {
     "title": "Maintenance",
-    "subtitle": "System diagnostics, session cleanup, context optimization, token tracking",
+    "subtitle": "System diagnostics, command testing",
     "tabDiagnose": "Diagnostics",
     "tabSessions": "Sessions",
     "tabContext": "Context",

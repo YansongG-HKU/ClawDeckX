@@ -171,6 +171,6 @@ chmod +x "$BINARY_NAME"
 echo -e "${GREEN}✓ Download complete!${NC}"
 
 # 5. Run with arguments
-echo -e "${BLUE}>> Starting OpenClaw Deck...${NC}"
+echo -e "${BLUE}>> Starting ClawDeckX...${NC}"
 echo "----------------------------------------"
 ./"$BINARY_NAME" "$@"

@@ -38,7 +38,7 @@
   },
   "maint": {
     "title": "유지보수",
-    "subtitle": "시스템 진단, 세션 정리, 컨텍스트 최적화, 토큰 추적",
+    "subtitle": "시스템 진단, 명령어 테스트",
     "tabDiagnose": "진단",
     "tabSessions": "세션",
     "tabContext": "컨텍스트",

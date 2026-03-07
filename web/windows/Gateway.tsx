@@ -940,7 +940,7 @@ const Gateway: React.FC<GatewayProps> = ({ language }) => {
               {status?.running ? gw.running : gw.stopped}
             </div>
             {activeProfile && <span className="text-[10px] text-slate-400 dark:text-white/40 font-mono">{activeProfile.host}:{activeProfile.port}</span>}
-            {status?.runtime && <span className="text-[10px] text-slate-400 dark:text-white/40">{gw.runtimeMode}: <span className="font-mono text-slate-600 dark:text-white/60">{status.runtime}</span></span>}
+            {status?.runtime && <span className="text-[10px] text-slate-400 dark:text-white/40">{gw.runtimeMode}: <span className="font-mono text-slate-600 dark:text-white/60">{(gw as any)[`runtime${status.runtime.charAt(0).toUpperCase()}${status.runtime.slice(1)}`] || status.runtime}</span></span>}
           </div>
           {/* 看门狗探测状态 */}
           {status?.running && (

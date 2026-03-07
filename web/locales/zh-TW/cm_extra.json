@@ -38,7 +38,7 @@
   },
   "maint": {
     "title": "健康維護",
-    "subtitle": "系統診斷、會話清理、上下文最佳化、Token 追蹤",
+    "subtitle": "系統診斷、命令測試",
     "tabDiagnose": "系統診斷",
     "tabSessions": "會話清理",
     "tabContext": "上下文最佳化",

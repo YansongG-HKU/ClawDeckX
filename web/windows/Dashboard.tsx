@@ -131,6 +131,7 @@ const Dashboard: React.FC<DashboardProps> = ({ language }) => {
   const d = (t as any).dash as any;
   const dr = (t as any).dr as any;
   const hi = (t as any).hi as any;
+  const gwL = (t as any).gw as any;
   const menuCostLabel = typeof (t as any).menu?.cost === 'string' ? (t as any).menu.cost : 'Cost';
   const locale = String(language || 'en');
   const { toast } = useToast();
@@ -629,7 +630,7 @@ const Dashboard: React.FC<DashboardProps> = ({ language }) => {
               <div className="flex flex-wrap gap-x-5 gap-y-1 mt-1.5 text-[11px]">
                 {uptimeMs > 0 && <span className="text-slate-500 dark:text-white/50">{d.uptime}: <b className="text-slate-700 dark:text-white/70 font-mono">{fmtUptime(uptimeMs, uptimeUnits)}</b></span>}
                 {tickMs > 0 && <span className="text-slate-500 dark:text-white/50">{d.tickLabel}: <b className="text-slate-700 dark:text-white/70 font-mono">{tickMs}{d.unitMillisecond}</b></span>}
-                {gwStatus?.runtime && <span className="text-slate-500 dark:text-white/50">{d.runtimeLabel}: <b className="text-slate-700 dark:text-white/70 font-mono">{gwStatus.runtime}</b></span>}
+                {gwStatus?.runtime && <span className="text-slate-500 dark:text-white/50">{d.runtimeLabel}: <b className="text-slate-700 dark:text-white/70 font-mono">{gwL?.[`runtime${gwStatus.runtime.charAt(0).toUpperCase()}${gwStatus.runtime.slice(1)}`] || gwStatus.runtime}</b></span>}
               </div>
             </div>
             <div className="flex flex-col items-end gap-2 shrink-0">

@@ -38,7 +38,7 @@
   },
   "maint": {
     "title": "Wartung",
-    "subtitle": "Systemdiagnose, Sitzungsbereinigung, Kontextoptimierung, Token-Verfolgung",
+    "subtitle": "Systemdiagnose, Befehlstest",
     "tabDiagnose": "Diagnose",
     "tabSessions": "Sitzungen",
     "tabContext": "Kontext",

@@ -25,6 +25,7 @@ interface SectionDef {
   icon: string;
   labelKey: string;
   color: string;
+  searchKeys?: string[];
 }
 const ModelsSection = lazy(() => import('./sections/ModelsSection').then(m => ({ default: m.ModelsSection })));
 const AgentsSection = lazy(() => import('./sections/AgentsSection').then(m => ({ default: m.AgentsSection })));
@@ -49,27 +50,46 @@ const TemplatesSection = lazy(() => import('./sections/TemplatesSectionV2').then
 const UnmappedConfigSection = lazy(() => import('./sections/UnmappedConfigSection').then(m => ({ default: m.UnmappedConfigSection })));
 const SECTIONS: SectionDef[] = [
   // core sections
-  { id: 'models', icon: 'psychology', labelKey: 'secModels', color: 'text-blue-500' },
-  { id: 'channels', icon: 'forum', labelKey: 'secChannels', color: 'text-green-500' },
-  { id: 'gateway', icon: 'dns', labelKey: 'secGateway', color: 'text-teal-500' },
-  { id: 'templates', icon: 'auto_fix_high', labelKey: 'secTemplates', color: 'text-violet-500' },
+  { id: 'models', icon: 'psychology', labelKey: 'secModels', color: 'text-blue-500',
+    searchKeys: ['providers', 'provider', 'apiType', 'apiTypeTip', 'baseUrlTip', 'credentials', 'models', 'primaryModel', 'primaryModelDesc', 'fallbackModel', 'fallbackModelDesc', 'contextWindow', 'contextWindowDesc', 'reasoning', 'reasoningDesc', 'mergeMode', 'mergeModeDesc', 'subagentModel', 'subagentModelDesc', 'heartbeatModel', 'heartbeatModelDesc', 'customHeaders', 'authMethod', 'advancedSettings', 'addProviderWizard', 'testConn', 'discoverModels'] },
+  { id: 'channels', icon: 'forum', labelKey: 'secChannels', color: 'text-green-500',
+    searchKeys: ['channelConfig', 'addChannel', 'channelType', 'allowFrom', 'denyFrom', 'adminIds', 'mentionPatterns', 'greeting', 'onboardMsg', 'groupMode', 'threadMode', 'dmPolicy', 'groupPolicy', 'streamMode', 'replyMode', 'inlineButtons', 'selfChatMode', 'chTelegram', 'chWhatsapp', 'chDiscord', 'chSlack', 'chSignal', 'chImessage', 'chBluebubbles', 'chGooglechat', 'chMsteams', 'chMattermost', 'chMatrix', 'chFeishu', 'chWecom', 'chWecomKf', 'chWechat', 'chQq', 'chDingtalk', 'chDoubao', 'chZalo', 'chVoicecall', 'botToken', 'appToken', 'webhookUrl'] },
+  { id: 'gateway', icon: 'dns', labelKey: 'secGateway', color: 'text-teal-500',
+    searchKeys: ['basicSettings', 'port', 'runMode', 'bind', 'authentication', 'authMode', 'authToken', 'authPassword', 'authRateLimit', 'tlsEnabled', 'autoGenerate', 'certPath', 'keyPath', 'remoteConn', 'remotePassword', 'tlsFingerprint', 'transport', 'reload', 'reloadMode', 'controlUi', 'httpConfig', 'httpChat', 'httpResponses', 'trustedProxies', 'gwToolAccess', 'gwNodes', 'discovery', 'webConfig', 'channelHealthCheckMin', 'allowTailscaleAuth'] },
+  { id: 'templates', icon: 'auto_fix_high', labelKey: 'secTemplates', color: 'text-violet-500',
+    searchKeys: ['tplDesc', 'tplAdd', 'tplEdit', 'tplDelete', 'tplApply', 'tplExport', 'tplImport', 'tplShare', 'tplSearch', 'tplCategory', 'tplTags', 'tplAuthor', 'tplBuiltIn', 'tplUser'] },
   // frequently used sections
-  { id: 'agents', icon: 'smart_toy', labelKey: 'secAgents', color: 'text-purple-500' },
-  { id: 'tools', icon: 'build', labelKey: 'secTools', color: 'text-orange-500' },
-  { id: 'messages', icon: 'chat', labelKey: 'secMessages', color: 'text-cyan-500' },
-  { id: 'commands', icon: 'terminal', labelKey: 'secCommands', color: 'text-amber-500' },
-  { id: 'session', icon: 'history', labelKey: 'secSession', color: 'text-indigo-500' },
-  { id: 'hooks', icon: 'webhook', labelKey: 'secHooks', color: 'text-pink-500' },
-  { id: 'cron', icon: 'schedule', labelKey: 'secCron', color: 'text-lime-500' },
-  { id: 'extensions', icon: 'extension', labelKey: 'secExtensions', color: 'text-violet-500' },
-  { id: 'memory', icon: 'neurology', labelKey: 'secMemory', color: 'text-sky-500' },
-  { id: 'audio', icon: 'volume_up', labelKey: 'secAudio', color: 'text-fuchsia-500' },
-  { id: 'browser', icon: 'language', labelKey: 'secBrowser', color: 'text-emerald-500' },
-  { id: 'logging', icon: 'monitoring', labelKey: 'secLogging', color: 'text-yellow-500' },
-  { id: 'auth', icon: 'lock', labelKey: 'secAuth', color: 'text-red-500' },
+  { id: 'agents', icon: 'smart_toy', labelKey: 'secAgents', color: 'text-purple-500',
+    searchKeys: ['agentList', 'addAgent', 'systemPrompt', 'behavior', 'thinkingDefault', 'verboseDefault', 'elevatedDefault', 'typingMode', 'compactionMode', 'bootstrapTruncationWarning', 'humanDelay', 'heartbeat', 'maxConcurrent', 'maxConcurrentDesc', 'subagentConcurrent', 'workspace', 'timeoutS', 'mediaMaxMb', 'sandbox', 'dockerEnabled', 'wakeMode', 'avatar'] },
+  { id: 'tools', icon: 'build', labelKey: 'secTools', color: 'text-orange-500',
+    searchKeys: ['toolProfile', 'profile', 'profileDesc', 'allowList', 'denyList', 'exec', 'execHost', 'security', 'askBeforeExec', 'safeBins', 'safeBinsDesc', 'webSearch', 'webFetch', 'media', 'imageUnderstanding', 'audioUnderstanding', 'videoUnderstanding', 'elevatedTools', 'allowedElevated', 'messageTools', 'crossContextSend', 'broadcast', 'agentToAgent'] },
+  { id: 'messages', icon: 'chat', labelKey: 'secMessages', color: 'text-cyan-500',
+    searchKeys: ['prefixes', 'messagePrefix', 'responsePrefix', 'ackReaction', 'typingReaction', 'ackEmoji', 'ackScope', 'removeAfterReply', 'groupChat', 'historyLimit', 'messageQueue', 'queueCap', 'dropWhenFull', 'inboundDebounce', 'ttsConfig', 'autoTts', 'typingIntervalS', 'typingMode'] },
+  { id: 'commands', icon: 'terminal', labelKey: 'secCommands', color: 'text-amber-500',
+    searchKeys: ['commandToggles', 'nativeCommands', 'nativeSkills', 'textCommands', 'bashCommands', 'configCommands', 'debugCommands', 'restartCommand', 'bashConfig', 'foregroundMs', 'accessControl', 'useAccessGroups', 'ownerAllowFrom', 'ownerAllowFromDesc'] },
+  { id: 'session', icon: 'history', labelKey: 'secSession', color: 'text-indigo-500',
+    searchKeys: ['sessionScope', 'scope', 'scopeDesc', 'dmScope', 'idleMinutes', 'sessionStore', 'sessionMainKey', 'parentForkMaxTokens', 'resetTriggers', 'sessionReset', 'resetMode', 'atHour', 'resetByType', 'threadBindings', 'tbIdleHours', 'tbMaxAgeHours', 'sessionMaintenance', 'maintMode', 'maintPruneAfter', 'maintMaxEntries', 'maintRotateBytes', 'maintMaxDiskBytes', 'agentToAgentSession', 'maxPingPongTurns'] },
+  { id: 'hooks', icon: 'webhook', labelKey: 'secHooks', color: 'text-pink-500',
+    searchKeys: ['enableHooks', 'webhookPath', 'maxBodyBytes', 'presets', 'hookMappings', 'hookMatch', 'hookAction', 'hookChannel', 'hookModel', 'credentialsPath', 'tokenPath', 'webhookToken', 'gmailConfig', 'gmailEnabled', 'internalEnabled', 'internalHooks'] },
+  { id: 'cron', icon: 'schedule', labelKey: 'secCron', color: 'text-lime-500',
+    searchKeys: ['cronJobs', 'cronStorePath', 'cronWakeMode', 'cronLightContext', 'cronMaxConcurrent'] },
+  { id: 'extensions', icon: 'extension', labelKey: 'secExtensions', color: 'text-violet-500',
+    searchKeys: ['skillEntries', 'skillName', 'pluginSettings', 'enablePlugins', 'pluginSlots', 'pluginEntries', 'pluginName', 'memoryPlugin', 'loadConfig', 'installConfig', 'allowBundled', 'extraDirs', 'watch', 'watchDebounceMs', 'nodeManager', 'envVars'] },
+  { id: 'memory', icon: 'neurology', labelKey: 'secMemory', color: 'text-sky-500',
+    searchKeys: ['memoryConfig', 'memoryProvider', 'maxMemories', 'citations', 'memSearchProvider', 'memSearchFallback', 'qmdCommand', 'qmdDataPath'] },
+  { id: 'audio', icon: 'volume_up', labelKey: 'secAudio', color: 'text-fuchsia-500',
+    searchKeys: ['audioConfig', 'talkProvider', 'talkOutputFormat', 'sttProvider', 'ttsProvider', 'voiceId', 'speed', 'wakeWord', 'enableWakeWord', 'wakeWordPhrase', 'silenceMs', 'inputDevice', 'outputDevice', 'sampleRate', 'ttsStatus', 'talkMode', 'talkModeDesc', 'audioTranscription', 'audioInterrupt'] },
+  { id: 'browser', icon: 'language', labelKey: 'secBrowser', color: 'text-emerald-500',
+    searchKeys: ['browserConfig', 'brEvaluateEnabled', 'headless', 'browserTimeout', 'viewport', 'brNoSandbox', 'brAttachOnly', 'brDefaultProfile', 'brSsrfPolicy', 'brAllowPrivateNetwork', 'brHostnameAllowlist', 'cdpUrl', 'executablePath', 'brColor'] },
+  { id: 'logging', icon: 'monitoring', labelKey: 'secLogging', color: 'text-yellow-500',
+    searchKeys: ['loggingConfig', 'logLevel', 'logFile', 'maxFileBytes', 'consoleLevel', 'consoleStyle', 'redactSensitive', 'redactPatterns', 'diagnostics', 'enableDiag', 'diagFlags', 'stuckSessionWarnMs', 'otelConfig', 'otelEndpoint', 'otelProtocol', 'otelServiceName', 'otelTraces', 'otelMetrics', 'otelLogs', 'otelSampleRate', 'otelFlushMs', 'cacheTrace'] },
+  { id: 'auth', icon: 'lock', labelKey: 'secAuth', color: 'text-red-500',
+    searchKeys: ['authConfig', 'authOrder', 'authOrderDesc', 'authProfiles', 'authProfile', 'addAuthProfile', 'authEmail', 'authCooldowns', 'authCooldownDesc', 'providerOrder'] },
   // tail sections
-  { id: 'live', icon: 'cloud_sync', labelKey: 'secLive', color: 'text-amber-500' },
-  { id: 'misc', icon: 'tune', labelKey: 'secMisc', color: 'text-slate-500' },
+  { id: 'live', icon: 'cloud_sync', labelKey: 'secLive', color: 'text-amber-500',
+    searchKeys: ['liveConfig', 'viewSchema', 'liveLoadConfig', 'configApplyBtn', 'configPatchBtn', 'configSetTitle', 'configSetDesc', 'wizardTitle', 'wizardStart'] },
+  { id: 'misc', icon: 'tune', labelKey: 'secMisc', color: 'text-slate-500',
+    searchKeys: ['updateConfig', 'updateChannel', 'checkOnStart', 'autoUpdateEnabled', 'uiConfig', 'assistantName', 'assistantAvatar', 'seamColor', 'controlUi', 'basePath', 'allowedOrigins', 'cliConfig', 'cliTaglineMode', 'shellEnvEnabled', 'envVars', 'discovery'] },
   { id: 'unmapped', icon: 'new_releases', labelKey: 'secUnmapped', color: 'text-amber-500' },
   { id: 'json', icon: 'data_object', labelKey: 'secJson', color: 'text-slate-400' },
 ];
@@ -168,10 +188,17 @@ const Editor: React.FC<EditorProps> = ({ language, pendingSection, onSectionCons
     if (unmappedCount === 0) list = list.filter(s => s.id !== 'unmapped');
     if (!searchQuery.trim()) return list;
     const q = searchQuery.toLowerCase();
-    return list.filter(s =>
-      ((es as any)[s.labelKey] || '').toLowerCase().includes(q) ||
-      s.id.includes(q)
-    );
+    return list.filter(s => {
+      if (((es as any)[s.labelKey] || '').toLowerCase().includes(q)) return true;
+      if (s.id.includes(q)) return true;
+      if (s.searchKeys) {
+        return s.searchKeys.some(k => {
+          const v = (es as any)[k];
+          return typeof v === 'string' && v.toLowerCase().includes(q);
+        });
+      }
+      return false;
+    });
   }, [searchQuery, es, unmappedCount]);
 
   const handleSectionClick = useCallback((id: SectionId) => {

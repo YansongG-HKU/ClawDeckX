@@ -38,7 +38,7 @@
   },
   "maint": {
     "title": "Pemeliharaan",
-    "subtitle": "Diagnostik sistem, pembersihan sesi, optimisasi konteks, pelacakan token",
+    "subtitle": "Diagnostik sistem, pengujian perintah",
     "tabDiagnose": "Diagnostik",
     "tabSessions": "Sesi",
     "tabContext": "Konteks",

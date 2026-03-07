@@ -94,7 +94,7 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ status, healthCheckEnabled,
             </div>
             <div className="px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06]">
               <p className="text-[9px] text-white/30 uppercase tracking-wider">{gw.runtimeMode || 'Mode'}</p>
-              <p className="text-[12px] font-bold font-mono text-white/70">{status.runtime || '-'}</p>
+              <p className="text-[12px] font-bold font-mono text-white/70">{status.runtime ? ((gw as any)[`runtime${status.runtime.charAt(0).toUpperCase()}${status.runtime.slice(1)}`] || status.runtime) : '-'}</p>
             </div>
             <div className="px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] col-span-2">
               <p className="text-[9px] text-white/30 uppercase tracking-wider">{gw.serviceDetail || 'Detail'}</p>

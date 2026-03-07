@@ -494,7 +494,7 @@ func (h *DoctorHandler) Overview(w http.ResponseWriter, r *http.Request) {
 
 	for i := range trend {
 		p := &trend[i]
-		deduct := p.Critical*20 + p.High*12 + p.Medium*6 + p.Low*2
+		deduct := p.Critical*20 + p.High*10 + p.Medium*3 + p.Low*1
 		p.HealthScore = 100 - deduct
 		if p.HealthScore < 0 {
 			p.HealthScore = 0
@@ -638,18 +638,17 @@ func (h *DoctorHandler) Summary(w http.ResponseWriter, r *http.Request) {
 	if !st.Running {
 		score -= 35
 	}
-	score -= minInt(20, stats.Medium5m*4)
-	score -= minInt(36, stats.High5m*12)
+	score -= minInt(10, stats.Medium5m*2)
+	score -= minInt(30, stats.High5m*10)
 	score -= minInt(50, stats.Critical5m*25)
 	if health.Enabled && health.FailCount > 0 {
-		score -= minInt(30, health.FailCount*10)
+		score -= minInt(25, health.FailCount*10)
 	}
 	if sessErrors.TotalErrors > 0 {
-		score -= minInt(15, sessErrors.ErrorSessions*3)
+		score -= minInt(10, sessErrors.ErrorSessions*3)
 	}
-	// Security audit findings impact score
+	// Security audit: only critical findings impact score; warn-level are advisory only
 	score -= minInt(40, secCritical*15)
-	score -= minInt(20, secWarn*5)
 	if score < 0 {
 		score = 0
 	}

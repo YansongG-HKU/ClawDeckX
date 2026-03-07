@@ -38,7 +38,7 @@
   },
   "maint": {
     "title": "Mantenimiento",
-    "subtitle": "Diagnósticos del sistema, limpieza de sesiones, optimización de contexto, seguimiento de tokens",
+    "subtitle": "Diagnósticos del sistema, pruebas de comandos",
     "tabDiagnose": "Diagnósticos",
     "tabSessions": "Sesiones",
     "tabContext": "Contexto",

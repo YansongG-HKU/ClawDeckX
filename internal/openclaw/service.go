@@ -762,15 +762,45 @@ func (s *Service) daemonStatusSystemd() DaemonStatusResult {
 		res.Detail = i18n.T(i18n.MsgDaemonStatusSystemdNoHome)
 		return res
 	}
+
+	// Check user-level unit file
+	isUserLevel := false
+	isSystemLevel := false
 	if _, err := os.Stat(unitPath); err == nil {
 		res.Installed = true
+		isUserLevel = true
 	}
-	if runOk("systemctl", "--user", "is-enabled", "--quiet", systemdServiceName) {
-		res.Enabled = true
+	// Also check system-level unit (fallback path used when user systemd is unavailable)
+	const systemLevelPath = "/etc/systemd/system/openclaw-gateway.service"
+	if _, err := os.Stat(systemLevelPath); err == nil {
+		res.Installed = true
+		isSystemLevel = true
+		if !isUserLevel {
+			res.UnitFile = systemLevelPath
+		}
 	}
+
+	if isUserLevel {
+		if runOk("systemctl", "--user", "is-enabled", "--quiet", systemdServiceName) {
+			res.Enabled = true
+		}
+	}
+	if isSystemLevel {
+		if runOk("systemctl", "is-enabled", "--quiet", systemdServiceName) {
+			res.Enabled = true
+		}
+	}
+
 	if systemdActive(systemdServiceName) || systemdActive("openclaw") {
 		res.Active = true
 	}
+	// Also check system-level active status
+	if !res.Active && isSystemLevel {
+		if runOk("systemctl", "is-active", "--quiet", systemdServiceName) {
+			res.Active = true
+		}
+	}
+
 	if res.Installed {
 		res.Detail = i18n.T(i18n.MsgDaemonStatusSystemdInstalled)
 		if res.Enabled {

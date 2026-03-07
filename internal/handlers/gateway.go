@@ -305,8 +305,16 @@ func (h *GatewayHandler) DaemonInstall(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.writeAudit(r, constants.ActionGatewayStart, "success", "daemon installed")
-	logger.Gateway.Info().Msg("daemon installed")
-	web.OK(w, r, h.svc.DaemonStatus())
+	status := h.svc.DaemonStatus()
+	logger.Gateway.Info().
+		Bool("installed", status.Installed).
+		Bool("enabled", status.Enabled).
+		Bool("active", status.Active).
+		Str("platform", status.Platform).
+		Str("unitFile", status.UnitFile).
+		Str("detail", status.Detail).
+		Msg("daemon installed, returning status")
+	web.OK(w, r, status)
 }
 
 // DaemonUninstall removes the OS-level service registration.

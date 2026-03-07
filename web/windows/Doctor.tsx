@@ -456,20 +456,28 @@ const Doctor: React.FC<DoctorProps> = ({ language }) => {
     }, immediate ? 0 : 900);
   }, [loadSummary]);
 
-  function deriveSummary(base: DoctorSummary): DoctorSummary {
+  function deriveSummary(base: DoctorSummary, sessErrors: { totalErrors: number; errorSessions: number } = { totalErrors: 0, errorSessions: 0 }): DoctorSummary {
     const stats = base.exceptionStats || { medium5m: 0, high5m: 0, critical5m: 0, total1h: 0, total24h: 0 };
     const gatewayRunning = !!base.gateway?.running;
     const health = base.healthCheck || { enabled: false, failCount: 0, maxFails: 0, lastOk: '' };
 
     let score = 100;
     if (!gatewayRunning) score -= 35;
-    score -= Math.min(20, (stats.medium5m || 0) * 4);
-    score -= Math.min(36, (stats.high5m || 0) * 12);
+    score -= Math.min(10, (stats.medium5m || 0) * 2);
+    score -= Math.min(30, (stats.high5m || 0) * 10);
     score -= Math.min(50, (stats.critical5m || 0) * 25);
     if (health.enabled && (health.failCount || 0) > 0) {
-      score -= Math.min(30, (health.failCount || 0) * 10);
+      score -= Math.min(25, (health.failCount || 0) * 10);
     }
-    // Note: session/chat errors deduction is computed separately via chatSessionErrors
+    // Session/chat errors deduction
+    if (sessErrors.totalErrors > 0) {
+      score -= Math.min(10, sessErrors.errorSessions * 3);
+    }
+    // Security audit: only critical findings impact score; warn-level are advisory only
+    const secAudit = base.securityAudit;
+    if (secAudit && secAudit.critical > 0) {
+      score -= Math.min(40, secAudit.critical * 15);
+    }
     if (score < 0) score = 0;
 
     let status: 'ok' | 'warn' | 'error' = 'ok';
@@ -944,7 +952,27 @@ const Doctor: React.FC<DoctorProps> = ({ language }) => {
     return ['all', ...Array.from(set)];
   }, [result?.items]);
 
-  const displaySummary = useMemo(() => summary ? deriveSummary(summary) : null, [language, summary]);
+  // Compute chat/session errors from bucket data (matches issue timeline)
+  // NOTE: uses raw `summary` (not displaySummary) to avoid a circular dependency.
+  const chatSessionErrors = useMemo(() => {
+    const buckets = pruneSummaryBuckets();
+    const chatHour = countBucketEntries(buckets.hour, 'chat');
+    const chatDay = countBucketEntries(buckets.day, 'chat');
+    const chatIssues = (summary?.recentIssues || []).filter(
+      (issue) => detectSummarySourceKey(issue.source, issue.category) === 'chat'
+    );
+    const totalErrors = Math.max(chatHour, chatDay, chatIssues.length);
+    const sessionSet = new Set<string>();
+    chatIssues.forEach((issue) => {
+      const detail = issue.detail || issue.title || '';
+      const sessionMatch = detail.match(/session:\s*([^\s·]+)/i);
+      if (sessionMatch) sessionSet.add(sessionMatch[1]);
+      else sessionSet.add(issue.id);
+    });
+    return { totalErrors, errorSessions: sessionSet.size };
+  }, [countBucketEntries, pruneSummaryBuckets, summary?.recentIssues]);
+
+  const displaySummary = useMemo(() => summary ? deriveSummary(summary, chatSessionErrors) : null, [chatSessionErrors, language, summary]);
 
   const issueSourceMeta = useCallback((source?: string, category?: string) => {
     const key = detectSummarySourceKey(source, category);
@@ -1075,8 +1103,8 @@ const Doctor: React.FC<DoctorProps> = ({ language }) => {
     return deriveSummary({
       ...displaySummary,
       exceptionStats: scopedSummaryStats,
-    });
-  }, [displaySummary, language, scopedSummaryStats, summarySourceFilter]);
+    }, chatSessionErrors);
+  }, [chatSessionErrors, displaySummary, language, scopedSummaryStats, summarySourceFilter]);
 
   const securityFixableItems = useMemo(() => {
     return (summaryView?.securityAudit?.items || []).filter((item) => detectSecurityAction(item as any) === 'exec');
@@ -1113,25 +1141,7 @@ const Doctor: React.FC<DoctorProps> = ({ language }) => {
     }
   }, [confirm, securityFixableItems, fetchAll, loadSummary, text, toast]);
 
-  // Compute chat/session errors from bucket data (matches issue timeline)
-  const chatSessionErrors = useMemo(() => {
-    const buckets = pruneSummaryBuckets();
-    const chatHour = countBucketEntries(buckets.hour, 'chat');
-    const chatDay = countBucketEntries(buckets.day, 'chat');
-    const chatIssues = (displaySummary?.recentIssues || []).filter(
-      (issue) => detectSummarySourceKey(issue.source, issue.category) === 'chat'
-    );
-    const totalErrors = Math.max(chatHour, chatDay, chatIssues.length);
-    // Count unique sessions from recent issues
-    const sessionSet = new Set<string>();
-    chatIssues.forEach((issue) => {
-      const detail = issue.detail || issue.title || '';
-      const sessionMatch = detail.match(/session:\s*([^\s·]+)/i);
-      if (sessionMatch) sessionSet.add(sessionMatch[1]);
-      else sessionSet.add(issue.id);
-    });
-    return { totalErrors, errorSessions: sessionSet.size };
-  }, [countBucketEntries, displaySummary?.recentIssues, pruneSummaryBuckets]);
+  // chatSessionErrors is now computed above displaySummary to avoid circular dependency
 
   const currentStatus = summaryView?.status || overview?.status || 'warn';
   const currentScore = summaryView?.score ?? overview?.score ?? result?.score ?? 0;
@@ -1204,22 +1214,22 @@ const Doctor: React.FC<DoctorProps> = ({ language }) => {
     if (!gw?.running) items.push({ key: 'gateway', label: text.deductionGateway || 'Gateway Offline', points: 35, maxPoints: 35, color: '#ef4444' });
     const critPts = Math.min(50, (stats.critical5m || 0) * 25);
     if (critPts > 0) items.push({ key: 'critical', label: text.deductionCritical || 'Critical', points: critPts, maxPoints: 50, color: '#ef4444' });
-    const highPts = Math.min(36, (stats.high5m || 0) * 12);
-    if (highPts > 0) items.push({ key: 'high', label: text.deductionHigh || 'High', points: highPts, maxPoints: 36, color: '#f97316' });
-    const medPts = Math.min(20, (stats.medium5m || 0) * 4);
-    if (medPts > 0) items.push({ key: 'medium', label: text.deductionMedium || 'Medium', points: medPts, maxPoints: 20, color: '#f59e0b' });
+    const highPts = Math.min(30, (stats.high5m || 0) * 10);
+    if (highPts > 0) items.push({ key: 'high', label: text.deductionHigh || 'High', points: highPts, maxPoints: 30, color: '#f97316' });
+    const medPts = Math.min(10, (stats.medium5m || 0) * 2);
+    if (medPts > 0) items.push({ key: 'medium', label: text.deductionMedium || 'Medium', points: medPts, maxPoints: 10, color: '#f59e0b' });
     if (hc?.enabled && (hc.failCount || 0) > 0) {
-      const hcPts = Math.min(30, (hc.failCount || 0) * 10);
-      items.push({ key: 'healthcheck', label: text.deductionHealthCheck || 'Health Check', points: hcPts, maxPoints: 30, color: '#8b5cf6' });
+      const hcPts = Math.min(25, (hc.failCount || 0) * 10);
+      items.push({ key: 'healthcheck', label: text.deductionHealthCheck || 'Health Check', points: hcPts, maxPoints: 25, color: '#8b5cf6' });
     }
     if (chatSessionErrors.totalErrors > 0) {
-      const sessPts = Math.min(15, chatSessionErrors.errorSessions * 3);
-      items.push({ key: 'session', label: text.deductionSessionErrors || 'Session Errors', points: sessPts, maxPoints: 15, color: '#ec4899' });
+      const sessPts = Math.min(10, chatSessionErrors.errorSessions * 3);
+      items.push({ key: 'session', label: text.deductionSessionErrors || 'Session Errors', points: sessPts, maxPoints: 10, color: '#ec4899' });
     }
     const secAudit = summaryView.securityAudit;
-    if (secAudit && (secAudit.critical > 0 || secAudit.warn > 0)) {
-      const secPts = Math.min(40, secAudit.critical * 15) + Math.min(20, secAudit.warn * 5);
-      items.push({ key: 'security', label: text.deductionSecurity || 'Security Audit', points: secPts, maxPoints: 60, color: '#6366f1' });
+    if (secAudit && secAudit.critical > 0) {
+      const secPts = Math.min(40, secAudit.critical * 15);
+      items.push({ key: 'security', label: text.deductionSecurity || 'Security Audit', points: secPts, maxPoints: 40, color: '#6366f1' });
     }
     return items.sort((a, b) => b.points - a.points);
   }, [summaryView, chatSessionErrors, text.deductionGateway, text.deductionCritical, text.deductionHigh, text.deductionMedium, text.deductionHealthCheck, text.deductionSessionErrors, text.deductionSecurity]);

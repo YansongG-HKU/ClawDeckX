@@ -471,6 +471,30 @@ const TestCenterPanel: React.FC<TestCenterPanelProps> = ({ language }) => {
     { id: 'system' as const, label: dr.sourceSystem || 'System', icon: 'settings' },
   ];
 
+  const categoryColors: Record<string, { border: string; icon: string; hover: string; activeBg: string; badge: string }> = {
+    llm: {
+      border: 'border-l-violet-400 dark:border-l-violet-500',
+      icon: 'text-violet-500 dark:text-violet-400',
+      hover: 'hover:border-violet-300 dark:hover:border-violet-500/40',
+      activeBg: 'hover:bg-violet-50/50 dark:hover:bg-violet-500/[0.04]',
+      badge: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
+    },
+    gateway: {
+      border: 'border-l-blue-400 dark:border-l-blue-500',
+      icon: 'text-blue-500 dark:text-blue-400',
+      hover: 'hover:border-blue-300 dark:hover:border-blue-500/40',
+      activeBg: 'hover:bg-blue-50/50 dark:hover:bg-blue-500/[0.04]',
+      badge: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+    },
+    system: {
+      border: 'border-l-amber-400 dark:border-l-amber-500',
+      icon: 'text-amber-500 dark:text-amber-400',
+      hover: 'hover:border-amber-300 dark:hover:border-amber-500/40',
+      activeBg: 'hover:bg-amber-50/50 dark:hover:bg-amber-500/[0.04]',
+      badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+    },
+  };
+
   const modeLabel = execCap?.mode === 'remote'
     ? (dr.tcModeRemote || 'Remote')
     : execCap?.mode === 'local'
@@ -549,27 +573,37 @@ const TestCenterPanel: React.FC<TestCenterPanelProps> = ({ language }) => {
       {presetsOpen && (
         <div className="rounded-xl border border-slate-200/60 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-2 animate-in slide-in-from-top-1 duration-150">
           <div className="flex items-center gap-1 mb-2">
-            {categoryBtns.map(c => (
-              <button key={c.id} onClick={() => setActiveCategory(c.id)}
-                className={`h-6 px-2 rounded text-[9px] font-bold flex items-center gap-1 transition-all ${activeCategory === c.id ? 'bg-primary/15 text-primary' : 'bg-slate-100 dark:bg-white/[0.04] text-slate-500 dark:text-white/40'}`}>
-                <span className="material-symbols-outlined text-[10px]">{c.icon}</span>
-                {c.label}
-              </button>
-            ))}
+            {categoryBtns.map(c => {
+              const cc = c.id !== 'all' ? categoryColors[c.id] : null;
+              return (
+                <button key={c.id} onClick={() => setActiveCategory(c.id)}
+                  className={`h-6 px-2 rounded text-[9px] font-bold flex items-center gap-1 transition-all ${
+                    activeCategory === c.id
+                      ? (cc ? cc.badge : 'bg-primary/15 text-primary')
+                      : 'bg-slate-100 dark:bg-white/[0.04] text-slate-500 dark:text-white/40'
+                  }`}>
+                  <span className="material-symbols-outlined text-[10px]">{c.icon}</span>
+                  {c.label}
+                </button>
+              );
+            })}
             <span className="text-[9px] text-slate-400 dark:text-white/25 ms-auto">{filteredCommands.length} {dr.items || 'commands'}</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1.5 max-h-[220px] overflow-y-auto">
-            {filteredCommands.map(cmd => (
-              <button key={cmd.id} onClick={() => { runPreset(cmd); setPresetsOpen(false); }}
-                className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] px-2 py-1.5 text-start hover:border-primary/30 transition-colors group">
-                <div className="flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[13px] text-slate-400 group-hover:text-primary transition-colors">{cmd.icon}</span>
-                  <p className="text-[10px] font-bold text-slate-700 dark:text-white/75 truncate flex-1">{cmd.label}</p>
-                  <span className="material-symbols-outlined text-[12px] text-slate-300 dark:text-white/20 group-hover:text-primary transition-colors shrink-0">play_arrow</span>
-                </div>
-                <p className="text-[8px] font-mono text-slate-400/60 dark:text-white/20 mt-0.5 truncate">{cmd.command} {cmd.args.join(' ')}</p>
-              </button>
-            ))}
+            {filteredCommands.map(cmd => {
+              const cc = categoryColors[cmd.category];
+              return (
+                <button key={cmd.id} onClick={() => { runPreset(cmd); setPresetsOpen(false); }}
+                  className={`rounded-lg border border-l-[3px] border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] px-2 py-1.5 text-start transition-all group ${cc ? `${cc.border} ${cc.hover} ${cc.activeBg}` : 'hover:border-primary/30'}`}>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`material-symbols-outlined text-[14px] transition-colors ${cc ? cc.icon : 'text-slate-400 group-hover:text-primary'}`}>{cmd.icon}</span>
+                    <p className="text-[11px] font-bold text-slate-700 dark:text-white/75 truncate flex-1">{cmd.label}</p>
+                    <span className="material-symbols-outlined text-[12px] text-slate-300 dark:text-white/20 group-hover:text-primary transition-colors shrink-0">play_arrow</span>
+                  </div>
+                  <p className="text-[9px] font-mono text-slate-400/60 dark:text-white/25 mt-0.5 truncate">{cmd.command} {cmd.args.join(' ')}</p>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

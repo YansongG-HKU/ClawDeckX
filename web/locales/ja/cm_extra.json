@@ -38,7 +38,7 @@
   },
   "maint": {
     "title": "メンテナンス",
-    "subtitle": "システム診断、セッションクリーンアップ、コンテキスト最適化、トークン追跡",
+    "subtitle": "システム診断、コマンドテスト",
     "tabDiagnose": "診断",
     "tabSessions": "セッション",
     "tabContext": "コンテキスト",
