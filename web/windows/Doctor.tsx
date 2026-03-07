@@ -168,6 +168,41 @@ function relativeTime(ts: string, text: any): string {
   return (text.timelineHourAgo || '{n}h ago').replace('{n}', String(h));
 }
 
+function formatIssueTitle(raw?: string): string {
+  if (!raw) return '';
+  const s = raw.trim();
+  // Not JSON — return as-is
+  if (!s.startsWith('{') && !s.startsWith('[')) {
+    // Strip redundant prefix like "Gateway warning: " when followed by JSON-like content
+    const prefixMatch = s.match(/^(Gateway (?:error|warning):\s*)(\{.+)/s);
+    if (prefixMatch) return formatIssueTitle(prefixMatch[2]);
+    // Clean up "component: {...} message: {...}: text" pattern
+    const compMsgMatch = s.match(/^component:\s*\{[^}]*"?([^"}\s,]+)"?\}.*?message:\s*(?:\{[^}]*\}:\s*)?(.+)/i);
+    if (compMsgMatch) return `[${compMsgMatch[1]}] ${compMsgMatch[2].slice(0, 80)}`;
+    return s;
+  }
+  try {
+    const obj = JSON.parse(s);
+    if (typeof obj !== 'object' || obj === null) return s;
+    const msg = obj.message || obj.msg || obj.error || obj.err || obj.errorMessage || obj.error_message;
+    const comp = obj.component || obj.subsystem || obj.module || obj.source;
+    if (msg && comp) return `[${comp}] ${String(msg).slice(0, 80)}`;
+    if (msg) return String(msg).slice(0, 100);
+    if (comp) return `[${comp}] ${obj.level || obj.status || obj.state || 'event'}`;
+    // Fallback: pick first meaningful string value
+    for (const k of Object.keys(obj)) {
+      const v = obj[k];
+      if (typeof v === 'string' && v.length > 2 && v.length < 120) return `${k}: ${v}`;
+    }
+    return s.slice(0, 100);
+  } catch {
+    // Semi-JSON: try to extract message after colon
+    const tailMatch = s.match(/\}[:\s]*(.{3,80})/);
+    if (tailMatch) return tailMatch[1].trim();
+    return s.slice(0, 100);
+  }
+}
+
 function formatIssueDetail(raw?: string): string {
   if (!raw) return '';
   const s = raw.trim();
@@ -423,6 +458,12 @@ const Doctor: React.FC<DoctorProps> = ({ language }) => {
     setSummaryLoading(true);
     try {
       const data = await doctorApi.summaryCached(5000, force) as DoctorSummary;
+      if (data?.recentIssues) {
+        data.recentIssues = data.recentIssues.map(issue => ({
+          ...issue,
+          title: formatIssueTitle(issue.title) || issue.title,
+        }));
+      }
       seedSummaryBuckets(data);
       setSummary(applyBucketCountsToSummary(data));
       setIsDiagnoseEntering(false);
@@ -605,7 +646,7 @@ const Doctor: React.FC<DoctorProps> = ({ language }) => {
                 source: String(data?.source || ''),
                 category: String(data?.category || ''),
                 risk,
-                title: String(data?.summary || text.issuesTitle || 'Activity event'),
+                title: formatIssueTitle(String(data?.summary || '')) || text.issuesTitle || 'Activity event',
                 timestamp,
               },
               ...(prev.recentIssues || []).filter((item) => item.id !== String(data?.event_id || '')),

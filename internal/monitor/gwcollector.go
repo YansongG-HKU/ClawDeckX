@@ -459,6 +459,10 @@ func (c *GWCollector) handleLogEvent(payload json.RawMessage) {
 	if message == "" {
 		message = data.Msg
 	}
+	// If message is JSON, extract human-readable fields
+	if strings.HasPrefix(strings.TrimSpace(message), "{") {
+		message = extractLogMessage(message)
+	}
 	errDetail := data.Error
 	if errDetail == "" {
 		errDetail = data.Err
@@ -476,6 +480,71 @@ func (c *GWCollector) handleLogEvent(payload json.RawMessage) {
 		summary := "Gateway warning: " + message
 		c.writeActivity("Log", "medium", summary, string(payload), "gateway", "alert", "")
 	}
+}
+
+// extractLogMessage tries to parse a JSON string and return a human-readable
+// summary. For example {"subsystem":"gateway/ws"}: "not-paired" becomes
+// "[gateway/ws] not-paired".
+func extractLogMessage(raw string) string {
+	s := strings.TrimSpace(raw)
+	// Handle "JSON — JSON: tail" or "JSON: tail" patterns
+	parts := strings.SplitN(s, "}: ", 2)
+	if len(parts) == 2 {
+		tail := strings.TrimSpace(parts[1])
+		// Try to extract component from the JSON prefix
+		var obj map[string]interface{}
+		if err := json.Unmarshal([]byte(parts[0]+"}"), &obj); err == nil {
+			comp := ""
+			for _, k := range []string{"component", "subsystem", "module", "source"} {
+				if v, ok := obj[k]; ok {
+					comp = fmt.Sprintf("%v", v)
+					break
+				}
+			}
+			if comp != "" {
+				// Strip nested JSON prefix from tail if present
+				if idx := strings.Index(tail, "}: "); idx >= 0 {
+					tail = strings.TrimSpace(tail[idx+3:])
+				} else if strings.HasPrefix(tail, "{") {
+					if end := strings.Index(tail, "}"); end >= 0 && end+2 < len(tail) {
+						tail = strings.TrimSpace(tail[end+1:])
+						tail = strings.TrimPrefix(tail, ":")
+						tail = strings.TrimSpace(tail)
+					}
+				}
+				return fmt.Sprintf("[%s] %s", comp, tail)
+			}
+		}
+		return tail
+	}
+	// Pure JSON object
+	var obj map[string]interface{}
+	if err := json.Unmarshal([]byte(s), &obj); err == nil {
+		msg := ""
+		comp := ""
+		for _, k := range []string{"message", "msg", "error", "err"} {
+			if v, ok := obj[k]; ok {
+				msg = fmt.Sprintf("%v", v)
+				break
+			}
+		}
+		for _, k := range []string{"component", "subsystem", "module", "source"} {
+			if v, ok := obj[k]; ok {
+				comp = fmt.Sprintf("%v", v)
+				break
+			}
+		}
+		if msg != "" && comp != "" {
+			return fmt.Sprintf("[%s] %s", comp, msg)
+		}
+		if msg != "" {
+			return msg
+		}
+		if comp != "" {
+			return fmt.Sprintf("[%s]", comp)
+		}
+	}
+	return raw
 }
 
 // analyzePayloadForErrors performs unified error analysis on any event payload.

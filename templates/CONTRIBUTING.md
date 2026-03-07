@@ -9,9 +9,9 @@ This guide explains how to add new content to the ClawDeckX Knowledge Hub — re
 | Type | Purpose | Key Fields |
 |------|---------|------------|
 | `recipe` | Step-by-step guides (visual UI operations) | `body`, `steps[]` |
-| `tip` | Quick knowledge cards | `body` |
+| `tip` | Quick knowledge cards | `body`, `statusCheck?`, `editorSection?` |
 | `snippet` | Copy-paste config references | `snippet`, `snippetLanguage` |
-| `faq` | Question & answer | `question`, `answer` |
+| `faq` | Question & answer | `question`, `answer`, `relatedDoctorChecks?` |
 
 ## File Structure
 
@@ -71,7 +71,7 @@ Add the relative path to `templates/official/knowledge/index.json`:
 ```json
 {
   "category": "knowledge",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "templates": [
     "tips/my-tip.json"
   ]
@@ -135,29 +135,37 @@ Recipes should describe **ClawDeckX visual UI steps**, not CLI commands.
 
 ### Tip
 
+Tips can include an optional `statusCheck` field for live status detection in the Knowledge Hub, and an `editorSection` field to link to the relevant Config Center section.
+
 ```json
 {
-  "id": "tip-soul-writing",
+  "id": "tip-web-search",
   "type": "tip",
   "version": "1.0.0",
   "metadata": {
-    "name": "SOUL.md 编写技巧",
-    "description": "让你的 AI 代理个性更鲜明",
-    "category": "tips",
+    "name": "网络搜索增强",
+    "description": "启用网络搜索让 AI 助手可以实时查找最新信息",
+    "category": "capability",
     "difficulty": "easy",
-    "icon": "lightbulb",
-    "tags": ["soul", "writing", "beginner"],
-    "author": "ClawDeckX Team",
-    "lastUpdated": "2026-03-07T00:00:00Z",
+    "featured": true,
+    "tags": ["web", "search", "realtime"],
     "i18n": {
       "en": {
-        "name": "SOUL.md Writing Tips",
-        "description": "Make your AI agent's personality shine"
+        "name": "Web Search Enhancement",
+        "description": "Enable web search for real-time information"
       }
     }
   },
   "content": {
-    "body": "## 1. Be Specific\n\nDon't say \"be helpful\". Say \"when the user asks about code, provide a working example first, then explain\".\n\n## 2. Use First Person\n\nWrite as if the agent is describing itself: \"I am a...\" not \"The agent should...\"\n\n> **Tip**: Edit SOUL.md in **Config Center → Identity** using the visual editor."
+    "body": "## Why Enable Web Search?\n\nAI models have a training data cutoff. Enable web search so your AI can look up real-time news, docs, and more.\n\n## Configure in ClawDeckX\n\n1. Go to **Config Center → Tools**\n2. Enable **Web Search**\n3. Select a provider (Brave, Perplexity, Gemini, Grok, Kimi)\n4. Enter the API Key",
+    "editorSection": "tools",
+    "statusCheck": {
+      "type": "config_field",
+      "field": "tools.web.search.enabled",
+      "okWhen": "true",
+      "okTemplate": "Web search enabled",
+      "failTemplate": "Web search not enabled"
+    }
   }
 }
 ```
@@ -231,6 +239,45 @@ Recipes should describe **ClawDeckX visual UI steps**, not CLI commands.
 - **`lastUpdated`**: ISO 8601 format, update whenever content changes
 - **`tags`**: 2-5 relevant tags, lowercase
 - **`relatedTemplates`**: array of other knowledge item IDs for cross-linking
+
+## Content Fields
+
+### `editorSection` (optional)
+
+Links the knowledge item to a Config Center section. When the user clicks "Go to Settings", ClawDeckX opens that section.
+
+Valid values: `models`, `channels`, `agents`, `tools`, `session`, `gateway`, `hooks`, `cron`, `memory`, `audio`, `browser`, `logging`, `auth`, `messages`, `commands`, `json`, `live`, `misc`, `templates`
+
+### `statusCheck` (optional, tips only)
+
+Enables live status detection. The Knowledge Hub fetches gateway data and evaluates the check, showing a ✅/⚠️ badge on the card.
+
+```json
+"statusCheck": {
+  "type": "config_field",
+  "field": "agents.defaults.model.fallbacks",
+  "okWhen": "truthy",
+  "okTemplate": "Fallback models configured",
+  "failTemplate": "No fallback models — AI will be unavailable if primary fails"
+}
+```
+
+| Property | Description |
+|----------|-------------|
+| `type` | Check type: `config_field`, `channels_count`, `agent_count`, `security_configured` |
+| `field` | Dot-notation config path to check (for `config_field`) |
+| `okWhen` | Condition: `truthy`, `true`, `eq:<value>` |
+| `threshold` | Numeric threshold (for `channels_count` / `agent_count`) |
+| `okTemplate` | Message shown when check passes |
+| `failTemplate` | Message shown when check fails |
+
+### `relatedDoctorChecks` (optional, FAQs)
+
+Array of Doctor check IDs. Links the FAQ to Health Center diagnostics:
+
+```json
+"relatedDoctorChecks": ["gateway.status", "pid.lock", "config.file"]
+```
 
 ## i18n (Translations)
 

@@ -9,9 +9,9 @@
 | 类型 | 用途 | 关键字段 |
 |------|------|----------|
 | `recipe` | 分步配置指南（可视化操作步骤） | `body`, `steps[]` |
-| `tip` | 快捷知识卡片 | `body` |
+| `tip` | 快捷知识卡片 | `body`, `statusCheck?`, `editorSection?` |
 | `snippet` | 可复制的配置参考 | `snippet`, `snippetLanguage` |
-| `faq` | 常见问答 | `question`, `answer` |
+| `faq` | 常见问答 | `question`, `answer`, `relatedDoctorChecks?` |
 
 ## 文件结构
 
@@ -71,7 +71,7 @@ templates/official/knowledge/
 ```json
 {
   "category": "knowledge",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "templates": [
     "tips/my-tip.json"
   ]
@@ -135,29 +135,37 @@ node templates/scripts/validate-templates.mjs
 
 ### 技巧（Tip）
 
+Tip 可以包含可选的 `statusCheck` 字段用于知识中心的实时状态检测，以及 `editorSection` 字段链接到配置中心的对应区域。
+
 ```json
 {
-  "id": "tip-soul-writing",
+  "id": "tip-web-search",
   "type": "tip",
   "version": "1.0.0",
   "metadata": {
-    "name": "SOUL.md 编写技巧",
-    "description": "让你的 AI 代理个性更鲜明",
-    "category": "tips",
+    "name": "网络搜索增强",
+    "description": "启用网络搜索让 AI 助手可以实时查找最新信息",
+    "category": "capability",
     "difficulty": "easy",
-    "icon": "lightbulb",
-    "tags": ["soul", "writing", "beginner"],
-    "author": "ClawDeckX Team",
-    "lastUpdated": "2026-03-07T00:00:00Z",
+    "featured": true,
+    "tags": ["web", "search", "realtime"],
     "i18n": {
       "en": {
-        "name": "SOUL.md Writing Tips",
-        "description": "Make your AI agent's personality shine"
+        "name": "Web Search Enhancement",
+        "description": "Enable web search for real-time information"
       }
     }
   },
   "content": {
-    "body": "## 1. 具体明确\n\n不要说"要有帮助"。要说"当用户询问代码时，先提供一个可运行的示例，然后再解释"。\n\n## 2. 使用第一人称\n\n以代理自我描述的方式编写：\"我是一个...\" 而不是 \"代理应该...\"\n\n> **提示**：在 **配置中心 → 身份** 中使用可视化编辑器编辑 SOUL.md。"
+    "body": "## 为什么启用网络搜索？\n\nAI 模型的训练数据有截止日期。启用网络搜索后，AI 可以查找实时新闻、文档等。\n\n## 在 ClawDeckX 中配置\n\n1. 前往「配置中心 → 工具」\n2. 启用「网络搜索」\n3. 选择搜索提供商（Brave、Perplexity、Gemini、Grok、Kimi）\n4. 填入 API Key",
+    "editorSection": "tools",
+    "statusCheck": {
+      "type": "config_field",
+      "field": "tools.web.search.enabled",
+      "okWhen": "true",
+      "okTemplate": "网络搜索已启用",
+      "failTemplate": "网络搜索未启用"
+    }
   }
 }
 ```
@@ -231,6 +239,45 @@ node templates/scripts/validate-templates.mjs
 - **`lastUpdated`**：ISO 8601 格式，内容变更时更新
 - **`tags`**：2-5 个相关标签，小写
 - **`relatedTemplates`**：关联的其他知识条目 ID，用于交叉链接
+
+## 内容字段
+
+### `editorSection`（可选）
+
+将知识条目链接到配置中心的某个区域。用户点击「去设置」时，ClawDeckX 会打开对应的配置区域。
+
+可用值：`models`, `channels`, `agents`, `tools`, `session`, `gateway`, `hooks`, `cron`, `memory`, `audio`, `browser`, `logging`, `auth`, `messages`, `commands`, `json`, `live`, `misc`, `templates`
+
+### `statusCheck`（可选，仅 tip 类型）
+
+启用实时状态检测。知识中心会获取网关数据并评估检查结果，在卡片上显示 ✅/⚠️ 状态徽章。
+
+```json
+"statusCheck": {
+  "type": "config_field",
+  "field": "agents.defaults.model.fallbacks",
+  "okWhen": "truthy",
+  "okTemplate": "已配置备用模型",
+  "failTemplate": "未配置备用模型，主模型故障时 AI 将无法响应"
+}
+```
+
+| 属性 | 说明 |
+|------|------|
+| `type` | 检查类型：`config_field`、`channels_count`、`agent_count`、`security_configured` |
+| `field` | 点分隔的配置路径（用于 `config_field`） |
+| `okWhen` | 判断条件：`truthy`、`true`、`eq:<值>` |
+| `threshold` | 数值阈值（用于 `channels_count` / `agent_count`） |
+| `okTemplate` | 检查通过时显示的消息 |
+| `failTemplate` | 检查未通过时显示的消息 |
+
+### `relatedDoctorChecks`（可选，仅 FAQ 类型）
+
+健康中心诊断项 ID 数组。将 FAQ 链接到健康中心的对应诊断项：
+
+```json
+"relatedDoctorChecks": ["gateway.status", "pid.lock", "config.file"]
+```
 
 ## 多语言（i18n）
 
