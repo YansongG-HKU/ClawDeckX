@@ -171,6 +171,9 @@ func (c *GWCollector) handleMessageEvent(payload json.RawMessage) {
 	}
 
 	content := data.Content
+	if strings.HasPrefix(strings.TrimSpace(content), "{") {
+		content = extractLogMessage(content)
+	}
 	if len(content) > 200 {
 		content = content[:200] + "..."
 	}
@@ -200,8 +203,11 @@ func (c *GWCollector) handleToolEvent(event string, payload json.RawMessage) {
 	actionTaken := "allow"
 
 	input := data.Input
-	if len(input) > 300 {
-		input = input[:300] + "..."
+	if strings.HasPrefix(strings.TrimSpace(input), "{") {
+		input = extractToolInput(input)
+	}
+	if len(input) > 200 {
+		input = input[:200] + "..."
 	}
 
 	summary := fmt.Sprintf("Tool call: %s", toolName)
@@ -547,6 +553,51 @@ func extractLogMessage(raw string) string {
 	return raw
 }
 
+// extractToolInput parses a JSON tool input and returns a concise summary of
+// the key parameters (e.g. path, command, query, url).
+func extractToolInput(raw string) string {
+	s := strings.TrimSpace(raw)
+	var obj map[string]interface{}
+	if err := json.Unmarshal([]byte(s), &obj); err != nil {
+		return raw
+	}
+	var picks []string
+	// Prioritize the most meaningful fields
+	for _, key := range []string{"path", "file", "filename", "command", "cmd", "query", "url", "name", "content", "text", "pattern", "target"} {
+		if v, ok := obj[key]; ok {
+			vs := fmt.Sprintf("%v", v)
+			if vs != "" && vs != "<nil>" {
+				if len(vs) > 80 {
+					vs = vs[:80] + "…"
+				}
+				picks = append(picks, fmt.Sprintf("%s=%s", key, vs))
+			}
+			if len(picks) >= 3 {
+				break
+			}
+		}
+	}
+	if len(picks) > 0 {
+		return strings.Join(picks, ", ")
+	}
+	// Fallback: first 2 string values
+	for k, v := range obj {
+		if vs, ok := v.(string); ok && vs != "" {
+			if len(vs) > 60 {
+				vs = vs[:60] + "…"
+			}
+			picks = append(picks, fmt.Sprintf("%s=%s", k, vs))
+			if len(picks) >= 2 {
+				break
+			}
+		}
+	}
+	if len(picks) > 0 {
+		return strings.Join(picks, ", ")
+	}
+	return raw
+}
+
 // analyzePayloadForErrors performs unified error analysis on any event payload.
 // It detects error/warn indicators in the payload and records them as activities.
 func (c *GWCollector) analyzePayloadForErrors(event string, payload json.RawMessage) {
@@ -592,6 +643,11 @@ func (c *GWCollector) analyzePayloadForErrors(event string, payload json.RawMess
 	// If no explicit level but has error message, treat as error
 	if errorMsg != "" && !isError && !isWarn {
 		isError = true
+	}
+
+	// Clean up JSON in error messages
+	if strings.HasPrefix(strings.TrimSpace(errorMsg), "{") {
+		errorMsg = extractLogMessage(errorMsg)
 	}
 
 	if isError && errorMsg != "" {

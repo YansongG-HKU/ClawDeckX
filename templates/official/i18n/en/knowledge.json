@@ -1,0 +1,469 @@
+{
+  "faq-channel-disconnected": {
+    "name": "Channel Disconnected",
+    "description": "Troubleshoot when messaging channels (Telegram, Discord, WhatsApp) disconnect or can't send/receive",
+    "content": {
+      "question": "What should I do when a messaging channel disconnects or can't send/receive messages?",
+      "answer": "## Troubleshooting Steps\n\n### 1. Check Dashboard Channel Status\nOpen the ClawDeckX dashboard and check the status indicator for each channel:\n- 🟢 Connected — Normal\n- 🔴 Disconnected — Needs troubleshooting\n- 🟡 Connecting — Waiting or retrying\n\n### 2. Check Token Validity\nGo to Config Center → Channels and check the token for the affected channel:\n- **Telegram** — Token may have been reset by BotFather. Verify in BotFather\n- **Discord** — Token may have been reset in Developer Portal. Check at discord.com/developers\n- **WhatsApp** — QR code session may have expired, rescan required\n\n### 3. Check Network Connection\n- Telegram and Discord require access to their API servers\n- WhatsApp uses WebSocket connections requiring stable network\n- If behind a proxy, verify proxy configuration is correct\n\n### 4. Check Channel Configuration\n- Confirm the channel's `enabled` is not set to false\n- Confirm you're not blocked by `allowFrom` rules (if your user ID is not in the allowlist)\n\n### 5. Reconnect\n- Click the \"Reconnect\" button on the channel in the dashboard\n- Or save the configuration in Config Center → Channels to trigger a reconnection\n- Last resort: restart the gateway\n\n### 6. WhatsApp Special Cases\n- WhatsApp connection is based on the Web protocol; phone must stay connected to the network\n- If unused for a long time, you may need to rescan the QR code\n- Check if your phone shows a \"Logged in on another device\" prompt\n\n## Quick Fix\n\nRun Health Center diagnostics → Check the channel.connected item → Follow the instructions."
+    }
+  },
+  "faq-gateway-not-running": {
+    "name": "Gateway Won't Start",
+    "description": "Systematically troubleshoot gateway startup failures, connection issues or crashes",
+    "content": {
+      "question": "What should I do when the gateway won't start or can't connect?",
+      "answer": "## Troubleshooting Steps\n\n### 1. Check Gateway Process\nOpen the ClawDeckX dashboard and check the gateway status indicator at the top:\n- 🔴 Red = Not running → Click \"Start Gateway\" button\n- 🟡 Yellow = Starting → Wait 10 seconds; if stuck, check logs\n- 🟢 Green = Running normally\n\n### 2. Port Conflict\nDefault port **18789** may be occupied by another program.\n- Go to Config Center → Gateway → Basic Settings to change the port\n- Windows: Run `netstat -ano | findstr 18789` in terminal to check\n- macOS/Linux: Run `lsof -i :18789` to check\n\n### 3. Stale Process (PID Lock File)\nA previous abnormal exit may have left a PID lock file preventing startup.\n- Open Health Center → Run Diagnostics → If \"PID lock file\" warning appears, click \"Fix\" to auto-clean\n- Manual cleanup: Delete the `~/.openclaw/gateway.pid` file\n\n### 4. Configuration File Errors\nJSON syntax errors in configuration will prevent startup.\n- Go to Config Center → JSON Editor to check for red syntax error markers\n- Run Health Center diagnostics; the config.file check will report configuration issues\n- After backing up current config, you can reset to defaults in JSON Editor\n\n### 5. Node.js Version Incompatibility\nOpenClaw requires Node.js **22+**.\n- Run `node -v` in terminal to check version\n- If below 22, upgrade Node.js and restart\n\n### 6. Bind Address Issues\nIf `gateway.bind` is set to `lan` or `custom`, network changes may cause binding failures.\n- Go to Config Center → Gateway → Basic Settings and change bind to `auto` or `loopback`\n\n## Quick Fix\n\nOpen Health Center → Run Diagnostics → Click \"Auto Fix\" to resolve most issues automatically."
+    }
+  },
+  "faq-high-token-cost": {
+    "name": "High Token Costs",
+    "description": "Common methods and configuration tips for analyzing and optimizing AI usage costs",
+    "content": {
+      "question": "How can I reduce high token consumption costs?",
+      "answer": "## Cost Optimization Strategies (Ranked by Impact)\n\n### 1. Use Low-Cost Model for Heartbeat (Save 50-80%)\nHeartbeat is the biggest hidden cost source. Go to Config Center → Agents → Heartbeat:\n- Set heartbeat model to a low-cost model (e.g., gpt-4o-mini, claude-haiku, gemini-flash)\n- Increase heartbeat interval (every: \"1h\" instead of default \"30m\")\n- Set active hours (activeHours) to stop heartbeat during off-hours\n- Enable lightContext to reduce heartbeat context size\n\n### 2. Use Low-Cost Model for Sub-agents (Save 60-90%)\nGo to Config Center → Agents → Sub-agents:\n- Set subagents.model to a low-cost model\n- Limit maxSpawnDepth to 1 to avoid nested sub-agents causing exponential costs\n\n### 3. Enable Context Pruning (Save 20-40%)\nGo to Config Center → Agents → Context Pruning:\n- Enable cache-ttl mode to auto-clean expired tool call results\n- Set ttl to 20-30 minutes\n\n### 4. Optimize Compaction Strategy\nGo to Config Center → Agents → Compaction:\n- Reduce keepRecentTokens to decrease context sent to model each time\n- Enable memoryFlush to save important info to MEMORY.md instead of keeping it in context\n\n### 5. Disable Unnecessary Thinking Mode\nGo to Config Center → Agents:\n- Set thinkingDefault to off or minimal (thinking mode consumes extra tokens)\n- Only enable temporarily with /think command when deep reasoning is needed\n\n### 6. Configure Session Auto-Reset\nGo to Config Center → Session → Auto Reset:\n- Enable daily reset to prevent unlimited context accumulation\n\n### 7. Limit Media Processing\nGo to Config Center → Agents:\n- Reduce mediaMaxMb to limit media file size\n- Reduce imageMaxDimensionPx to lower image resolution\n\n## Cost Monitoring\n\nMost AI provider consoles offer usage dashboards. Check regularly:\n- OpenAI: platform.openai.com/usage\n- Anthropic: console.anthropic.com\n- Google: console.cloud.google.com"
+    }
+  },
+  "faq-memory-not-working": {
+    "name": "Memory Search Not Working",
+    "description": "Troubleshoot when memory search returns no results or inaccurate matches",
+    "content": {
+      "question": "What should I do when memory search returns no results or inaccurate results?",
+      "answer": "## Troubleshooting Steps\n\n### 1. Confirm Memory Search is Enabled\nGo to Config Center → Memory → Check if \"Enable Memory Search\" is turned on.\n\n### 2. Check Embedding Provider\nMemory search requires an embedding provider to generate vectors:\n- Confirm an embedding provider is selected (openai / gemini / local / ollama)\n- If using openai, confirm the OpenAI API Key is valid and has balance\n- If using local, first startup needs to download the model, may take a few minutes\n\n### 3. Wait for Index Building\nAfter first enabling or adding new content, the system needs time to build the vector index:\n- Small data (<100 items): seconds to 1 minute\n- Medium data (100-1000 items): 1-5 minutes\n- Large data (>1000 items): 5-30 minutes\n- Check logs to confirm indexing is complete\n\n### 4. Check Search Scope\nConfirm sources configuration is correct:\n- **memory** — Search MEMORY.md file\n- **sessions** — Search historical sessions\n- If neither is checked, search won't return results\n\n### 5. Check MEMORY.md Content\nGo to Config Center → Agents → View the MEMORY.md file:\n- Confirm the file is not empty\n- Content format should be clear (headings + bullet points work best)\n- Avoid large blocks of unstructured text\n\n### 6. Adjust Search Parameters\nIf results exist but are inaccurate:\n- Lower `minScore` threshold (e.g., from 0.5 to 0.3) to increase recall\n- Increase `maxResults` to return more candidates\n- Enable `hybrid` search (combining vector + keyword) for better results\n\n### 7. Manually Trigger Sync\nIf you recently modified MEMORY.md but search hasn't updated:\n- Restart the gateway to trigger a full sync\n- Or wait for the auto-sync cycle (default: checks every 5 minutes)\n\n## Quick Fix\n\nRun Health Center diagnostics → Check memory-related items."
+    }
+  },
+  "faq-model-not-responding": {
+    "name": "Model Not Responding",
+    "description": "Troubleshoot when the AI model doesn't reply, times out or returns errors",
+    "content": {
+      "question": "What should I do when the AI model doesn't reply or returns errors?",
+      "answer": "## Troubleshooting Steps\n\n### 1. Check Provider Connection\nGo to Config Center → Models, find your provider, and click \"Test Connection\":\n- ✅ Connection successful → Provider is fine, issue is elsewhere\n- ❌ Connection failed → Check if API Key is correct or expired\n\n### 2. Check API Key\n- Confirm the API Key hasn't expired or been revoked\n- Confirm the account has sufficient balance (many providers reject requests at 0 balance)\n- Try testing the same key in the provider's official Playground\n\n### 3. Check Network Connection\n- Confirm your network can access the provider's API address\n- If in mainland China, some providers (OpenAI, Anthropic) require a proxy\n- Check if the correct Base URL is set (custom proxy address)\n\n### 4. Check Model Name\n- Confirm the primary model name is spelled correctly (case-sensitive)\n- Some provider model names may have been updated (e.g., gpt-4-turbo → gpt-4o)\n- Click \"Discover Models\" in Config Center → Models to get the latest model list\n\n### 5. Check Rate Limiting\n- If the error contains 429 or rate_limit, request frequency is too high\n- Solution: Configure fallback models so OpenClaw auto-switches\n- Or reduce heartbeat frequency in Config Center → Agents → Heartbeat\n\n### 6. Check Timeout\n- If the model responds slowly, it may be under heavy load\n- Go to Config Center → Agents → Increase timeoutSeconds (default 120 seconds)\n\n## Quick Fix\n\n1. Run Health Center diagnostics and check model-related items\n2. Ensure at least one fallback model is configured\n3. If the issue persists, switch to a different provider's model"
+    }
+  },
+  "faq-sandbox-permission": {
+    "name": "Sandbox Permission Errors",
+    "description": "Troubleshoot Docker sandbox container startup failures, permission issues or file access errors",
+    "content": {
+      "question": "What should I do when the sandbox container won't start or has permission errors?",
+      "answer": "## Troubleshooting Steps\n\n### 1. Confirm Docker is Installed and Running\n- Windows: Confirm Docker Desktop is running (Docker icon in system tray)\n- macOS: Confirm Docker Desktop is running\n- Linux: Run `docker info` to confirm the Docker service is running\n\n### 2. Check Docker Permissions\n- Linux users need to add their user to the docker group: `sudo usermod -aG docker $USER`\n- Or confirm the OpenClaw process has permission to access Docker socket (/var/run/docker.sock)\n\n### 3. Check Image\nGo to Config Center → Agents → Sandbox → Docker Settings:\n- Confirm the image field has the correct image name\n- Run `docker pull <image>` to manually pull the image\n- In China, you may need to configure a Docker registry mirror\n\n### 4. Workspace Access Issues\nIf AI reports \"cannot access file\" or \"permission denied\":\n- Check `workspaceAccess` setting: none / ro / rw\n- In ro (read-only) mode, AI cannot modify files\n- Confirm the workspace path exists and Docker has permission to mount it\n\n### 5. Network Issues\n- Default uses bridge network mode\n- If AI needs network access, confirm network is not set to none\n- **Do not use host mode** (rejected by security policy)\n\n### 6. Resource Limits\nIf container is frequently OOM killed:\n- Increase memory limit (e.g., \"1g\")\n- Increase pidsLimit (e.g., 256)\n- Check if cpus limit is too low\n\n### 7. WSL2 Special Cases (Windows)\n- Confirm Docker Desktop uses WSL2 backend (Settings → General → Use WSL 2)\n- File paths use Linux format (/mnt/c/Users/...)\n- If commands report \"exec format error\", check if image architecture matches\n\n## Configuration Field\n\nConfig path: `agents.defaults.sandbox`"
+    }
+  },
+  "recipe-add-provider": {
+    "name": "Add AI Provider",
+    "description": "Add OpenAI, Anthropic, Google or other AI providers and configure API keys in ClawDeckX",
+    "content": {
+      "body": "OpenClaw supports 20+ AI providers including OpenAI, Anthropic, Google, Mistral, Groq, Ollama and more. Each provider requires configuring API type, Base URL and API Key.\n\n**Supported API Types:**\n- `openai` — OpenAI and compatible providers (e.g., Groq, Together, OpenRouter)\n- `anthropic` — Anthropic Claude series\n- `google` — Google Gemini series\n- `mistral` — Mistral AI\n- `ollama` — Local Ollama inference\n- `azure` — Azure OpenAI Service\n\n**Security Note:** API Keys are encrypted and stored locally, never uploaded to any remote service.",
+      "steps": [
+        {
+          "title": "Open Model Configuration",
+          "description": "Go to Config Center → Models and click the \"Add Provider\" button at the top of the page."
+        },
+        {
+          "title": "Select Provider Type",
+          "description": "In the wizard popup, select a provider (e.g., OpenAI). The system will auto-fill default API type and Base URL. For third-party providers compatible with OpenAI format (e.g., Groq), select OpenAI type and modify the Base URL."
+        },
+        {
+          "title": "Enter API Key",
+          "description": "Paste your key in the API Key field. Click the \"Test Connection\" button to verify the key is valid. If the test fails, check if the key is correct and if the network can access the provider's API address."
+        },
+        {
+          "title": "Discover Available Models",
+          "description": "After successful connection, click \"Discover Models\" to automatically retrieve all models supported by the provider. You can also manually enter model names."
+        },
+        {
+          "title": "Set as Primary Model (Optional)",
+          "description": "In the Primary Model area, select a model from the provider you just added. It's recommended to set 1-2 fallback models that auto-switch when the primary model is unavailable."
+        },
+        {
+          "title": "Save and Verify",
+          "description": "Click \"Save\" and the gateway will auto-reload configuration. Open the Chat window and send a test message to confirm the model responds correctly."
+        }
+      ]
+    }
+  },
+  "recipe-backup-restore": {
+    "name": "Backup & Restore Config",
+    "description": "Export full configuration via ClawDeckX for cross-device migration or disaster recovery",
+    "content": {
+      "body": "Regularly backing up your OpenClaw configuration prevents accidental loss and makes it easy to migrate between devices. ClawDeckX provides visual export/import functionality.\n\n**Backup Includes:**\n- Complete openclaw.json configuration file (providers, models, channels, sessions and all settings)\n- Agent files (IDENTITY.md, SOUL.md, USER.md, MEMORY.md)\n- Cron jobs and webhook configuration\n\n**Not Included:**\n- API Keys (for security, must be re-entered on new devices)\n- Historical session data (stored in local database)\n- Installed skills and plugins (need reinstallation)",
+      "steps": [
+        {
+          "title": "Export Configuration",
+          "description": "Go to Config Center → JSON Editor → Click the \"Export\" button in the toolbar. The system will download the complete current configuration as a JSON file. You can also directly copy all content from the JSON Editor."
+        },
+        {
+          "title": "Backup Agent Files",
+          "description": "Go to Config Center → Agents → Click each agent's file list and copy the content of IDENTITY.md, SOUL.md, etc. one by one. Or directly backup all files in the ~/.openclaw/agents/ directory."
+        },
+        {
+          "title": "Restore on New Device",
+          "description": "Install OpenClaw and ClawDeckX on the new device → Go to Config Center → JSON Editor → Paste the backed-up JSON configuration → Save."
+        },
+        {
+          "title": "Fill in Sensitive Information",
+          "description": "After restoring, re-enter all API Keys: Go to Config Center → Models and re-enter API Keys for each provider. Also check if channel tokens need updating."
+        },
+        {
+          "title": "Verify Restoration",
+          "description": "Run Health Center diagnostics to confirm all configuration items are normal. Red errors usually mean API Keys or tokens haven't been re-entered."
+        }
+      ]
+    }
+  },
+  "recipe-quickstart": {
+    "name": "Quick Start Guide",
+    "description": "Complete first-time setup through ClawDeckX visual interface — from install to first conversation in 5 minutes",
+    "content": {
+      "body": "Complete your first-time setup through ClawDeckX's visual interface — no manual configuration file editing required.\n\n**Prerequisites:**\n- OpenClaw installed (`npm i -g openclaw` or use the install script)\n- At least one AI provider API Key (e.g., OpenAI, Anthropic, Google)\n\nAfter completion, you'll have an AI assistant that can chat through messaging channels.",
+      "steps": [
+        {
+          "title": "Start the Gateway",
+          "description": "Open ClawDeckX → Dashboard → Click \"Start Gateway\" button. If this is the first run, ClawDeckX will automatically detect OpenClaw installation and guide you through initialization."
+        },
+        {
+          "title": "Add AI Provider",
+          "description": "Go to Config Center → Models → Click \"Add Provider\" button. Select provider type (OpenAI / Anthropic / Google etc.), enter API Key, and click \"Test Connection\" to confirm."
+        },
+        {
+          "title": "Set Primary Model",
+          "description": "On the Config Center → Models page, find the Primary Model area and select a model from your added providers. Recommended starters: gpt-4o (OpenAI), claude-sonnet (Anthropic), or gemini-pro (Google)."
+        },
+        {
+          "title": "Add Messaging Channel",
+          "description": "Go to Config Center → Channels → Click \"Add Channel\". Select your platform (Telegram / Discord / WhatsApp / Slack etc.) and follow prompts to enter Bot Token or scan QR code."
+        },
+        {
+          "title": "Set Agent Identity (Optional)",
+          "description": "Go to Config Center → Agents → Edit the default agent's IDENTITY.md and SOUL.md to define the AI assistant's personality and behavior. You can also choose from preset templates in Usage Wizard → Identity Setup."
+        },
+        {
+          "title": "Run Diagnostic Verification",
+          "description": "Open Health Center → Click \"Run Diagnostics\". Confirm all critical items (gateway status, model connection, channel connection) show green. If any red/yellow items appear, click the corresponding \"Fix\" button or view details."
+        },
+        {
+          "title": "Send Your First Message",
+          "description": "Send any message to your AI assistant in a connected messaging channel, or open ClawDeckX's built-in Chat window for direct conversation. Receiving a reply means setup is complete."
+        }
+      ]
+    }
+  },
+  "recipe-setup-cron": {
+    "name": "Set Up Cron Jobs",
+    "description": "Configure scheduled tasks for your AI assistant — daily summaries, reminders and more",
+    "content": {
+      "body": "OpenClaw's cron system lets your AI assistant execute tasks on schedule without manual triggering. Common use cases include:\n- Daily morning news summaries or weather forecasts\n- Scheduled email/calendar checks with reports\n- Periodic health checks or data backup reminders\n\n**Configuration Field Reference:**\n- `enabled` — Whether to enable the cron system\n- `maxConcurrentRuns` — Maximum concurrent running tasks\n- `retry.maxAttempts` — Maximum retry attempts on task failure\n- `retry.retryOn` — Error types that trigger retries (rate_limit / network / timeout etc.)",
+      "steps": [
+        {
+          "title": "Enable Cron System",
+          "description": "Go to Config Center → Cron Jobs → Ensure the \"Enable Cron Jobs\" toggle at the top is turned on."
+        },
+        {
+          "title": "Create a Task",
+          "description": "Click \"Add Cron Job\" button. Fill in task name, cron expression (e.g., '0 8 * * *' for daily 8 AM), and the prompt to send. Select target channel and agent."
+        },
+        {
+          "title": "Configure Retry Strategy (Recommended)",
+          "description": "In the Cron Jobs config area under \"Retry\", set maxAttempts to 2-3, and retryOn to rate_limit and network. This ensures tasks auto-retry when the AI provider is temporarily unavailable."
+        },
+        {
+          "title": "Configure Failure Alerts (Optional)",
+          "description": "Enable failureAlert and set after to 2 (alert after 2 consecutive failures). Alert messages will be sent to the specified channel and contact."
+        },
+        {
+          "title": "Save and Verify",
+          "description": "After saving, you can view the task list and next execution time on the Cron Jobs page. Click a task's \"Run Now\" button to manually trigger a test run."
+        }
+      ]
+    }
+  },
+  "recipe-setup-discord": {
+    "name": "Connect Discord",
+    "description": "Create a Discord Bot and connect it to OpenClaw gateway via ClawDeckX",
+    "content": {
+      "body": "A Discord Bot needs to be created in the Discord Developer Portal to obtain a Token.\n\n**Prerequisites:**\n- A Discord account\n- A Discord server you manage (to invite the Bot)\n- OpenClaw gateway running with model configured",
+      "steps": [
+        {
+          "title": "Create Discord Application",
+          "description": "Visit https://discord.com/developers/applications → Click \"New Application\" → Enter application name → Create."
+        },
+        {
+          "title": "Get Bot Token",
+          "description": "On the application page, select \"Bot\" in the left sidebar → Click \"Reset Token\" to get the Token. **Important:** The Token is shown only once — copy and save it immediately. Enable Message Content Intent under \"Privileged Gateway Intents\"."
+        },
+        {
+          "title": "Invite Bot to Server",
+          "description": "Select \"OAuth2\" → \"URL Generator\" in the left sidebar → Check bot and applications.commands → Under Bot Permissions, check Send Messages, Read Message History, Add Reactions → Copy the generated URL, open it in a browser, select your server and authorize."
+        },
+        {
+          "title": "Configure in ClawDeckX",
+          "description": "Go to Config Center → Channels → Click \"Add Channel\" → Select Discord. Paste the Bot Token in the Token field. If you want the Bot to work only in a specific server, you can fill in the guildId."
+        },
+        {
+          "title": "Save and Test",
+          "description": "Click \"Save\" and wait for the gateway to reload. In your Discord server, @mention the Bot or send a message in DMs. Receiving an AI reply means setup is complete."
+        }
+      ]
+    }
+  },
+  "recipe-setup-hooks": {
+    "name": "Set Up Webhook Integration",
+    "description": "Configure webhooks to receive external events (GitHub, email, custom services) for AI auto-response",
+    "content": {
+      "body": "OpenClaw's webhook system receives HTTP requests from external services and converts events into AI conversations. Typical scenarios:\n- GitHub push/PR event notifications to chat channels\n- Auto-analyze and report incoming emails\n- Monitoring alerts triggering AI analysis and suggestions\n\n**Configuration Field Reference:**\n- `hooks.enabled` — Whether to enable the webhook system\n- `hooks.path` — Webhook receive path (default /hooks)\n- `hooks.token` — Verification token to prevent unauthorized requests\n- `hooks.mappings[]` — Routing rules to direct different webhooks to different agents/channels",
+      "steps": [
+        {
+          "title": "Enable Webhook System",
+          "description": "Go to Config Center → Hooks → Turn on \"Enable Hooks\". The system listens on /hooks path by default."
+        },
+        {
+          "title": "Set Verification Token",
+          "description": "Set a security token in the Token field (recommend using a long random string). External services must include this token in the Header or URL parameter when sending requests."
+        },
+        {
+          "title": "Configure Route Mappings",
+          "description": "Click \"Add Mapping\" to create routing rules:\n- match.path — Match path (e.g., /github)\n- match.source — Match source identifier\n- action — Select wake (wake heartbeat) or agent (trigger agent)\n- messageTemplate — Message template, use {{body}} to reference request content\n- channel/to — Specify delivery channel and contact"
+        },
+        {
+          "title": "Configure in External Service",
+          "description": "In GitHub/GitLab webhook settings, enter your gateway address + hooks path (e.g., https://your-gateway:18789/hooks/github), and fill the Token in the Secret field."
+        },
+        {
+          "title": "Test Webhook",
+          "description": "In GitHub's webhook settings, click \"Recent Deliveries\" → \"Redeliver\" to send a test request. Or use curl:\ncurl -X POST http://localhost:18789/hooks/test -H 'Authorization: Bearer YOUR_TOKEN' -d '{\"message\": \"test\"}'."
+        }
+      ]
+    }
+  },
+  "recipe-setup-memory-search": {
+    "name": "Enable Memory Search",
+    "description": "Configure vector search so your AI can retrieve past conversations and knowledge files for long-term memory",
+    "content": {
+      "body": "Memory Search lets your AI assistant semantically retrieve relevant content from past conversations and knowledge files. This is the key feature for making your AI \"never forget\".\n\n**How It Works:**\n1. OpenClaw converts MEMORY.md, past sessions and other content into vector embeddings\n2. When users ask questions, the system automatically searches for the most semantically relevant memory fragments\n3. Found content is injected into the AI's context, helping it give more accurate answers\n\n**Supported Embedding Providers:** OpenAI, Google Gemini, Voyage, Mistral, Ollama (local)",
+      "steps": [
+        {
+          "title": "Enable Memory Search",
+          "description": "Go to Config Center → Memory → Turn on \"Enable Memory Search\"."
+        },
+        {
+          "title": "Select Embedding Provider",
+          "description": "In the \"Embedding Provider\" dropdown, select:\n- **openai** — Uses OpenAI's text-embedding models (requires API Key)\n- **gemini** — Uses Google's embedding models\n- **local** — Uses local models (no API Key needed, slightly lower quality)\n- **ollama** — Uses local Ollama inference\nRecommended for new users: openai for best results."
+        },
+        {
+          "title": "Configure Search Scope",
+          "description": "In sources, select content sources to search:\n- **memory** — Search MEMORY.md file content\n- **sessions** — Search historical session records\nRecommended: check both for best memory performance."
+        },
+        {
+          "title": "Adjust Query Parameters (Optional)",
+          "description": "Advanced users can adjust:\n- maxResults — Maximum results per search (default 5)\n- minScore — Minimum relevance threshold (0-1, default 0.3)\n- hybrid.enabled — Enable hybrid search (vector + keyword) for better recall"
+        },
+        {
+          "title": "Save and Verify",
+          "description": "After saving, mention something from a previous conversation in chat and observe if the AI can recall it. First-time enabling may require waiting for index building to complete."
+        }
+      ]
+    }
+  },
+  "recipe-setup-telegram": {
+    "name": "Connect Telegram",
+    "description": "Create a Telegram Bot and connect it to OpenClaw gateway via ClawDeckX",
+    "content": {
+      "body": "Telegram is one of OpenClaw's most commonly used messaging channels. You need to first create a Bot through BotFather, then enter the Token in ClawDeckX to complete the connection.\n\n**Prerequisites:**\n- A Telegram account\n- OpenClaw gateway running with model configured",
+      "steps": [
+        {
+          "title": "Create Telegram Bot",
+          "description": "Search for @BotFather in Telegram and send the /newbot command. Follow prompts to enter Bot name and username (username must end with 'bot'). BotFather will return a Token (format like 123456789:ABCdefGHIjklMNO) — copy and save it."
+        },
+        {
+          "title": "Add Telegram Channel",
+          "description": "Go to Config Center → Channels → Click \"Add Channel\" → Select Telegram. Paste the Token from BotFather in the Token field."
+        },
+        {
+          "title": "Configure Access Control (Recommended)",
+          "description": "In the channel settings, find the \"allowFrom\" field and enter your Telegram user ID (get it via @userinfobot). This prevents strangers from using your Bot. You can also set dmPolicy to allowFrom to restrict DM access."
+        },
+        {
+          "title": "Save and Test",
+          "description": "Click \"Save\" and wait for the gateway to reload. In Telegram, open your newly created Bot, send /start, then send any message. If you receive an AI reply, the connection is successful."
+        },
+        {
+          "title": "Group Usage (Optional)",
+          "description": "To use in groups:\n1. Add the Bot to a group\n2. In BotFather, send /setprivacy → Select your Bot → Disable (allows Bot to read all messages)\n3. @mention the Bot or reply to the Bot's messages in the group to trigger conversation"
+        }
+      ]
+    }
+  },
+  "snippet-cron-daily": {
+    "name": "Daily Summary Cron Job",
+    "description": "Example cron job config for daily morning news/weather/todo summary",
+    "content": {
+      "snippet": "// Cron job configuration example\n// Create in Config Center → Cron Jobs\n\n// Task name: Daily Briefing\n// Cron expression: 0 8 * * * (Daily at 8:00 AM)\n// Prompt:\n\nPlease prepare my daily briefing:\n\n1. **Today's Weather** — Check the weather forecast for my city\n2. **Important News** — Search for 3 important tech/AI news stories today, briefly summarize\n3. **Todo Reminders** — Check my MEMORY.md for items due today\n4. **Schedule Suggestions** — Based on weather and todos, suggest an action plan for today\n\nPlease output in a concise format, separate each section with emoji headings."
+    }
+  },
+  "snippet-hook-mapping": {
+    "name": "Webhook Mapping Config Snippet",
+    "description": "Example webhook mapping config for GitHub push/PR event notifications to chat channels",
+    "content": {
+      "snippet": "// hooks.mappings configuration example\n// Add the following mappings in Config Center → Hooks\n\n// Mapping 1: GitHub Push event → Notify via Telegram\n{\n  \"id\": \"github-push\",\n  \"match\": {\n    \"path\": \"/github\",\n    \"source\": \"github\"\n  },\n  \"action\": \"agent\",\n  \"messageTemplate\": \"GitHub Push event: {{body.repository.full_name}} received {{body.commits.length}} commits, latest: {{body.head_commit.message}}\",\n  \"channel\": \"telegram\",\n  \"to\": \"YOUR_CHAT_ID\"\n}\n\n// Mapping 2: GitHub PR event → Wake AI for analysis\n{\n  \"id\": \"github-pr\",\n  \"match\": {\n    \"path\": \"/github-pr\"\n  },\n  \"action\": \"agent\",\n  \"messageTemplate\": \"New PR needs review: {{body.pull_request.title}} by {{body.pull_request.user.login}}, please analyze changes and provide suggestions.\",\n  \"channel\": \"telegram\",\n  \"model\": \"claude-sonnet\"\n}\n\n// Mapping 3: Generic Webhook → Wake heartbeat\n{\n  \"id\": \"generic-wake\",\n  \"match\": {\n    \"path\": \"/wake\"\n  },\n  \"action\": \"wake\",\n  \"wakeMode\": \"now\"\n}"
+    }
+  },
+  "snippet-soul-template": {
+    "name": "SOUL.md Personality Template",
+    "description": "AI agent personality template defining identity, character and expertise. Edit in Config Center → Agents",
+    "content": {
+      "snippet": "# Identity\nYou are a professional technical assistant named Atlas, specializing in DevOps, system administration, and software development.\n\n# Personality\n- Respond concisely and directly, avoid lengthy pleasantries\n- Prioritize actionable solutions over theoretical analysis\n- Proactively flag uncertain information as \"uncertain\"\n- Good at explaining complex concepts with analogies and examples\n\n# Communication Style\n- Reply in English, keep technical terms in their original form\n- Code examples include brief inline comments\n- Complex operations explained step-by-step, each step noting expected results\n- Warn before dangerous operations and provide rollback plans\n\n# Areas of Expertise\n- Linux / macOS system administration\n- Docker / Kubernetes container orchestration\n- CI/CD pipelines (GitHub Actions, GitLab CI)\n- Network configuration and security hardening\n- Python / TypeScript / Go development\n\n# Behavioral Boundaries\n- Never fabricate uncertain technical details\n- Remind users to backup before production operations\n- Never execute destructive commands without confirmation\n- Alert users about security when sensitive information is involved in conversation"
+    }
+  },
+  "snippet-tool-policy": {
+    "name": "Tool Policy Config Snippet",
+    "description": "Example tool policy configs with profile/allow/deny combinations for different security needs",
+    "content": {
+      "snippet": "// Tool policy configuration examples\n// Configure in Config Center → Tools or Config Center → JSON Editor\n\n// ═══════════════════════════════════════\n// Plan 1: Full Trust (Personal use)\n// ═══════════════════════════════════════\n\"tools\": {\n  \"profile\": \"full\"\n}\n\n// ═══════════════════════════════════════\n// Plan 2: Coding Mode (No messaging)\n// ═══════════════════════════════════════\n\"tools\": {\n  \"profile\": \"coding\",\n  \"deny\": [\"message_send\", \"message_broadcast\"]\n}\n\n// ═══════════════════════════════════════\n// Plan 3: Safe Mode (Chat + Web search only)\n// ═══════════════════════════════════════\n\"tools\": {\n  \"profile\": \"messaging\",\n  \"web\": {\n    \"search\": { \"enabled\": true },\n    \"fetch\": { \"enabled\": true, \"maxChars\": 50000 }\n  }\n}\n\n// ═══════════════════════════════════════\n// Plan 4: Per-provider permissions\n// ═══════════════════════════════════════\n\"tools\": {\n  \"profile\": \"full\",\n  \"byProvider\": {\n    \"openai\": { \"profile\": \"coding\" },\n    \"anthropic\": { \"profile\": \"full\" }\n  }\n}\n\n// ═══════════════════════════════════════\n// Plan 5: Command execution hardening\n// ═══════════════════════════════════════\n\"tools\": {\n  \"profile\": \"coding\",\n  \"exec\": {\n    \"allowlist\": [\"git *\", \"npm *\", \"node *\"],\n    \"denylist\": [\"rm -rf *\", \"sudo *\"]\n  }\n}"
+    }
+  },
+  "tip-audio-transcription": {
+    "name": "Audio Transcription",
+    "description": "Enable automatic voice message transcription so your AI can understand and reply to voice messages",
+    "content": {
+      "body": "## Voice Transcription Feature\n\nMany users send voice messages on Telegram, WhatsApp, and Discord. With voice transcription enabled, OpenClaw automatically converts voice messages to text so the AI assistant can understand and respond.\n\n## Configure in ClawDeckX\n\nGo to Config Center → Audio → Find the \"Voice Transcription\" area:\n\n1. Turn on \"Enable Voice Transcription\"\n2. Select the transcription provider (default uses OpenAI Whisper)\n3. Save\n\n## How It Works\n\n1. User sends a voice message in a messaging channel\n2. OpenClaw automatically downloads the audio file\n3. Calls Whisper API to convert audio to text\n4. Passes the transcribed text to the AI model as user message\n5. AI responds in text\n\n## Notes\n\n- Requires an OpenAI API Key (Whisper is an OpenAI service)\n- Each transcription incurs a small API fee (~$0.006/minute)\n- Supported audio formats: mp3, mp4, mpeg, mpga, m4a, wav, webm\n- Maximum audio duration depends on provider limits\n\n## Configuration Field\n\nConfig path: `audio.transcription`"
+    }
+  },
+  "tip-browser-automation": {
+    "name": "Browser Automation",
+    "description": "Enable browser automation for web browsing, form filling, screenshots and page interaction",
+    "content": {
+      "body": "## Browser Automation Capabilities\n\nWhen enabled, the AI assistant can:\n- Open web pages and read content\n- Click buttons and fill forms\n- Take page screenshots\n- Execute JavaScript code (evaluateEnabled)\n- Use Chrome DevTools Protocol (CDP) for advanced operations\n\n## Configure in ClawDeckX\n\n1. Go to Config Center → Browser\n2. Turn on \"Enable Browser\"\n3. Recommended: also enable \"Page Evaluation\" (evaluateEnabled) for full interaction capabilities\n\n## Configuration Options\n\n| Option | Description | Default |\n|--------|-------------|---------|\n| **enabled** | Enable browser | false |\n| **evaluateEnabled** | Allow JS execution in pages | false |\n| **headless** | Headless mode (no window) | true |\n| **noSandbox** | Disable Chrome sandbox (needed in containers) | false |\n| **executablePath** | Custom Chrome path | Auto-detect |\n\n## Browser Profiles\n\nYou can create multiple browser profiles, each with independent CDP port and settings:\n\n- Go to Config Center → Browser → Profiles\n- Add a new profile with a specific cdpPort or cdpUrl\n- Use case: one profile for automation, another for maintaining login state\n\n## SSRF Security Policy\n\nBy default, browser access to internal network addresses is blocked (preventing SSRF attacks). If you need to access internal services:\n- Add allowedHostnames in \"SSRF Policy\"\n- **Not recommended** to enable allowPrivateNetwork unless you fully trust the AI's operations\n\n## Configuration Field\n\nConfig path: `browser.enabled` and `browser.evaluateEnabled`"
+    }
+  },
+  "tip-clawdeckx-workflow": {
+    "name": "ClawDeckX Workflow Guide",
+    "description": "Master ClawDeckX desktop operations, config center navigation and health center tips",
+    "content": {
+      "body": "## Desktop Navigation\n\n- **Double-click empty desktop area** — Quickly return to dashboard to view gateway status and channel connections\n- **Drag window title bar** — Freely move windows; drag window edges to resize\n- **Dock bar** — Permanent quick-access bar at the bottom with Dashboard, Config Center, Chat, Health Center and more\n- **Right-click Dock icons** — Some icons support right-click menus for quick actions\n\n## Config Center Operations\n\nThe Config Center is the core interface for managing OpenClaw. The left navigation bar contains 20+ configuration areas:\n\n- **Models** — Add AI providers, set primary/fallback/sub-agent models\n- **Channels** — Manage Telegram/Discord/WhatsApp messaging channels\n- **Agents** — Create multi-agents, set identity/behavior/sandbox\n- **Tools** — Control tool permission profiles, web search, file system access\n- **Session** — Session scope, auto-reset, maintenance policies\n- **Gateway** — Port, auth mode, TLS, remote connections\n\n**Tips:**\n- After modifying any configuration, click \"Save\" and the gateway will hot-reload automatically\n- Use the top search bar to quickly locate configuration items\n- Switch to \"JSON Editor\" to directly edit the raw configuration file\n- View the complete running configuration in the \"Live Config\" area\n\n## Health Center\n\n- **Run Diagnostics** — Click \"Run Diagnostics\" to auto-check 50+ configuration and runtime items\n- **Severity Markers** — 🔴 Errors must be fixed, 🟡 Warnings suggest optimization, 🟢 Passed, no action needed\n- **Auto Fix** — Some diagnostic items provide automatic fix buttons\n- **Linked Knowledge Base** — Each diagnostic item can link to knowledge base articles; click to view details\n- **Recommended Frequency** — Run once after each config change or OpenClaw upgrade\n\n## Usage Wizard\n\n- **Config Completeness** — The wizard calculates your overall configuration score (percentage)\n- **Step-by-step Guidance** — From basic checks → identity setup → scenario templates → memory system → capability limits\n- **Direct to Config** — Each step links directly to the relevant config section for quick editing"
+    }
+  },
+  "tip-compaction-tuning": {
+    "name": "Compaction Strategy Tuning",
+    "description": "Optimize context compaction strategy — balance conversation quality and token cost",
+    "content": {
+      "body": "## What is Context Compaction?\n\nWhen conversation history exceeds the model's context window limit, OpenClaw automatically compacts (summarizes) older conversation content while retaining key information. The compaction strategy directly affects the AI's \"memory\" and token cost.\n\n## Compaction Modes\n\n| Mode | Description |\n|------|-------------|\n| **default** | Standard compaction, suitable for most scenarios |\n| **safeguard** | Safe mode with extra checks before compaction to prevent losing important info |\n\n## Configure in ClawDeckX\n\nGo to Config Center → Agents → Find the \"Compaction\" area:\n\n### Key Parameters\n\n- **reserveTokens** — Tokens reserved for new conversation. Increasing this gives the AI more reply space but triggers compaction more frequently\n- **keepRecentTokens** — Number of recent tokens to keep uncompacted. Increasing preserves more recent context\n- **maxHistoryShare** — Maximum share of total context for history (0.1-0.9). Setting 0.7 means 70% for history, 30% reserved for system prompt and new replies\n\n### Quality Guard\n\nEnabling `qualityGuard` checks summary quality after compaction and auto-retries if quality is insufficient:\n- **enabled** — Whether to enable\n- **maxRetries** — Maximum retry count\n\n### Memory Flush\n\n`memoryFlush` is an important feature that auto-saves important information to MEMORY.md before compaction occurs:\n- **enabled** — Whether to enable (**strongly recommended**)\n- **softThresholdTokens** — Early trigger threshold\n- **forceFlushTranscriptBytes** — Forced flush conversation size threshold\n\n## Recommended Configuration\n\n**Daily Chat (Balanced):**\n- reserveTokens: 4000\n- keepRecentTokens: 8000\n- memoryFlush.enabled: true\n\n**Programming Assistant (More Context):**\n- reserveTokens: 8000\n- keepRecentTokens: 16000\n- maxHistoryShare: 0.8\n\n## Configuration Field\n\nConfig path: `agents.defaults.compaction`"
+    }
+  },
+  "tip-context-pruning": {
+    "name": "Context Pruning",
+    "description": "Enable cache-ttl mode to auto-clean expired tool results and reduce unnecessary token usage",
+    "content": {
+      "body": "## What is Context Pruning?\n\nIn long conversations, the AI's context accumulates large amounts of tool call results (e.g., file contents, command outputs) that are often only useful at the time. Context pruning automatically removes expired tool results, freeing valuable token space.\n\n## Pruning Modes\n\n| Mode | Description |\n|------|-------------|\n| **off** | No pruning (default) |\n| **cache-ttl** | Auto-prune expired content based on TTL (time-to-live) |\n\n## Configure in ClawDeckX\n\nGo to Config Center → Agents → Find the \"Context Pruning\" area:\n\n### Core Parameters\n\n- **mode** — Select `cache-ttl` to enable\n- **ttl** — Content time-to-live (e.g., \"30m\" means eligible for pruning after 30 minutes)\n- **keepLastAssistants** — Keep the last N AI replies from being pruned\n\n### Pruning Strategy\n\nPruning has two levels, progressively degrading:\n\n1. **Soft Trim** — Triggered when context reaches `softTrimRatio` (default 0.7, i.e., 70%)\n   - Truncates large tool results to headChars + tailChars\n   - Keeps beginning and end, replaces middle with ellipsis\n\n2. **Hard Clear** — Triggered when reaching `hardClearRatio` (default 0.9, i.e., 90%)\n   - Completely removes expired tool results\n   - Replaces with placeholder text\n\n### Tool Filtering\n\nYou can specify which tools' outputs to prune:\n- **tools.allow** — Only prune outputs from these tools\n- **tools.deny** — Exclude these tools (their outputs won't be pruned)\n\n## Recommended Configuration\n\n```json\n\"contextPruning\": {\n  \"mode\": \"cache-ttl\",\n  \"ttl\": \"20m\",\n  \"keepLastAssistants\": 3,\n  \"softTrimRatio\": 0.65,\n  \"hardClearRatio\": 0.85\n}\n```\n\n## Configuration Field\n\nConfig path: `agents.defaults.contextPruning`"
+    }
+  },
+  "tip-cost-optimization": {
+    "name": "Cost Optimization",
+    "description": "Significantly reduce API costs with heartbeat model, active hours and compaction strategies",
+    "content": {
+      "body": "## Where Do Costs Come From?\n\nMain expenses for AI assistants:\n\n1. **Primary model calls** — Token consumption per conversation\n2. **Heartbeat checks** — Token consumption for scheduled tasks (e.g., email, calendar)\n3. **Long context** — Sessions growing too long cause large context to be sent with each request\n\n## Optimization Strategies\n\n### 1. Use Cheap Model for Heartbeat\n\nHeartbeat checks don't need the strongest model. Using a low-cost model can save **70-90%** on heartbeat costs:\n\n- **Recommended:** Claude Haiku, GPT-4o-mini, Gemini Flash\n- Set in Config Center → Models → Heartbeat Model\n\n### 2. Set Active Hours\n\nLimit heartbeat to run only during needed hours:\n\n```yaml\nheartbeat:\n  activeHours: \"09:00-23:00\"  # Run only during daytime\n  timezone: \"Asia/Shanghai\"\n```\n\n### 3. Set Reasonable Compaction Threshold\n\n- Lower threshold (20K) = more frequent compaction = lower cost\n- Higher threshold (100K) = less compaction = higher quality but more expensive\n- **Recommended:** 50K is a good cost-performance balance\n\n### 4. Use Mid-tier Model for Sub-agents\n\nSub-agents handle decomposed subtasks and don't need the strongest model:\n\n- **Recommended:** Claude Sonnet, GPT-4o\n- Keep the primary model high-end (Claude Opus, GPT-4.5)\n\n### 5. Fallback Models\n\nSet fallback models to auto-switch when primary is unavailable, avoiding wasted retries:\n\n- Primary: Claude Opus → Fallback: GPT-4o\n- Or Primary: GPT-4.5 → Fallback: Claude Sonnet\n\n## Cost Monitoring\n\nCheck token consumption trends in ClawDeckX's \"Usage Statistics\" to spot anomalies early."
+    }
+  },
+  "tip-gateway-tls": {
+    "name": "Gateway TLS Encryption",
+    "description": "Enable TLS to protect gateway communication — prevent API keys and conversations from being intercepted",
+    "content": {
+      "body": "## Why TLS?\n\nIf the gateway is exposed on the network (non-localhost access), all communication is transmitted in plaintext, including:\n- API Keys and Tokens\n- Conversation content\n- Authentication credentials\n\nWith TLS enabled, all communication is encrypted — even if intercepted, it cannot be read.\n\n## When Do You Need TLS?\n\n| Scenario | Required? |\n|----------|----------|\n| Local access (localhost) | Not needed |\n| LAN access | Recommended |\n| Internet/remote access | **Required** |\n| Using Tailscale | Not needed (Tailscale has built-in encryption) |\n\n## Configure in ClawDeckX\n\nGo to Config Center → Gateway → TLS:\n\n### Method 1: Auto-generate Certificate (Simplest)\n\n1. Turn on \"Enable TLS\"\n2. Turn on \"Auto Generate\"\n3. Save\n\nOpenClaw will auto-generate a self-signed certificate. Note: browsers will show a security warning — this is normal (self-signed certificates are not trusted by browsers).\n\n### Method 2: Use Your Own Certificate\n\n1. Turn on \"Enable TLS\"\n2. Turn off \"Auto Generate\"\n3. Enter certificate path (certPath) and key path (keyPath)\n4. If you have a CA certificate, enter caPath\n\n## Use with Authentication\n\nTLS is typically used with authentication:\n- Go to Config Center → Gateway → Authentication\n- Select auth mode: token (recommended) or password\n- Set auth credentials\n\n## Configuration Field\n\nConfig path: `gateway.tls.enabled`"
+    }
+  },
+  "tip-heartbeat-active-hours": {
+    "name": "Heartbeat Active Hours",
+    "description": "Set active hours for heartbeat — auto-pause during off-hours to save API costs",
+    "content": {
+      "body": "## What is Heartbeat?\n\nHeartbeat is OpenClaw's periodic proactive check mechanism. The AI assistant performs a \"check\" at set intervals (default 30 minutes), typically used for:\n- Checking new emails and reporting\n- Executing periodic tasks defined in HEARTBEAT.md\n- Scheduled weather/news pushes\n\n## Problem: 24-Hour Heartbeat Wastes Resources\n\nWithout setting active hours, heartbeat runs through the night and early morning, generating unnecessary API call costs.\n\n## Configure in ClawDeckX\n\nGo to Config Center → Agents → Find the \"Heartbeat\" area:\n\n1. In the \"Active Hours\" section, set **start time** and **end time** (24-hour format, e.g., 08:00 - 22:00)\n2. Set **timezone** (e.g., Asia/Shanghai, America/New_York)\n3. Outside active hours, heartbeat auto-pauses\n\n### Other Heartbeat Parameters\n\n- **every** — Heartbeat interval (e.g., \"30m\" for every 30 minutes)\n- **model** — Model used for heartbeat (recommend cheap models like gpt-4o-mini)\n- **lightContext** — Enable lightweight context mode to reduce heartbeat token consumption\n- **directPolicy** — Heartbeat policy in DMs: allow or block (heartbeat only in groups)\n\n## Recommended Configuration\n\n**Office Worker:**\n- activeHours: 08:00 - 23:00\n- every: 30m\n- model: gpt-4o-mini\n\n**Night Owl:**\n- activeHours: 10:00 - 24:00\n- every: 45m\n\n## Configuration Field\n\nConfig path: `agents.defaults.heartbeat.activeHours`\n\n```json\n\"heartbeat\": {\n  \"every\": \"30m\",\n  \"model\": \"gpt-4o-mini\",\n  \"activeHours\": {\n    \"start\": \"08:00\",\n    \"end\": \"23:00\",\n    \"timezone\": \"Asia/Shanghai\"\n  }\n}\n```"
+    }
+  },
+  "tip-logging-debugging": {
+    "name": "Logging & Debugging",
+    "description": "Configure log levels, output formats and diagnostic tools for efficient OpenClaw troubleshooting",
+    "content": {
+      "body": "## 日志配置\n\n当 OpenClaw 出现异常行为时，日志是排查问题的第一工具。\n\n### 在 ClawDeckX 中配置\n\n前往「配置中心 → 日志」：\n\n### 日志级别\n\n| 级别 | 说明 | 适用场景 |\n|------|------|----------|\n| **silent** | 不输出日志 | 不推荐 |\n| **error** | 仅错误 | 生产环境 |\n| **warn** | 错误 + 警告 | 生产环境（推荐） |\n| **info** | 包含运行信息 | 日常使用（默认） |\n| **debug** | 包含调试信息 | 排查问题时临时启用 |\n| **trace** | 最详细 | 深度排查（会产生大量日志） |\n\n### 控制台输出格式\n\n- **pretty** — 彩色格式化输出（开发环境推荐）\n- **compact** — 紧凑输出（生产环境推荐）\n- **json** — JSON 格式（便于日志收集系统解析）\n\n### 文件日志\n\n- **file** — 日志文件路径\n- **maxFileBytes** — 日志文件最大大小（超过后自动轮转）\n\n## 诊断工具\n\n前往「配置中心 → 日志 → 诊断」：\n\n### 卡顿检测\n\n- **stuckSessionWarnMs** — 会话处理超过此时间（毫秒）发出警告\n\n### OpenTelemetry（高级）\n\n如果你使用 Grafana、Jaeger 等可观测性平台，可以启用 OTEL 集成：\n- **otel.enabled** — 启用 OTEL\n- **otel.endpoint** — 收集器地址\n- **otel.traces/metrics/logs** — 分别控制链路追踪、指标、日志的导出\n\n### 缓存追踪\n\n启用 `cacheTrace` 可以记录每次 AI 请求的完整提示词和响应，用于分析 AI 行为：\n- **cacheTrace.enabled** — 启用\n- **cacheTrace.includeMessages** — 包含对话消息\n- **cacheTrace.includePrompt** — 包含系统提示\n\n## 敏感信息保护\n\n- **redactSensitive** — 设为 `tools` 可以在日志中隐藏工具调用的敏感参数\n- **redactPatterns** — 自定义脱敏正则表达式\n\n## 配置字段\n\n对应配置路径：`logging` 和 `diagnostics`"
+    }
+  },
+  "tip-message-reactions": {
+    "name": "Message Status Reactions",
+    "description": "Enable status emoji reactions so users can see AI processing stages in real-time",
+    "content": {
+      "body": "## 什么是状态表情？\n\n状态表情（Status Reactions）是 OpenClaw 在处理消息时自动添加到用户消息上的 emoji 反应。不同的 emoji 表示不同的处理阶段，让用户无需等待就能知道 AI 正在做什么。\n\n## 默认状态表情\n\n| 阶段 | 默认 Emoji | 含义 |\n|------|-----------|------|\n| thinking | 🤔 | AI 正在思考 |\n| tool | 🔧 | AI 正在使用工具 |\n| coding | 💻 | AI 正在编写代码 |\n| web | 🌐 | AI 正在搜索网络 |\n| done | ✅ | 处理完成 |\n| error | ❌ | 处理出错 |\n| stallSoft | ⏳ | 处理较慢 |\n| stallHard | ⚠️ | 处理卡住 |\n\n## 在 ClawDeckX 中配置\n\n前往「配置中心 → 消息」→ 找到「状态表情」区域：\n\n1. 打开「启用状态表情」开关\n2. 自定义每个阶段的 emoji（可选）\n3. 调整时间参数（可选）\n\n## 时间参数\n\n- **debounceMs** — 防抖延迟，避免频繁切换表情（默认 500ms）\n- **stallSoftMs** — 多久后显示「处理较慢」表情（默认 30000ms = 30 秒）\n- **stallHardMs** — 多久后显示「处理卡住」表情（默认 120000ms = 2 分钟）\n- **doneHoldMs** — 完成表情保持多久后移除（默认 5000ms = 5 秒）\n- **errorHoldMs** — 错误表情保持多久后移除\n\n## 其他消息优化\n\n- **ackReaction** — 收到消息时的确认表情（如 👀），让用户知道消息已收到\n- **removeAckAfterReply** — 回复后自动移除确认表情\n- **suppressToolErrors** — 抑制工具错误的详细信息（对用户更友好）\n\n## 配置字段\n\n对应配置路径：`messages.statusReactions`"
+    }
+  },
+  "tip-model-fallbacks": {
+    "name": "Model Fallback Chain",
+    "description": "Configure fallback models for automatic failover when the primary model is unavailable",
+    "content": {
+      "body": "## 为什么需要备用模型？\n\nAI 提供商可能因为限流（rate limit）、服务中断或账户余额不足而暂时不可用。配置备用链可以让 OpenClaw 在主模型失败时自动尝试下一个模型，保证 AI 助手始终在线。\n\n## 在 ClawDeckX 中配置\n\n1. 前往「配置中心 → 模型」\n2. 在「备用模型」区域，点击「添加备用模型」\n3. 从下拉列表中选择已配置的提供商和模型\n4. 可以添加多个备用模型，按优先级排列\n\n## 推荐搭配策略\n\n| 主模型 | 备用 1 | 备用 2 |\n|--------|--------|--------|\n| claude-sonnet | gpt-4o | gemini-pro |\n| gpt-4o | claude-sonnet | deepseek-chat |\n| gemini-pro | gpt-4o-mini | claude-haiku |\n\n**最佳实践：**\n- 主模型和备用模型使用**不同提供商**，避免同一家服务中断时全部失效\n- 备用模型可以选择更便宜的型号（如 gpt-4o-mini），在降级时节省成本\n- 至少配置 1 个备用模型，推荐配置 2 个\n\n## 配置字段\n\n对应配置路径：`agents.defaults.model.fallbacks`\n\n值为模型名称数组，如：\n```json\n\"fallbacks\": [\"gpt-4o\", \"gemini-pro\"]\n```"
+    }
+  },
+  "tip-multi-agent": {
+    "name": "Multi-Agent Collaboration",
+    "description": "Use different Agents for different scenarios, each with independent personality, memory and skill configuration",
+    "content": {
+      "body": "## 什么是多 Agent？\n\n多 Agent 让你创建多个独立的 AI 角色，每个 Agent 有自己的：\n\n- **IDENTITY.md** — 独立的身份和人格\n- **SOUL.md** — 独立的行为规则\n- **MEMORY/** — 独立的记忆系统\n- **技能** — 独立的技能配置\n\n## 使用场景\n\n| 场景 | Agent 示例 |\n|------|------------|\n| 工作 vs 生活 | 「工作助手」处理邮件和代码，「生活助手」管理日程和购物 |\n| 中文 vs 英文 | 一个 Agent 用中文，另一个用英文 |\n| 不同项目 | 每个项目一个 Agent，记忆和上下文完全隔离 |\n| 团队共享 | 不同团队成员各自的专属 Agent |\n\n## 配置方法\n\n### 1. 创建新 Agent\n\n在配置中心 → Agent → 新建 Agent，设置名称和 emoji。\n\n### 2. 分配频道\n\n每个 Agent 可以绑定到不同的频道，比如：\n- 工作 Agent → Slack\n- 生活 Agent → Telegram\n\n### 3. 独立配置\n\n为每个 Agent 配置独立的 IDENTITY.md、SOUL.md 和技能。\n\n## 高级：Agent 间协作\n\n多个 Agent 可以通过以下方式协作：\n\n- **共享记忆** — 部分记忆文件可以跨 Agent 共享\n- **消息路由** — 根据消息内容自动分配到合适的 Agent\n- **工作流** — 多 Agent 按流程协作完成复杂任务\n\n## 最佳实践\n\n- 从 2 个 Agent 开始（如工作 + 生活），逐步扩展\n- 每个 Agent 的 IDENTITY.md 要有明确的角色区分\n- 使用 ClawDeckX 的「多 Agent 管理」面板统一管理"
+    }
+  },
+  "tip-multi-channel-routing": {
+    "name": "Multi-Channel Routing",
+    "description": "Serve multiple chat platforms with a single AI, each channel can have different behavior rules",
+    "content": {
+      "body": "## 什么是多频道路由？\n\n多频道路由让你的 AI 助手同时连接 Telegram、Discord、WhatsApp、Signal 等多个聊天平台，**每个频道可以有独立的行为规则**。\n\n## 为什么需要它？\n\n- **统一管理** — 一个 AI 服务所有平台，不用为每个平台单独部署\n- **差异化行为** — 工作频道严肃专业，私人频道轻松活泼\n- **访问控制** — 不同频道设置不同的 allowFrom 白名单和 dmPolicy\n\n## 配置方法\n\n### 1. 添加多个频道\n\n在配置中心的「频道」部分，添加你需要的聊天平台，填入对应的 Token。\n\n### 2. 设置频道路由规则\n\n每个频道可以独立设置：\n- **dmPolicy** — 控制谁可以发起私聊（`open` / `allowlist` / `closed`）\n- **allowFrom** — 白名单，只允许特定用户或群组\n- **groupPolicy** — 群组消息的响应策略\n\n### 3. 频道级别 SOUL 覆盖\n\n你可以为特定频道添加额外的 SOUL 指令，比如让 Discord 频道用英文回复，Telegram 频道用中文回复。\n\n## 最佳实践\n\n- 先连接一个频道确认正常，再逐步添加其他频道\n- 生产环境建议为每个频道设置 allowFrom 白名单\n- 使用 `openclaw channels status --probe` 验证所有频道状态"
+    }
+  },
+  "tip-sandbox-mode": {
+    "name": "Sandbox Isolation",
+    "description": "Enable Docker sandbox to isolate AI command execution and code running — prevent accidental system damage",
+    "content": {
+      "body": "## 为什么需要沙箱？\n\n当 AI 助手执行命令或运行代码时，默认在宿主机上直接运行。如果 AI 产生错误操作（如误删文件），可能造成不可逆的损害。沙箱通过 Docker 容器隔离执行环境，确保安全。\n\n## 沙箱模式\n\n| 模式 | 说明 | 适用场景 |\n|------|------|----------|\n| **off** | 不使用沙箱（默认） | 个人设备，信任环境 |\n| **non-main** | 仅非主代理使用沙箱 | 多代理场景，主代理需要直接操作 |\n| **all** | 所有代理都在沙箱中运行 | 生产环境，最高安全级别 |\n\n## 在 ClawDeckX 中配置\n\n1. 前往「配置中心 → 代理 → 沙箱」\n2. 在「沙箱模式」下拉列表中选择模式\n3. 选择工作区访问级别：\n   - **none** — 沙箱内无法访问工作区文件\n   - **ro** — 只读访问（推荐）\n   - **rw** — 读写访问\n\n## Docker 容器配置\n\n在「Docker 设置」中可以精细控制容器资源：\n- **image** — 使用的 Docker 镜像\n- **memory** — 容器内存限制（如 512m、1g）\n- **cpus** — CPU 核心数限制\n- **pidsLimit** — 进程数限制（防止 fork 炸弹）\n- **network** — 网络模式（bridge/none，禁止使用 host）\n- **capDrop** — 要移除的 Linux Capabilities\n\n## 前提条件\n\n- 需要安装 Docker 并确保 Docker 服务正在运行\n- OpenClaw 进程需要有权限访问 Docker API\n- Windows 用户需要 Docker Desktop 或 WSL2 中的 Docker\n\n## 配置字段\n\n对应配置路径：`agents.defaults.sandbox.mode`\n\n值为 `off` | `non-main` | `all`"
+    }
+  },
+  "tip-security-hardening": {
+    "name": "Security Hardening",
+    "description": "Protect your AI assistant with allowlists, access control and sandbox mode",
+    "content": {
+      "body": "## 为什么需要安全加固？\n\n如果你的 AI 助手连接了公开的聊天平台（如 Telegram、Discord），任何人都可能尝试与它对话。安全加固确保只有授权用户才能使用。\n\n## 三层安全防护\n\n### 1. allowFrom 白名单\n\n限制哪些用户或群组可以与 AI 对话：\n\n```yaml\nchannels:\n  telegram:\n    allowFrom:\n      - \"user:123456789\"    # 特定用户\n      - \"group:-100xxxx\"    # 特定群组\n```\n\n### 2. dmPolicy 访问控制\n\n控制私聊权限：\n\n- **`open`** — 任何人都可以私聊（不推荐用于生产）\n- **`allowlist`** — 只有白名单用户可以私聊（推荐）\n- **`closed`** — 禁止所有私聊\n\n### 3. 网关认证\n\n保护 Web UI 和 API 接口：\n\n- **Token 认证** — 设置一个访问 Token\n- **密码认证** — 设置用户名和密码\n- **TLS 加密** — 生产环境强烈建议启用\n\n## 沙箱模式\n\n限制 AI 可以执行的操作：\n\n- 禁用文件系统写入\n- 禁用命令执行\n- 限制网络访问范围\n\n## 最佳实践\n\n- **生产环境必须** 设置 allowFrom 和 dmPolicy\n- 使用 Token 或密码保护网关 API\n- 定期检查访问日志，确认没有异常访问\n- 使用健康中心的安全诊断验证配置"
+    }
+  },
+  "tip-session-management": {
+    "name": "Session Management",
+    "description": "Master session reset, context compaction and scope settings for more efficient conversations",
+    "content": {
+      "body": "## Session 基础\n\n每次对话都在一个 Session 中进行。Session 会记住上下文，但太长的上下文会增加成本和延迟。\n\n## 常用命令\n\n| 命令 | 作用 |\n|------|------|\n| `/new` | 重置当前会话，清空上下文 |\n| `/compact` | 手动压缩上下文，保留关键信息 |\n| `/undo` | 撤销上一条消息 |\n\n## 压缩阈值（Compaction）\n\n当 Session 的 token 数超过阈值时，AI 会自动压缩上下文：\n\n- **推荐值**：`50000`（50K tokens）\n- **低成本**：`20000`（更频繁压缩，但节省 token）\n- **高质量**：`100000`（更少压缩，保留更多上下文）\n\n## 作用域设置\n\n- **per-sender** — 每个用户独立 Session（默认，推荐）\n- **per-channel** — 每个频道/群组共享 Session\n\n## 记忆刷新（Memory Flush）\n\n开启 `memoryFlush` 后，Session 压缩时会自动将重要信息保存到长期记忆文件中，防止关键信息因压缩而丢失。\n\n## 最佳实践\n\n- 长时间不同话题的对话，主动用 `/new` 重置\n- 开启 memoryFlush 防止重要信息丢失\n- 根据你的模型 context window 大小调整压缩阈值"
+    }
+  },
+  "tip-session-reset": {
+    "name": "Session Auto-Reset",
+    "description": "Configure automatic session reset — daily clean slate or idle timeout for fresh conversations",
+    "content": {
+      "body": "## 为什么需要自动重置？\n\n长时间的对话会积累大量上下文，导致：\n- AI 回复速度变慢（处理更多历史信息）\n- Token 消耗增加\n- 上下文混乱（多个话题混在一起）\n\n自动重置可以定期清空对话历史，让每次对话从头开始。\n\n## 重置模式\n\n| 模式 | 说明 |\n|------|------|\n| **daily** | 每天在指定小时自动重置 |\n| **idle** | 空闲超过指定分钟数后重置 |\n\n## 在 ClawDeckX 中配置\n\n前往「配置中心 → 会话」→ 找到「自动重置」区域：\n\n1. 选择重置模式（daily 或 idle）\n2. daily 模式：设置 `atHour`（0-23，如 6 表示凌晨 6 点重置）\n3. idle 模式：设置 `idleMinutes`（如 120 表示 2 小时无消息后重置）\n\n## 按对话类型设置不同策略\n\n可以为不同类型的对话设置不同的重置策略：\n\n- **direct** — 私聊会话\n- **group** — 群组会话\n- **thread** — 主题/帖子会话\n\n前往「配置中心 → 会话 → 按类型重置」分别配置。\n\n## 按频道设置不同策略\n\n也可以为不同频道设置独立的重置策略。例如：\n- Telegram 使用 daily 模式（每天重置）\n- Discord 使用 idle 模式（2 小时无消息后重置）\n\n前往「配置中心 → 会话 → 按频道重置」配置。\n\n## 手动重置\n\n随时可以在聊天中发送 `/new` 命令手动重置当前会话，或发送 `/compact` 手动压缩上下文。\n\n## 配置字段\n\n对应配置路径：`session.reset`\n\n```json\n\"session\": {\n  \"reset\": {\n    \"mode\": \"daily\",\n    \"atHour\": 6\n  }\n}\n```"
+    }
+  },
+  "tip-subagent-model": {
+    "name": "Sub-agent Model Optimization",
+    "description": "Set independent low-cost models for sub-agents — maintain main agent quality while reducing overall costs",
+    "content": {
+      "body": "## 什么是子代理？\n\n当 AI 助手需要执行复杂任务时，它可以「分派」（spawn）子代理来并行处理子任务。例如：\n- 主代理分析需求，子代理分别去搜索资料、编写代码、执行测试\n- 多个子代理可以同时运行，加速任务完成\n\n## 优化策略：子代理使用低成本模型\n\n子代理通常执行较简单的子任务，不需要最强的模型。为子代理设置低成本模型可以显著降低费用：\n\n| 模型搭配 | 主代理 | 子代理 | 预估节省 |\n|----------|--------|--------|----------|\n| 方案 A | claude-sonnet | claude-haiku | ~70% |\n| 方案 B | gpt-4o | gpt-4o-mini | ~80% |\n| 方案 C | gemini-pro | gemini-flash | ~90% |\n\n## 在 ClawDeckX 中配置\n\n前往「配置中心 → 代理」→ 找到「子代理」区域：\n\n1. 在「子代理模型」中选择一个低成本模型\n2. 设置并发限制（maxConcurrent，默认 3）\n3. 设置最大嵌套深度（maxSpawnDepth，默认 1 = 不嵌套）\n\n### 关键参数\n\n- **model** — 子代理使用的模型（可以和主模型不同）\n- **maxConcurrent** — 同时运行的最大子代理数\n- **maxSpawnDepth** — 最大嵌套深度（1-5，不建议超过 2）\n- **maxChildrenPerAgent** — 单个代理最多产生的子代理数（1-20，默认 5）\n- **runTimeoutSeconds** — 子代理运行超时时间\n- **archiveAfterMinutes** — 子代理完成后多久自动归档\n- **thinking** — 子代理的思考模式（建议设为 off 或 minimal 以节省 token）\n\n## 配置字段\n\n对应配置路径：`agents.defaults.subagents`\n\n```json\n\"subagents\": {\n  \"model\": \"gpt-4o-mini\",\n  \"maxConcurrent\": 3,\n  \"maxSpawnDepth\": 1,\n  \"thinking\": \"off\"\n}\n```"
+    }
+  },
+  "tip-thinking-mode": {
+    "name": "Thinking Mode",
+    "description": "Enable extended thinking for complex reasoning, planning and analysis tasks",
+    "content": {
+      "body": "## 什么是 Thinking 模式？\n\n开启 Thinking（Extended Thinking）后，AI 在回答前会先进行**深度推理**，类似人类的「先想清楚再说」。\n\n## 适用场景\n\n- **复杂数学推理** — 多步骤计算和证明\n- **代码架构设计** — 需要权衡多种方案\n- **长文分析** — 阅读长文档并总结关键信息\n- **策略规划** — 制定多步骤计划\n- **调试复杂问题** — 需要系统性排查\n\n## 配置方法\n\n在配置中心 → 模型 → 开启 `reasoning` 选项。\n\n```yaml\nagents:\n  defaults:\n    model:\n      reasoning: true\n```\n\n## 支持的模型\n\n不是所有模型都支持 Thinking：\n\n| 模型 | 支持 Thinking |\n|------|---------------|\n| Claude Opus / Sonnet | ✅ |\n| GPT-4o / 4.5 | ✅ |\n| Gemini Pro / Ultra | ✅ |\n| Claude Haiku | ❌ |\n| GPT-4o-mini | ❌ |\n\n## 注意事项\n\n- **成本更高** — Thinking 会产生额外的 token 消耗（thinking tokens）\n- **延迟更长** — AI 需要更多时间思考，首次响应会慢几秒\n- **不适合简单问答** — 日常闲聊不需要开启\n\n## 最佳实践\n\n- 对于主力工作 Agent 开启 Thinking\n- 对于轻量级的生活助手可以关闭以节省成本\n- 可以通过 `/think` 命令临时触发深度思考，而非全局开启"
+    }
+  },
+  "tip-tool-profiles": {
+    "name": "Tool Permission Profiles",
+    "description": "Control which tools your AI can use via profiles — balance capability and security",
+    "content": {
+      "body": "## 工具配置文件（Profile）\n\nOpenClaw 提供 4 种预设的工具配置文件，控制 AI 可以使用的工具范围：\n\n| Profile | 说明 | 适用场景 |\n|---------|------|----------|\n| **full** | 所有工具可用（默认） | 个人使用，信任环境 |\n| **coding** | 代码编辑、命令执行、文件操作 | 编程助手 |\n| **messaging** | 消息发送、基本对话 | 纯聊天场景 |\n| **minimal** | 最小权限，仅基本对话 | 高安全要求 |\n\n## 在 ClawDeckX 中配置\n\n1. 前往「配置中心 → 工具」\n2. 在「工具配置文件」下拉列表中选择合适的 Profile\n3. 如需更精细的控制，使用 allow/deny 列表\n\n## 精细权限控制\n\n- **deny** — 明确禁止的工具列表（黑名单）\n- **allow** — 仅允许的工具列表（白名单，覆盖 profile）\n- **alsoAllow** — 在 profile 基础上额外允许的工具\n- **byProvider** — 按提供商设置不同权限\n\n**注意：** allow 和 alsoAllow 不能同时使用。如果你设置了 allow，它会完全覆盖 profile 的工具列表。\n\n## 按代理设置不同权限\n\n每个代理可以有独立的工具权限。在「配置中心 → 代理」→ 选择代理 → 工具设置中配置。这样你可以让编程代理有完整权限，而聊天代理只有最小权限。\n\n## 配置字段\n\n对应配置路径：`tools.profile`\n\n值为 `minimal` | `coding` | `messaging` | `full`"
+    }
+  },
+  "tip-web-search": {
+    "name": "Web Search Enhancement",
+    "description": "Enable web search for real-time information — supports Brave, Perplexity, Gemini, Grok, Kimi",
+    "content": {
+      "body": "## 为什么启用网络搜索？\n\nAI 模型的训练数据有截止日期，无法获取最新信息。启用网络搜索后，AI 助手可以：\n- 查找最新新闻、天气、股价等实时信息\n- 搜索技术文档和 API 参考\n- 验证自身知识的准确性\n\n## 支持的搜索提供商\n\n| 提供商 | 特点 | API Key |\n|--------|------|---------|\n| **Brave** | 隐私优先，免费额度 | 需要 |\n| **Perplexity** | AI 增强搜索结果 | 需要 |\n| **Gemini** | Google 搜索能力 | 需要（复用 Google 提供商） |\n| **Grok** | X 平台集成，实时性强 | 需要 |\n| **Kimi** | 中文搜索优化 | 需要 |\n\n## 在 ClawDeckX 中配置\n\n1. 前往「配置中心 → 工具」\n2. 找到「网络搜索」区域\n3. 打开「启用网络搜索」开关\n4. 选择搜索提供商\n5. 填入对应的 API Key\n\n## 可调参数\n\n- **maxResults** — 每次搜索返回的最大结果数（默认 5，增大可提高信息覆盖但增加 token 消耗）\n- **timeoutSeconds** — 搜索超时时间\n- **cacheTtlMinutes** — 搜索结果缓存时间（避免重复搜索相同内容，减少 API 调用）\n\n## 配合网页抓取\n\n除了搜索，还可以启用网页抓取（web fetch）让 AI 读取搜索结果中的完整页面内容：\n- 在「网络抓取」区域打开「启用网页抓取」开关\n- 设置 maxChars 控制每个页面抓取的最大字符数\n\n## 配置字段\n\n对应配置路径：`tools.web.search.enabled` 和 `tools.web.search.provider`"
+    }
+  }
+}

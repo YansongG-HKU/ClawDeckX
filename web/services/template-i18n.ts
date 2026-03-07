@@ -26,6 +26,9 @@ const staticTranslations: Record<string, Record<string, TemplateI18nFile>> = {};
 
 // Lazy load translations
 const translationLoaders: Record<string, Record<string, () => Promise<TemplateI18nFile>>> = {
+  en: {
+    'knowledge': () => import('../../templates/official/i18n/en/knowledge.json').then(m => m.default || m),
+  },
   zh: {
     'scenarios/productivity': () => import('../../templates/official/i18n/zh/scenarios/productivity.json').then(m => m.default || m),
     'scenarios/social': () => import('../../templates/official/i18n/zh/scenarios/social.json').then(m => m.default || m),
@@ -36,6 +39,7 @@ const translationLoaders: Record<string, Record<string, () => Promise<TemplateI1
     'scenarios/family': () => import('../../templates/official/i18n/zh/scenarios/family.json').then(m => m.default || m),
     'multi-agent': () => import('../../templates/official/i18n/zh/multi-agent.json').then(m => m.default || m),
     'agents': () => import('../../templates/official/i18n/zh/agents.json').then(m => m.default || m),
+    'knowledge': () => import('../../templates/official/i18n/zh/knowledge.json').then(m => m.default || m),
   },
   'zh-TW': {
     'scenarios/productivity': () => import('../../templates/official/i18n/zh-TW/scenarios/productivity.json').then(m => m.default || m),
@@ -47,6 +51,7 @@ const translationLoaders: Record<string, Record<string, () => Promise<TemplateI1
     'scenarios/family': () => import('../../templates/official/i18n/zh-TW/scenarios/family.json').then(m => m.default || m),
     'multi-agent': () => import('../../templates/official/i18n/zh-TW/multi-agent.json').then(m => m.default || m),
     'agents': () => import('../../templates/official/i18n/zh-TW/agents.json').then(m => m.default || m),
+    'knowledge': () => import('../../templates/official/i18n/zh-TW/knowledge.json').then(m => m.default || m),
   },
   ja: {
     'scenarios/productivity': () => import('../../templates/official/i18n/ja/scenarios/productivity.json').then(m => m.default || m),
@@ -58,6 +63,7 @@ const translationLoaders: Record<string, Record<string, () => Promise<TemplateI1
     'scenarios/family': () => import('../../templates/official/i18n/ja/scenarios/family.json').then(m => m.default || m),
     'multi-agent': () => import('../../templates/official/i18n/ja/multi-agent.json').then(m => m.default || m),
     'agents': () => import('../../templates/official/i18n/ja/agents.json').then(m => m.default || m),
+    'knowledge': () => import('../../templates/official/i18n/ja/knowledge.json').then(m => m.default || m),
   },
   ko: {
     'scenarios/productivity': () => import('../../templates/official/i18n/ko/scenarios/productivity.json').then(m => m.default || m),
@@ -69,6 +75,7 @@ const translationLoaders: Record<string, Record<string, () => Promise<TemplateI1
     'scenarios/family': () => import('../../templates/official/i18n/ko/scenarios/family.json').then(m => m.default || m),
     'multi-agent': () => import('../../templates/official/i18n/ko/multi-agent.json').then(m => m.default || m),
     'agents': () => import('../../templates/official/i18n/ko/agents.json').then(m => m.default || m),
+    'knowledge': () => import('../../templates/official/i18n/ko/knowledge.json').then(m => m.default || m),
   },
   es: {
     'scenarios/productivity': () => import('../../templates/official/i18n/es/scenarios/productivity.json').then(m => m.default || m),
@@ -80,6 +87,7 @@ const translationLoaders: Record<string, Record<string, () => Promise<TemplateI1
     'scenarios/family': () => import('../../templates/official/i18n/es/scenarios/family.json').then(m => m.default || m),
     'multi-agent': () => import('../../templates/official/i18n/es/multi-agent.json').then(m => m.default || m),
     'agents': () => import('../../templates/official/i18n/es/agents.json').then(m => m.default || m),
+    'knowledge': () => import('../../templates/official/i18n/es/knowledge.json').then(m => m.default || m),
   },
   'pt-BR': {
     'scenarios/productivity': () => import('../../templates/official/i18n/pt-BR/scenarios/productivity.json').then(m => m.default || m),
@@ -91,6 +99,7 @@ const translationLoaders: Record<string, Record<string, () => Promise<TemplateI1
     'scenarios/family': () => import('../../templates/official/i18n/pt-BR/scenarios/family.json').then(m => m.default || m),
     'multi-agent': () => import('../../templates/official/i18n/pt-BR/multi-agent.json').then(m => m.default || m),
     'agents': () => import('../../templates/official/i18n/pt-BR/agents.json').then(m => m.default || m),
+    'knowledge': () => import('../../templates/official/i18n/pt-BR/knowledge.json').then(m => m.default || m),
   },
   de: {
     'scenarios/productivity': () => import('../../templates/official/i18n/de/scenarios/productivity.json').then(m => m.default || m),
@@ -102,6 +111,7 @@ const translationLoaders: Record<string, Record<string, () => Promise<TemplateI1
     'scenarios/family': () => import('../../templates/official/i18n/de/scenarios/family.json').then(m => m.default || m),
     'multi-agent': () => import('../../templates/official/i18n/de/multi-agent.json').then(m => m.default || m),
     'agents': () => import('../../templates/official/i18n/de/agents.json').then(m => m.default || m),
+    'knowledge': () => import('../../templates/official/i18n/de/knowledge.json').then(m => m.default || m),
   },
   fr: {
     'scenarios/productivity': () => import('../../templates/official/i18n/fr/scenarios/productivity.json').then(m => m.default || m),
@@ -113,6 +123,7 @@ const translationLoaders: Record<string, Record<string, () => Promise<TemplateI1
     'scenarios/family': () => import('../../templates/official/i18n/fr/scenarios/family.json').then(m => m.default || m),
     'multi-agent': () => import('../../templates/official/i18n/fr/multi-agent.json').then(m => m.default || m),
     'agents': () => import('../../templates/official/i18n/fr/agents.json').then(m => m.default || m),
+    'knowledge': () => import('../../templates/official/i18n/fr/knowledge.json').then(m => m.default || m),
   },
   ru: {
     'scenarios/productivity': () => import('../../templates/official/i18n/ru/scenarios/productivity.json').then(m => m.default || m),
@@ -124,6 +135,7 @@ const translationLoaders: Record<string, Record<string, () => Promise<TemplateI1
     'scenarios/family': () => import('../../templates/official/i18n/ru/scenarios/family.json').then(m => m.default || m),
     'multi-agent': () => import('../../templates/official/i18n/ru/multi-agent.json').then(m => m.default || m),
     'agents': () => import('../../templates/official/i18n/ru/agents.json').then(m => m.default || m),
+    'knowledge': () => import('../../templates/official/i18n/ru/knowledge.json').then(m => m.default || m),
   },
   ar: {
     'scenarios/productivity': () => import('../../templates/official/i18n/ar/scenarios/productivity.json').then(m => m.default || m),
@@ -135,6 +147,7 @@ const translationLoaders: Record<string, Record<string, () => Promise<TemplateI1
     'scenarios/family': () => import('../../templates/official/i18n/ar/scenarios/family.json').then(m => m.default || m),
     'multi-agent': () => import('../../templates/official/i18n/ar/multi-agent.json').then(m => m.default || m),
     'agents': () => import('../../templates/official/i18n/ar/agents.json').then(m => m.default || m),
+    'knowledge': () => import('../../templates/official/i18n/ar/knowledge.json').then(m => m.default || m),
   },
   hi: {
     'scenarios/productivity': () => import('../../templates/official/i18n/hi/scenarios/productivity.json').then(m => m.default || m),
@@ -146,6 +159,7 @@ const translationLoaders: Record<string, Record<string, () => Promise<TemplateI1
     'scenarios/family': () => import('../../templates/official/i18n/hi/scenarios/family.json').then(m => m.default || m),
     'multi-agent': () => import('../../templates/official/i18n/hi/multi-agent.json').then(m => m.default || m),
     'agents': () => import('../../templates/official/i18n/hi/agents.json').then(m => m.default || m),
+    'knowledge': () => import('../../templates/official/i18n/hi/knowledge.json').then(m => m.default || m),
   },
   id: {
     'scenarios/productivity': () => import('../../templates/official/i18n/id/scenarios/productivity.json').then(m => m.default || m),
@@ -157,6 +171,7 @@ const translationLoaders: Record<string, Record<string, () => Promise<TemplateI1
     'scenarios/family': () => import('../../templates/official/i18n/id/scenarios/family.json').then(m => m.default || m),
     'multi-agent': () => import('../../templates/official/i18n/id/multi-agent.json').then(m => m.default || m),
     'agents': () => import('../../templates/official/i18n/id/agents.json').then(m => m.default || m),
+    'knowledge': () => import('../../templates/official/i18n/id/knowledge.json').then(m => m.default || m),
   },
 };
 
@@ -165,9 +180,9 @@ class TemplateI18nManager {
   private loadingPromises: Map<string, Promise<void>> = new Map();
 
   async loadTranslations(category: string, subcategory: string | null, lang: Language): Promise<void> {
-    if (lang === 'en') return; // English is default, no need to load
-
+    // English is default for scenarios/agents/multi-agent, but knowledge items are in Chinese
     const path = subcategory ? `${category}/${subcategory}` : category;
+    if (lang === 'en' && path !== 'knowledge') return;
     const cacheKey = `${path}:${lang}`;
 
     // Check cache
@@ -222,9 +237,9 @@ class TemplateI18nManager {
     subcategory: string | null,
     lang: Language
   ): T {
-    if (lang === 'en') return template;
-
     const path = subcategory ? `${category}/${subcategory}` : category;
+    // English is default for scenarios/agents, but knowledge needs translation (source is Chinese)
+    if (lang === 'en' && path !== 'knowledge') return template;
     const translations = this.cache[path]?.[lang];
     const override = translations?.[template.id] as I18nOverride | undefined;
 

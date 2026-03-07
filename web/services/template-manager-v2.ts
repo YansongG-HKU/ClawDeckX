@@ -431,13 +431,10 @@ class TemplateManagerV2 {
     // Knowledge items may be empty (no content yet), that's OK
     const data = result.data || [];
 
-    // Apply i18n
-    const subcategories = [...new Set(data.map(t => t.metadata.category))];
-    await Promise.all(
-      subcategories.map(subcat => templateI18n.loadTranslations('knowledge', subcat, language))
-    );
+    // Apply i18n — knowledge uses a single unified translation file per language
+    await templateI18n.loadTranslations('knowledge', null, language);
     const localized = data.map((item) => {
-      return templateI18n.getLocalizedTemplate(item, 'knowledge', item.metadata.category, language);
+      return templateI18n.getLocalizedTemplate(item, 'knowledge', null, language);
     });
 
     this.knowledgeCache.set(cacheKey, localized);

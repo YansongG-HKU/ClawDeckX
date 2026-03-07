@@ -171,12 +171,21 @@ function relativeTime(ts: string, text: any): string {
 function formatIssueTitle(raw?: string): string {
   if (!raw) return '';
   const s = raw.trim();
-  // Not JSON — return as-is
+  // Not JSON — check for known prefixes with embedded JSON
   if (!s.startsWith('{') && !s.startsWith('[')) {
-    // Strip redundant prefix like "Gateway warning: " when followed by JSON-like content
-    const prefixMatch = s.match(/^(Gateway (?:error|warning):\s*)(\{.+)/s);
-    if (prefixMatch) return formatIssueTitle(prefixMatch[2]);
-    // Clean up "component: {...} message: {...}: text" pattern
+    // "Gateway error/warning: {JSON...}" → extract from JSON part
+    const gwMatch = s.match(/^(Gateway (?:error|warning):\s*)(\{.+)/s);
+    if (gwMatch) return `${gwMatch[1]}${formatIssueTitle(gwMatch[2])}`;
+    // "Event error/warning [event]: {JSON...}" → extract from JSON part
+    const evtMatch = s.match(/^(Event (?:error|warning) \[[^\]]+\]:\s*)(\{.+)/s);
+    if (evtMatch) return `${evtMatch[1]}${formatIssueTitle(evtMatch[2])}`;
+    // "Tool call: name → {JSON...}" → extract key params from JSON
+    const toolMatch = s.match(/^(Tool call:\s*\S+)\s*→\s*(\{.+)/s);
+    if (toolMatch) return `${toolMatch[1]} → ${formatIssueTitle(toolMatch[2])}`;
+    // "[role] {JSON...}" → extract from JSON part
+    const roleMatch = s.match(/^(\[[^\]]+\]\s*)(\{.+)/s);
+    if (roleMatch) return `${roleMatch[1]}${formatIssueTitle(roleMatch[2])}`;
+    // "component: {...} message: {...}: text" pattern
     const compMsgMatch = s.match(/^component:\s*\{[^}]*"?([^"}\s,]+)"?\}.*?message:\s*(?:\{[^}]*\}:\s*)?(.+)/i);
     if (compMsgMatch) return `[${compMsgMatch[1]}] ${compMsgMatch[2].slice(0, 80)}`;
     return s;
