@@ -330,10 +330,11 @@ func restartSelf() {
 	}
 
 	if runtime.GOOS == "windows" {
-		// On Windows, start a new process and exit
+		// On Windows, start a new process with DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
+		// so it survives the parent exit. Without these flags the child is killed
+		// when os.Exit terminates the current process tree.
 		cmd := exec.Command(exe, os.Args[1:]...)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
+		cmd.SysProcAttr = selfUpdateSysProcAttr()
 		cmd.Start()
 		os.Exit(0)
 	} else {

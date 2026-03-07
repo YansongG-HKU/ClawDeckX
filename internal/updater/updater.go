@@ -231,6 +231,12 @@ func ApplyUpdate(ctx context.Context, downloadURL string, progressFn func(ApplyP
 		return fmt.Errorf("download returned HTTP %d", resp.StatusCode)
 	}
 
+	// Reject HTML responses — mirrors may return error pages with HTTP 200
+	ct := resp.Header.Get("Content-Type")
+	if strings.Contains(ct, "text/html") {
+		return fmt.Errorf("download returned HTML instead of binary (Content-Type: %s), mirror may be broken", ct)
+	}
+
 	totalSize := resp.ContentLength
 
 	// Create temp file in same directory as current executable
@@ -285,8 +291,12 @@ func ApplyUpdate(ctx context.Context, downloadURL string, progressFn func(ApplyP
 	checksum := hex.EncodeToString(hasher.Sum(nil))
 	logger.Config.Info().Str("checksum", checksum).Int64("size", downloaded).Msg("update downloaded")
 
-	// 2. Verify: try to read checksums.txt from release if available
+	// 2. Verify: ensure downloaded file is a valid binary, not HTML/text garbage
 	progressFn(ApplyProgress{Stage: "verifying", Percent: 100})
+
+	if err := validateBinaryMagic(tmpPath); err != nil {
+		return fmt.Errorf("downloaded file is not a valid binary: %w", err)
+	}
 
 	// 3. Replace binary
 	progressFn(ApplyProgress{Stage: "replacing", Percent: 100})
@@ -344,6 +354,46 @@ func replaceBinary(currentPath, newPath string) error {
 		return fmt.Errorf("rename: %w", err)
 	}
 	return nil
+}
+
+// validateBinaryMagic checks that the file starts with a valid executable magic number.
+// This prevents replacing the binary with HTML error pages or other garbage.
+func validateBinaryMagic(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	header := make([]byte, 4)
+	n, err := f.Read(header)
+	if err != nil || n < 2 {
+		return fmt.Errorf("file too small or unreadable (%d bytes read)", n)
+	}
+
+	// ELF (Linux): 0x7f 'E' 'L' 'F'
+	if n >= 4 && header[0] == 0x7f && header[1] == 'E' && header[2] == 'L' && header[3] == 'F' {
+		return nil
+	}
+	// MZ / PE (Windows): 'M' 'Z'
+	if header[0] == 'M' && header[1] == 'Z' {
+		return nil
+	}
+	// Mach-O (macOS): 0xFEEDFACE, 0xFEEDFACF, 0xCEFAEDFE, 0xCFFAEDFE, or fat binary 0xCAFEBABE
+	if n >= 4 {
+		magic := uint32(header[0])<<24 | uint32(header[1])<<16 | uint32(header[2])<<8 | uint32(header[3])
+		switch magic {
+		case 0xFEEDFACE, 0xFEEDFACF, 0xCEFAEDFE, 0xCFFAEDFE, 0xCAFEBABE:
+			return nil
+		}
+	}
+
+	// Show first bytes for diagnosis
+	preview := string(header[:n])
+	if len(preview) > 40 {
+		preview = preview[:40]
+	}
+	return fmt.Errorf("unrecognized file header (starts with %q), expected ELF/PE/Mach-O binary", preview)
 }
 
 // compareSemver compares two semver strings; returns positive if a > b.

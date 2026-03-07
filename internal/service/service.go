@@ -16,7 +16,7 @@ func IsInstalled() bool {
 	case "darwin":
 		return fileExists(filepath.Join(os.Getenv("HOME"), "Library/LaunchAgents/ai.clawdeckx.plist"))
 	case "windows":
-		out, _ := exec.Command("sc", "query", "ClawDeckX").Output()
+		out, _ := exec.Command("schtasks", "/Query", "/TN", "ClawDeckX").Output()
 		return len(out) > 0
 	}
 	return false
@@ -126,7 +126,48 @@ func installDarwin(port int) error {
 }
 
 func installWindows(port int) error {
-	return nil // Windows support later
+	exe, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("get executable path: %w", err)
+	}
+	absExe, _ := filepath.Abs(exe)
+
+	// Create a .cmd wrapper script in the same directory
+	stateDir := filepath.Dir(absExe)
+	scriptPath := filepath.Join(stateDir, "clawdeckx-service.cmd")
+	script := fmt.Sprintf("@echo off\r\nrem ClawDeckX Service\r\ncd /d \"%s\"\r\n\"%s\" --port %d\r\n",
+		stateDir, absExe, port)
+	if err := os.WriteFile(scriptPath, []byte(script), 0644); err != nil {
+		return fmt.Errorf("write service script: %w", err)
+	}
+
+	// Create VBS launcher to run without visible console window
+	launcherPath := filepath.Join(stateDir, "clawdeckx-launcher.vbs")
+	vbs := fmt.Sprintf("Set ws = CreateObject(\"WScript.Shell\")\r\nws.Run \"%s\", 0, False\r\n", scriptPath)
+	if err := os.WriteFile(launcherPath, []byte(vbs), 0644); err != nil {
+		launcherPath = "" // fallback to .cmd
+	}
+
+	// Remove existing task if present
+	exec.Command("schtasks", "/Delete", "/F", "/TN", "ClawDeckX").Run()
+
+	// Determine which script to register
+	taskTarget := scriptPath
+	if launcherPath != "" {
+		taskTarget = launcherPath
+	}
+
+	// Create scheduled task: run on logon
+	cmd := exec.Command("schtasks", "/Create", "/F",
+		"/SC", "ONLOGON",
+		"/RL", "LIMITED",
+		"/TN", "ClawDeckX",
+		"/TR", fmt.Sprintf(`"%s"`, taskTarget))
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("create scheduled task: %s: %w", string(out), err)
+	}
+	return nil
 }
 
 func uninstallLinux() error {
@@ -160,5 +201,16 @@ func uninstallDarwin() error {
 }
 
 func uninstallWindows() error {
-	return nil // Windows support later
+	exe, _ := os.Executable()
+	absExe, _ := filepath.Abs(exe)
+	stateDir := filepath.Dir(absExe)
+
+	// Stop and delete the scheduled task
+	exec.Command("schtasks", "/End", "/TN", "ClawDeckX").Run()
+	exec.Command("schtasks", "/Delete", "/F", "/TN", "ClawDeckX").Run()
+
+	// Clean up task scripts
+	os.Remove(filepath.Join(stateDir, "clawdeckx-service.cmd"))
+	os.Remove(filepath.Join(stateDir, "clawdeckx-launcher.vbs"))
+	return nil
 }
