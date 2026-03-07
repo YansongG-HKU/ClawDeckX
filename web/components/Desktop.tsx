@@ -315,9 +315,11 @@ const Desktop: React.FC<DesktopProps> = ({
               onMouseEnter={() => handleAppHover(app.id)}
               className="flex flex-col items-center gap-1 group cursor-pointer w-full p-1 rounded-xl hover:bg-white/10 transition-colors"
             >
-              <div className={`relative w-[50px] h-[50px] rounded-[1.1rem] bg-gradient-to-b ${app.gradient} flex items-center justify-center shadow-[0_8px_16px_-4px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.3)] border-[0.5px] border-black/10 group-hover:brightness-110 group-active:scale-90 transition-all duration-200 overflow-hidden shrink-0`}>
-                <div className="absolute top-0 start-0 end-0 h-[40%] bg-gradient-to-b from-white/30 to-transparent pointer-events-none"></div>
-                <span className="material-symbols-outlined text-[26px] text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] select-none z-10">{app.icon}</span>
+              <div className="relative shrink-0">
+                <div className={`w-[50px] h-[50px] rounded-[1.1rem] bg-gradient-to-b ${app.gradient} flex items-center justify-center shadow-[0_8px_16px_-4px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.3)] border-[0.5px] border-black/10 group-hover:brightness-110 group-active:scale-90 transition-all duration-200 overflow-hidden`}>
+                  <div className="absolute top-0 start-0 end-0 h-[40%] bg-gradient-to-b from-white/30 to-transparent pointer-events-none"></div>
+                  <span className="material-symbols-outlined text-[26px] text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] select-none z-10">{app.icon}</span>
+                </div>
                 <Badge count={(badges as any)[app.id] || 0} />
               </div>
               <div className="w-full h-[28px] flex items-start justify-center overflow-hidden">
@@ -348,9 +350,11 @@ const Desktop: React.FC<DesktopProps> = ({
                 onPointerDown={(e) => onIconPointerDown(app.id, e)}
                 onDoubleClick={() => handleAppClick(app.id)}
               >
-                <div className={`relative w-[60px] h-[60px] rounded-[1.2rem] bg-gradient-to-b ${app.gradient} flex items-center justify-center shadow-[0_8px_16px_-4px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.3)] border-[0.5px] border-black/10 group-hover:brightness-110 group-active:scale-90 transition-all duration-200 overflow-hidden shrink-0`}>
-                  <div className="absolute top-0 start-0 end-0 h-[40%] bg-gradient-to-b from-white/30 to-transparent pointer-events-none"></div>
-                  <span className="material-symbols-outlined text-[32px] text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] select-none z-10">{app.icon}</span>
+                <div className="relative shrink-0">
+                  <div className={`w-[60px] h-[60px] rounded-[1.2rem] bg-gradient-to-b ${app.gradient} flex items-center justify-center shadow-[0_8px_16px_-4px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.3)] border-[0.5px] border-black/10 group-hover:brightness-110 group-active:scale-90 transition-all duration-200 overflow-hidden`}>
+                    <div className="absolute top-0 start-0 end-0 h-[40%] bg-gradient-to-b from-white/30 to-transparent pointer-events-none"></div>
+                    <span className="material-symbols-outlined text-[32px] text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] select-none z-10">{app.icon}</span>
+                  </div>
                   <Badge count={(badges as any)[app.id] || 0} />
                 </div>
                 <div className="w-full h-[32px] flex items-start justify-center overflow-hidden">
@@ -397,6 +401,7 @@ const Desktop: React.FC<DesktopProps> = ({
                       {isOpen && !isMinimized && (
                         <span className="absolute -bottom-1.5 start-1/2 -translate-x-1/2 w-[5px] h-[5px] rounded-full bg-white/90 dark:bg-white" />
                       )}
+                      <Badge count={(badges as any)[app.id] || 0} />
                     </div>
                     <span className={`text-[11px] md:text-[11px] font-bold text-center leading-tight whitespace-nowrap ${theme === 'dark' ? 'text-white/90' : 'text-slate-800'}`}>{appData ? getAppTitle(appData.titleKey) : ''}</span>
                   </div>
@@ -417,6 +422,7 @@ const Desktop: React.FC<DesktopProps> = ({
                 style={{ transform: `scale(${scale})`, width: window.innerWidth < 768 ? 'auto' : `${scale * 54}px`, flex: window.innerWidth < 768 ? '1' : 'none', transition: 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
                 <div className={`relative w-[42px] md:w-[48px] h-[42px] md:h-[48px] rounded-[0.9rem] md:rounded-[1rem] bg-gradient-to-b ${group.gradient} flex items-center justify-center shadow-lg border-[0.5px] border-black/10`}>
                   <span className="material-symbols-outlined text-[24px] md:text-[28px] text-white">{group.icon}</span>
+                  <Badge count={group.apps.reduce((sum, app) => sum + ((badges as any)[app.id] || 0), 0)} />
                 </div>
                 <div className="absolute -bottom-1 md:-bottom-2 h-[4px] flex items-center justify-center">
                   {hasAnyAppOpen && <div className={`w-[4px] h-[4px] rounded-full ${theme === 'dark' ? 'bg-white' : 'bg-black/70'}`}></div>}
