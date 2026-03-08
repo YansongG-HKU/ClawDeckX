@@ -1,10 +1,11 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { SectionProps } from '../sectionTypes';
 import { ConfigSection, TextField, PasswordField, SelectField, SwitchField, ArrayField, NumberField, EmptyState, DiscordGuildField } from '../fields';
 import { getTranslation } from '../../../locales';
 import { gwApi, gatewayApi, pairingApi, pluginApi } from '../../../services/api';
 import { post } from '../../../services/request';
 import CustomSelect from '../../../components/CustomSelect';
+import { useToast } from '../../../components/Toast';
 
 // ============================================================================
 // 频道定义：核心 + 扩展 + 国内平台
@@ -117,7 +118,71 @@ const TIP_KEYS: Record<string, string> = {
 // ============================================================================
 // 组件
 // ============================================================================
+
+// 通用配对管理组件
+const PairingSection: React.FC<{ channel: string; es: any; cw: any; toast: (type: string, msg: string) => void }> = ({ channel, es, cw, toast }) => {
+  const [pairingCode, setPairingCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+
+  const loadPendingRequests = useCallback(async () => {
+    try {
+      const res = await pairingApi.list(channel);
+      setPendingRequests(res.requests || []);
+    } catch (err) {
+      console.error('Failed to load pairing requests:', err);
+    }
+  }, [channel]);
+
+  useEffect(() => {
+    loadPendingRequests();
+  }, [loadPendingRequests]);
+
+  const handleApprove = async (code: string) => {
+    if (!code.trim()) return;
+    setLoading(true);
+    try {
+      await pairingApi.approve(channel, code.trim());
+      toast('success', cw.pairingApproved || 'Pairing approved!');
+      setPairingCode('');
+      await loadPendingRequests();
+    } catch (err: any) {
+      toast('error', err.message || 'Failed to approve pairing');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={pairingCode}
+          onChange={(e) => setPairingCode(e.target.value.toUpperCase())}
+          placeholder={cw.enterPairingCode || 'Enter pairing code'}
+          className="flex-1 px-3 py-1.5 text-sm rounded-lg bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10"
+        />
+        <button
+          onClick={() => handleApprove(pairingCode)}
+          disabled={loading || !pairingCode.trim()}
+          className="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? (cw.approving || 'Approving...') : (cw.approve || 'Approve')}
+        </button>
+      </div>
+      {pendingRequests.length > 0 && (
+        <div className="text-xs text-slate-600 dark:text-white/60">
+          {cw.pendingRequests || 'Pending requests'}: {pendingRequests.length}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================================================
 export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getField, deleteField, language, save }) => {
+  const { toast } = useToast();
   const es = useMemo(() => (getTranslation(language) as any).es || {}, [language]);
   const cw = useMemo(() => (getTranslation(language) as any).cw || {}, [language]);
   const channels = getField(['channels']) || {};
@@ -444,6 +509,9 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
           <>
             <PasswordField label={labelBotToken} value={g(['botToken']) || ''} onChange={v => s(['botToken'], v)} placeholder={es.phTelegramBotToken} tooltip={tip('botToken')} />
             <SelectField label={es.dmPolicy} value={g(['dmPolicy']) || 'pairing'} onChange={v => s(['dmPolicy'], v)} options={dmPolicy(es)} tooltip={tip('dmPolicy')} />
+            {(g(['dmPolicy']) || 'pairing') === 'pairing' && (
+              <PairingSection channel="telegram" es={es} cw={cw} toast={toast} />
+            )}
             <SelectField label={es.groupPolicy} value={g(['groupPolicy']) || 'allowlist'} onChange={v => s(['groupPolicy'], v)} options={groupPolicy(es)} tooltip={tip('groupPolicy')} />
             <ArrayField label={es.allowFrom} value={g(['allowFrom']) || []} onChange={v => s(['allowFrom'], v)} placeholder={es.tipAllowFromPh} tooltip={tip('allowFrom')} />
             <ArrayField label={es.groupAllowFrom || 'Group Allow From'} value={g(['groupAllowFrom']) || []} onChange={v => s(['groupAllowFrom'], v)} placeholder={es.phUserId} tooltip={tip('groupAllowFrom')} />
@@ -499,6 +567,9 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
         {ch === 'whatsapp' && (
           <>
             <SelectField label={es.dmPolicy} value={g(['dmPolicy']) || 'pairing'} onChange={v => s(['dmPolicy'], v)} options={dmPolicy(es)} tooltip={tip('dmPolicy')} />
+            {(g(['dmPolicy']) || 'pairing') === 'pairing' && (
+              <PairingSection channel="whatsapp" es={es} cw={cw} toast={toast} />
+            )}
             <SelectField label={es.groupPolicy} value={g(['groupPolicy']) || 'allowlist'} onChange={v => s(['groupPolicy'], v)} options={groupPolicy(es)} tooltip={tip('groupPolicy')} />
             <SwitchField label={es.selfChatMode} value={g(['selfChatMode']) === true} onChange={v => s(['selfChatMode'], v)} tooltip={es.tipSelfChat} />
             <ArrayField label={es.allowFrom} value={g(['allowFrom']) || []} onChange={v => s(['allowFrom'], v)} placeholder={es.phPhoneCN} tooltip={tip('allowFrom')} />
@@ -520,6 +591,9 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
           <>
             <PasswordField label={labelToken} value={g(['token']) || ''} onChange={v => s(['token'], v)} placeholder={es.phBotToken} tooltip={es.tipDiscordToken} />
             <SelectField label={es.dmPolicy} value={g(['dmPolicy']) || 'pairing'} onChange={v => s(['dmPolicy'], v)} options={dmPolicy(es)} tooltip={tip('dmPolicy')} />
+            {(g(['dmPolicy']) || 'pairing') === 'pairing' && (
+              <PairingSection channel="discord" es={es} cw={cw} toast={toast} />
+            )}
             <SelectField label={es.groupPolicy} value={g(['groupPolicy']) || 'allowlist'} onChange={v => s(['groupPolicy'], v)} options={groupPolicy(es)} tooltip={tip('groupPolicy')} />
             <ArrayField label={es.allowFrom} value={g(['allowFrom']) || []} onChange={v => s(['allowFrom'], v)} placeholder={es.phUserId} tooltip={tip('allowFrom')} />
             <TextField label={es.defaultTo || 'Default To'} value={g(['defaultTo']) || ''} onChange={v => s(['defaultTo'], v)} tooltip={tip('defaultTo')} />
@@ -631,6 +705,9 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
             <NumberField label={es.httpPort || 'HTTP Port'} value={g(['httpPort'])} onChange={v => s(['httpPort'], v)} placeholder="8080" tooltip={es.tipSignalHttpPort} />
             <TextField label={es.cliPath || 'CLI Path'} value={g(['cliPath']) || ''} onChange={v => s(['cliPath'], v)} tooltip={es.tipSignalCliPath} />
             <SelectField label={es.dmPolicy} value={g(['dmPolicy']) || 'pairing'} onChange={v => s(['dmPolicy'], v)} options={dmPolicy(es)} tooltip={tip('dmPolicy')} />
+            {(g(['dmPolicy']) || 'pairing') === 'pairing' && (
+              <PairingSection channel="signal" es={es} cw={cw} toast={toast} />
+            )}
             <SelectField label={es.groupPolicy} value={g(['groupPolicy']) || 'allowlist'} onChange={v => s(['groupPolicy'], v)} options={groupPolicy(es)} tooltip={tip('groupPolicy')} />
             <ArrayField label={es.allowFrom} value={g(['allowFrom']) || []} onChange={v => s(['allowFrom'], v)} placeholder={es.phPhoneIntl} tooltip={tip('allowFrom')} />
             <ArrayField label={es.groupAllowFrom || 'Group Allow From'} value={g(['groupAllowFrom']) || []} onChange={v => s(['groupAllowFrom'], v)} placeholder={es.phPhoneIntl} tooltip={tip('groupAllowFrom')} />
@@ -660,6 +737,9 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
             ]} allowEmpty tooltip={es.tipImsgService} />
             <TextField label={es.region || 'Region'} value={g(['region']) || ''} onChange={v => s(['region'], v)} tooltip={es.tipImsgRegion} />
             <SelectField label={es.dmPolicy} value={g(['dmPolicy']) || 'pairing'} onChange={v => s(['dmPolicy'], v)} options={dmPolicy(es)} tooltip={tip('dmPolicy')} />
+            {(g(['dmPolicy']) || 'pairing') === 'pairing' && (
+              <PairingSection channel="imessage" es={es} cw={cw} toast={toast} />
+            )}
             <SelectField label={es.groupPolicy} value={g(['groupPolicy']) || 'allowlist'} onChange={v => s(['groupPolicy'], v)} options={groupPolicy(es)} tooltip={tip('groupPolicy')} />
             <ArrayField label={es.allowFrom} value={g(['allowFrom']) || []} onChange={v => s(['allowFrom'], v)} placeholder={es.phPhoneCN} tooltip={tip('allowFrom')} />
             <ArrayField label={es.groupAllowFrom || 'Group Allow From'} value={g(['groupAllowFrom']) || []} onChange={v => s(['groupAllowFrom'], v)} placeholder={es.phPhoneCN} tooltip={tip('groupAllowFrom')} />
@@ -681,6 +761,9 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
             <PasswordField label={es.chPassword} value={g(['password']) || ''} onChange={v => s(['password'], v)} tooltip={es.tipBBPassword} />
             <TextField label={es.webhookPath || 'Webhook Path'} value={g(['webhookPath']) || ''} onChange={v => s(['webhookPath'], v)} tooltip={es.tipBBWebhookPath} />
             <SelectField label={es.dmPolicy} value={g(['dmPolicy']) || 'pairing'} onChange={v => s(['dmPolicy'], v)} options={dmPolicy(es)} tooltip={tip('dmPolicy')} />
+            {(g(['dmPolicy']) || 'pairing') === 'pairing' && (
+              <PairingSection channel="bluebubbles" es={es} cw={cw} toast={toast} />
+            )}
             <SelectField label={es.groupPolicy} value={g(['groupPolicy']) || 'allowlist'} onChange={v => s(['groupPolicy'], v)} options={groupPolicy(es)} tooltip={tip('groupPolicy')} />
             <ArrayField label={es.allowFrom} value={g(['allowFrom']) || []} onChange={v => s(['allowFrom'], v)} placeholder={es.phPhoneCN} tooltip={tip('allowFrom')} />
             <ArrayField label={es.groupAllowFrom || 'Group Allow From'} value={g(['groupAllowFrom']) || []} onChange={v => s(['groupAllowFrom'], v)} placeholder={es.phPhoneCN} tooltip={tip('groupAllowFrom')} />
@@ -784,6 +867,9 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
             <PasswordField label={labelAccessToken} value={g(['accessToken']) || ''} onChange={v => s(['accessToken'], v)} tooltip={es.tipMatrixToken} />
             <PasswordField label={es.matrixPassword || 'Password'} value={g(['password']) || ''} onChange={v => s(['password'], v)} tooltip={es.tipMatrixPassword} />
             <SelectField label={es.dmPolicy} value={g(['dm', 'policy']) || 'pairing'} onChange={v => s(['dm', 'policy'], v)} options={dmPolicy(es)} tooltip={tip('dmPolicy')} />
+            {(g(['dm', 'policy']) || 'pairing') === 'pairing' && (
+              <PairingSection channel="matrix" es={es} cw={cw} toast={toast} />
+            )}
             <SelectField label={es.groupPolicy} value={g(['groupPolicy']) || 'open'} onChange={v => s(['groupPolicy'], v)} options={groupPolicy(es)} tooltip={tip('groupPolicy')} />
             <SwitchField label={es.matrixEncryption || 'Encryption'} value={g(['encryption']) === true} onChange={v => s(['encryption'], v)} tooltip={es.tipMatrixEncryption} />
             <SelectField label={es.replyToMode || 'Reply To Mode'} value={g(['replyToMode']) || 'off'} onChange={v => s(['replyToMode'], v)} options={replyToMode(es)} tooltip={tip('replyToMode')} />
@@ -827,6 +913,9 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
             <PasswordField label={es.encryptKey} value={g(['encryptKey']) || ''} onChange={v => s(['encryptKey'], v)} tooltip={es.tipFeishuEncrypt} />
             <PasswordField label={es.verificationToken} value={g(['verificationToken']) || ''} onChange={v => s(['verificationToken'], v)} tooltip={es.tipFeishuVerify} />
             <SelectField label={es.dmPolicy} value={g(['dmPolicy']) || 'pairing'} onChange={v => s(['dmPolicy'], v)} options={dmPolicy(es)} tooltip={tip('dmPolicy')} />
+            {(g(['dmPolicy']) || 'pairing') === 'pairing' && (
+              <PairingSection channel="feishu" es={es} cw={cw} toast={toast} />
+            )}
             <ArrayField label={es.allowFrom || 'Allow From'} value={g(['allowFrom']) || []} onChange={v => s(['allowFrom'], v)} placeholder={es.feishuAllowFromPh || 'ou_xxx'} tooltip={es.tipFeishuAllowFrom} />
             <SelectField label={es.groupPolicy} value={g(['groupPolicy']) || 'allowlist'} onChange={v => s(['groupPolicy'], v)} options={groupPolicy(es)} tooltip={tip('groupPolicy')} />
             <ArrayField label={es.feishuGroupAllowFrom || 'Group Allow From'} value={g(['groupAllowFrom']) || []} onChange={v => s(['groupAllowFrom'], v)} placeholder={es.feishuGroupAllowFromPh || 'oc_xxx'} tooltip={es.tipFeishuGroupAllowFrom} />
@@ -941,6 +1030,9 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
           <>
             <PasswordField label={es.chToken} value={g(['botToken']) || ''} onChange={v => s(['botToken'], v)} tooltip={es.tipZaloToken} />
             <SelectField label={es.dmPolicy} value={g(['dmPolicy']) || 'pairing'} onChange={v => s(['dmPolicy'], v)} options={dmPolicy(es)} tooltip={tip('dmPolicy')} />
+            {(g(['dmPolicy']) || 'pairing') === 'pairing' && (
+              <PairingSection channel="zalo" es={es} cw={cw} toast={toast} />
+            )}
             <SelectField label={es.groupPolicy} value={g(['groupPolicy']) || 'disabled'} onChange={v => s(['groupPolicy'], v)} options={groupPolicy(es)} tooltip={tip('groupPolicy')} />
             <ArrayField label={es.allowFrom} value={g(['allowFrom']) || []} onChange={v => s(['allowFrom'], v)} placeholder={es.phUserId} tooltip={tip('allowFrom')} />
             <ArrayField label={es.groupAllowFrom || 'Group Allow From'} value={g(['groupAllowFrom']) || []} onChange={v => s(['groupAllowFrom'], v)} placeholder={es.phUserId} tooltip={tip('groupAllowFrom')} />
@@ -1316,13 +1408,17 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
                       <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-white/[0.03] border border-slate-200/60 dark:border-white/[0.04]">
                         <div className="flex items-center justify-between mb-1.5">
                           <span className="text-[10px] font-bold text-slate-600 dark:text-white/50">{cw.copyPermJson}</span>
-                          <button onClick={() => { navigator.clipboard.writeText(cw.feishuPermJson); }}
+                          <button onClick={() => {
+                            navigator.clipboard.writeText(cw.feishuPermJson).then(() => {
+                              toast('success', cw.copied || 'Copied!');
+                            });
+                          }}
                             className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold text-primary hover:bg-primary/10 transition-colors">
                             <span className="material-symbols-outlined text-[12px]">content_copy</span>
                             {cw.copyPermJson}
                           </button>
                         </div>
-                        <pre className="text-[11px] text-slate-500 dark:text-white/40 bg-slate-100 dark:bg-black/20 p-2 rounded overflow-x-auto max-h-20 overflow-y-auto custom-scrollbar font-mono leading-relaxed">{cw.feishuPermJson}</pre>
+                        <pre className="text-[11px] text-slate-500 dark:text-white/40 bg-slate-100 dark:bg-black/20 p-2 rounded overflow-x-auto max-h-20 overflow-y-auto custom-scrollbar font-mono leading-relaxed select-text">{cw.feishuPermJson}</pre>
                       </div>
                     )}
                     {pitfall && (
