@@ -125,6 +125,10 @@ function openWindow(id: string, extra: Record<string, any> = {}) {
   window.dispatchEvent(new CustomEvent('clawdeck:open-window', { detail: { id, ...extra } }));
 }
 
+function isLocal(host: string): boolean {
+  return host === '127.0.0.1' || host === 'localhost' || host === '::1';
+}
+
 const FAST_INTERVAL = 25000;
 
 const Dashboard: React.FC<DashboardProps> = ({ language }) => {
@@ -633,7 +637,7 @@ const Dashboard: React.FC<DashboardProps> = ({ language }) => {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-lg font-black dark:text-white text-slate-800">{activeGateway?.name || d.gwStatus}</h2>
+                <h2 className="text-lg font-black dark:text-white text-slate-800">{activeGateway && isLocal(activeGateway.host) ? (gwL?.localGateway || activeGateway.name) : (activeGateway?.name || d.gwStatus)}</h2>
                 <div className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full ${gwRunning ? 'bg-mac-green/15' : 'bg-slate-200 dark:bg-white/10'}`}>
                   <HealthDot ok={gwRunning} />
                   <span className={`text-[10px] font-bold uppercase ${gwRunning ? 'text-mac-green' : 'text-slate-400'}`}>{gwRunning ? d.running : d.stopped}</span>
