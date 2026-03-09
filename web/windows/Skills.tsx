@@ -964,7 +964,8 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
                     const cached = vals.filter(t => t.status === 'cached').length;
                     if (translating > 0) {
                       return (
-                        <span className="h-9 px-2 flex items-center gap-1 text-[10px] text-primary bg-primary/5 border border-primary/20 rounded-lg">
+                        <span className="h-9 px-2 flex items-center gap-1 text-[10px] text-primary bg-primary/5 border border-primary/20 rounded-lg"
+                          title={`${sk.translating || 'Translating'}: ${translating}/${total}`}>
                           <span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
                           {translating}/{total}
                         </span>
@@ -972,7 +973,8 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
                     }
                     if (cached > 0 && cached < total) {
                       return (
-                        <span className="h-9 px-2 flex items-center gap-1 text-[10px] text-slate-500 dark:text-white/50 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg">
+                        <span className="h-9 px-2 flex items-center gap-1 text-[10px] text-slate-500 dark:text-white/50 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg"
+                          title={`${sk.translated || 'Translated'}: ${cached}/${total}`}>
                           <span className="material-symbols-outlined text-[12px]">{translateEngine === 'free' ? 'g_translate' : 'smart_toy'}</span>
                           {cached}/{total}
                         </span>
@@ -1049,7 +1051,7 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
                     </button>
                   )}
                   {autoTranslate && translateEngine !== 'free' && <TranslateModelPicker sk={sk} compact />}
-                  {/* 翻译进度指示 */}
+                  {/* 翻译进度指示 + 速率限制 */}
                   {autoTranslate && (() => {
                     const total = marketResults.length;
                     const marketEntries = Object.entries(translations).filter(([k]) => k.startsWith('market:'));
@@ -1057,7 +1059,8 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
                     const cached = marketEntries.filter(([, t]) => t.status === 'cached').length;
                     if (translating > 0) {
                       return (
-                        <span className="h-9 px-2 flex items-center gap-1 text-[10px] text-primary bg-primary/5 border border-primary/20 rounded-lg">
+                        <span className="h-9 px-2 flex items-center gap-1 text-[10px] text-primary bg-primary/5 border border-primary/20 rounded-lg"
+                          title={`${sk.translating || 'Translating'}: ${translating}/${total}`}>
                           <span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
                           {translating}/{total}
                         </span>
@@ -1065,7 +1068,8 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
                     }
                     if (cached > 0 && cached < total) {
                       return (
-                        <span className="h-9 px-2 flex items-center gap-1 text-[10px] text-slate-500 dark:text-white/50 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg">
+                        <span className="h-9 px-2 flex items-center gap-1 text-[10px] text-slate-500 dark:text-white/50 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg"
+                          title={`${sk.translated || 'Translated'}: ${cached}/${total}`}>
                           <span className="material-symbols-outlined text-[12px]">{translateEngine === 'free' ? 'g_translate' : 'smart_toy'}</span>
                           {cached}/{total}
                         </span>
@@ -1073,6 +1077,14 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
                     }
                     return null;
                   })()}
+                  {/* 速率限制信息 */}
+                  {marketRateLimit && (
+                    <span className="h-9 px-2 flex items-center gap-1 text-[10px] text-slate-500 dark:text-white/50 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-lg whitespace-nowrap"
+                      title={`${sk.rateLimitInfo || 'API Rate Limit'}: ${marketRateLimit.remaining}/${marketRateLimit.limit}${marketRateLimit.reset ? ` (reset: ${marketRateLimit.reset}s)` : ''}`}>
+                      <span className="material-symbols-outlined text-[12px]">schedule</span>
+                      {marketRateLimit.remaining}/{marketRateLimit.limit}
+                    </span>
+                  )}
                 </div>
               )}
               {/* 刷新数据按钮 */}
@@ -1221,16 +1233,6 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
           {/* ClawHub 市场 */}
           {activeTab === 'market' && (
             <div className="space-y-4">
-              {/* 速率限制信息 */}
-              {marketRateLimit && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 text-[10px]">
-                  <span className="material-symbols-outlined text-[14px] text-slate-400">info</span>
-                  <span className="text-slate-500 dark:text-white/50">
-                    {sk.rateLimitInfo || 'API Rate Limit'}: <b className="text-slate-700 dark:text-white/70">{marketRateLimit.remaining}/{marketRateLimit.limit}</b>
-                    {marketRateLimit.reset && <span className="ms-2 text-slate-400 dark:text-white/30">(reset: {marketRateLimit.reset}s)</span>}
-                  </span>
-                </div>
-              )}
               {/* 加载中 */}
               {(marketLoading || marketSearching) && marketResults.length === 0 && (
                 <div className="flex items-center justify-center py-16 text-slate-400">
