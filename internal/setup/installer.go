@@ -359,7 +359,8 @@ func (i *Installer) installViaNpmWithOptions(ctx context.Context, version string
 		i.emitter.EmitLog(i18n.T(i18n.MsgInstallerUsingRegistry, map[string]interface{}{"Registry": registry}))
 	}
 
-	if runtime.GOOS != "windows" && os.Getuid() != 0 {
+	// On Unix systems, use sudo for global npm install if not running as root
+	if runtime.GOOS != "windows" && !isRunningAsRoot() {
 		cmd = "sudo " + cmd
 	}
 
