@@ -642,10 +642,10 @@ func RunServe(args []string) int {
 	if err != nil {
 		if errors.Is(err, proclock.ErrAlreadyRunning) {
 			fmt.Fprintln(os.Stderr)
-			fmt.Fprintln(os.Stderr, i18n.T(i18n.MsgServePortInUse, map[string]interface{}{"Port": cfg.Server.Port}))
+			fmt.Fprintln(os.Stderr, i18n.T(i18n.MsgServeAlreadyRunning, map[string]interface{}{"Port": cfg.Server.Port}))
 			fmt.Fprintln(os.Stderr)
-			fmt.Fprintln(os.Stderr, i18n.T(i18n.MsgServePortInUseSolutions))
-			logger.Log.Error().Int("port", cfg.Server.Port).Msg(i18n.T(i18n.MsgLogPortInUse))
+			fmt.Fprintln(os.Stderr, i18n.T(i18n.MsgServeAlreadyRunningSolutions))
+			logger.Log.Error().Int("port", cfg.Server.Port).Msg("ClawDeckX already running")
 		} else {
 			fmt.Fprintln(os.Stderr, i18n.T(i18n.MsgServePortInUse, map[string]interface{}{"Port": cfg.Server.Port}))
 			logger.Log.Error().Err(err).Msg("failed to acquire process lock")

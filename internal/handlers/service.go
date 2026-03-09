@@ -9,6 +9,7 @@ import (
 	"ClawDeckX/internal/openclaw"
 	"ClawDeckX/internal/service"
 	"ClawDeckX/internal/web"
+	"ClawDeckX/internal/webconfig"
 )
 
 type ServiceHandler struct {
@@ -69,7 +70,13 @@ func (h *ServiceHandler) InstallClawDeckX(w http.ResponseWriter, r *http.Request
 		Str("ip", r.RemoteAddr).
 		Msg("user requested ClawDeckX service install")
 
-	if err := service.Install(18791); err != nil {
+	// Read current port from config
+	cfg, err := webconfig.Load()
+	if err != nil {
+		cfg = webconfig.Default()
+	}
+
+	if err := service.Install(cfg.Server.Port); err != nil {
 		h.writeAudit(r, constants.ActionServiceInstall, "failed", "ClawDeckX install: "+err.Error())
 		logger.Log.Error().Err(err).Msg("ClawDeckX service install failed")
 		web.Fail(w, r, "INSTALL_FAILED", err.Error(), http.StatusInternalServerError)

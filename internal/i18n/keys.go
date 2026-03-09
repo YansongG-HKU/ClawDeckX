@@ -164,6 +164,8 @@ const (
 	MsgServeUserCreateFailed      = "serve.user_create_failed"
 	MsgServeUserCreated           = "serve.user_created"
 	MsgServeUserExists            = "serve.user_exists"
+	MsgServeAlreadyRunning        = "serve.already_running"
+	MsgServeAlreadyRunningSolutions = "serve.already_running_solutions"
 	MsgServePortInUse             = "serve.port_in_use"
 	MsgServePortInUseSolutions    = "serve.port_in_use_solutions"
 	MsgServePortOccupiedBy        = "serve.port_occupied_by"
