@@ -262,7 +262,6 @@ const Nodes: React.FC<NodesProps> = ({ language }) => {
   const [deviceFilterTokenStatus, setDeviceFilterTokenStatus] = useState('');
   const [deviceFilterLastUsed, setDeviceFilterLastUsed] = useState('');
   const [expandedDeviceId, setExpandedDeviceId] = useState<string | null>(null);
-  const [showTokenMap, setShowTokenMap] = useState<Set<string>>(new Set());
   const [confirmDialog, setConfirmDialog] = useState<{ title: string; desc: string; onOk: () => void; variant?: 'danger' | 'success' } | null>(null);
   const [pairNodeIdError, setPairNodeIdError] = useState('');
   const [verifyTokenError, setVerifyTokenError] = useState('');
@@ -454,6 +453,10 @@ const Nodes: React.FC<NodesProps> = ({ language }) => {
   }, [selectedIds, batchCmd, batchParams, batching, nd, toast]);
 
   const copyToClipboard = useCallback((text: string) => {
+    if (!navigator.clipboard) {
+      toast('error', 'Clipboard not available');
+      return;
+    }
     navigator.clipboard.writeText(text);
     toast('success', nd.copied);
   }, [toast, nd.copied]);
@@ -663,13 +666,17 @@ const Nodes: React.FC<NodesProps> = ({ language }) => {
     try {
       const res = await gwApi.deviceTokenRotate(deviceId, role, scopes) as any;
       if (res?.token) {
+        if (!navigator.clipboard) {
+          toast('error', 'Clipboard not available');
+          return;
+        }
         await navigator.clipboard.writeText(res.token);
         toast('success', nd.tokenRotated + ' - ' + nd.copied);
       }
       fetchDevices();
-    } catch (e: any) { 
+    } catch (e: any) {
       toast('error', String(e));
-      setDevicesError(String(e)); 
+      setDevicesError(String(e));
     }
   }, [fetchDevices, toast, nd]);
 
@@ -786,14 +793,6 @@ const Nodes: React.FC<NodesProps> = ({ language }) => {
     });
   }, []);
 
-  const toggleShowToken = useCallback((key: string) => {
-    setShowTokenMap(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key); else next.add(key);
-      return next;
-    });
-  }, []);
-
   // === Devices: enhanced confirm dialog wrappers ===
   const handleRevokeWithDialog = useCallback((deviceId: string, role: string) => {
     setConfirmDialog({
@@ -819,6 +818,11 @@ const Nodes: React.FC<NodesProps> = ({ language }) => {
         try {
           const res = await gwApi.deviceTokenRotate(deviceId, role, scopes) as any;
           if (res?.token) {
+            if (!navigator.clipboard) {
+              toast('error', 'Clipboard not available');
+              setConfirmDialog(null);
+              return;
+            }
             await navigator.clipboard.writeText(res.token);
             toast('success', nd.tokenRotated + ' - ' + nd.copied);
           }
@@ -1486,7 +1490,14 @@ const Nodes: React.FC<NodesProps> = ({ language }) => {
                     <p className="text-[10px] text-slate-400 dark:text-white/40 font-bold uppercase tracking-wider mb-0.5">{nd.myDeviceId || 'My Device ID'}</p>
                     <p className="text-[12px] text-slate-700 dark:text-white/80 font-mono truncate select-all" title={localDeviceId}>{localDeviceId}</p>
                   </div>
-                  <button onClick={() => { navigator.clipboard.writeText(localDeviceId); toast('success', nd.copied); }}
+                  <button onClick={() => {
+                    if (!navigator.clipboard) {
+                      toast('error', 'Clipboard not available');
+                      return;
+                    }
+                    navigator.clipboard.writeText(localDeviceId);
+                    toast('success', nd.copied);
+                  }}
                     className="h-8 px-2.5 flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/20 rounded-lg text-[10px] font-bold hover:bg-primary/20 transition-colors shrink-0">
                     <span className="material-symbols-outlined text-[14px]">content_copy</span>
                     <span className="hidden sm:inline">{nd.copy || 'Copy'}</span>
@@ -1810,8 +1821,6 @@ const Nodes: React.FC<NodesProps> = ({ language }) => {
                                   <div className="text-[11px] font-bold text-slate-400 dark:text-white/35 uppercase tracking-wider">{nd.tokens}</div>
                                   {tokens.map((tk, ti) => {
                                     const isRevoked = !!tk.revokedAtMs;
-                                    const tokenKey = `${device.deviceId}_${ti}`;
-                                    const isTokenVisible = showTokenMap.has(tokenKey);
                                     return (
                                       <div key={ti} className={`flex flex-col sm:flex-row sm:items-center gap-2 p-2.5 rounded-lg ${isRevoked ? 'bg-slate-100/50 dark:bg-white/[0.01] opacity-50' : 'bg-white dark:bg-white/[0.03] border border-slate-100 dark:border-white/5'}`}>
                                         <div className="flex-1 min-w-0">
@@ -1823,10 +1832,6 @@ const Nodes: React.FC<NodesProps> = ({ language }) => {
                                             {Array.isArray(tk.scopes) && tk.scopes.length > 0 && (
                                               <span className="text-[10px] text-slate-400 dark:text-white/35 truncate">{nd.scopes}: {tk.scopes.join(', ')}</span>
                                             )}
-                                            <button onClick={() => toggleShowToken(tokenKey)} className="text-[10px] text-slate-400 hover:text-primary flex items-center gap-0.5">
-                                              <span className="material-symbols-outlined text-[12px]">{isTokenVisible ? 'visibility_off' : 'visibility'}</span>
-                                              {isTokenVisible ? nd.tokenHide : nd.tokenShow}
-                                            </button>
                                           </div>
                                           <div className="flex gap-3 mt-1 text-[10px] text-slate-400 dark:text-white/20 flex-wrap">
                                             {tk.createdAtMs && <span>{nd.created} {fmtTs(tk.createdAtMs)}</span>}
