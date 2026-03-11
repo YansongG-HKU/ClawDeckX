@@ -435,15 +435,25 @@ func (h *SkillHubHandler) GetInstalledSkills(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// Log all skills for debugging
+	logger.Log.Debug().Int("total", len(response.Skills)).Msg("received skills from Gateway")
+
 	// Filter for managed skills (installed via SkillHub/ClawHub)
 	installedSkills := []string{}
+	allSources := make(map[string]int)
 	for _, skill := range response.Skills {
+		allSources[skill.Source]++
+		logger.Log.Debug().Str("name", skill.Name).Str("source", skill.Source).Msg("skill info")
 		if skill.Source == "openclaw-managed" {
 			installedSkills = append(installedSkills, skill.Name)
 		}
 	}
 
-	logger.Log.Debug().Int("count", len(installedSkills)).Strs("skills", installedSkills).Msg("fetched installed skills")
+	logger.Log.Debug().
+		Int("count", len(installedSkills)).
+		Strs("skills", installedSkills).
+		Interface("sources", allSources).
+		Msg("fetched installed skills")
 
 	web.OK(w, r, map[string]interface{}{
 		"skills": installedSkills,
