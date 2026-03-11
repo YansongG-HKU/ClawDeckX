@@ -1,0 +1,215 @@
+package handlers
+
+import (
+	"bytes"
+	"encoding/json"
+	"io"
+	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"time"
+
+	"ClawDeckX/internal/logger"
+	"ClawDeckX/internal/web"
+)
+
+// SkillHubHandler handles SkillHub-related operations
+type SkillHubHandler struct{}
+
+// NewSkillHubHandler creates a new SkillHub handler
+func NewSkillHubHandler() *SkillHubHandler {
+	return &SkillHubHandler{}
+}
+
+// CLIStatus checks if SkillHub CLI is installed
+// GET /api/v1/skillhub/cli-status
+func (h *SkillHubHandler) CLIStatus(w http.ResponseWriter, r *http.Request) {
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd.exe", "/c", "skillhub", "--version")
+	} else {
+		cmd = exec.Command("skillhub", "--version")
+	}
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err != nil {
+		// CLI not installed or not in PATH
+		web.OK(w, r, map[string]interface{}{
+			"installed": false,
+			"version":   nil,
+			"path":      nil,
+		})
+		return
+	}
+
+	version := strings.TrimSpace(stdout.String())
+	if version == "" {
+		version = strings.TrimSpace(stderr.String())
+	}
+
+	// Try to get the path
+	var pathCmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		pathCmd = exec.Command("cmd.exe", "/c", "where", "skillhub")
+	} else {
+		pathCmd = exec.Command("which", "skillhub")
+	}
+
+	var pathOut bytes.Buffer
+	pathCmd.Stdout = &pathOut
+	pathCmd.Run()
+
+	cliPath := strings.TrimSpace(pathOut.String())
+
+	web.OK(w, r, map[string]interface{}{
+		"installed": true,
+		"version":   version,
+		"path":      cliPath,
+	})
+}
+
+// Install installs SkillHub CLI
+// POST /api/v1/skillhub/install
+func (h *SkillHubHandler) Install(w http.ResponseWriter, r *http.Request) {
+	if runtime.GOOS == "windows" {
+		web.Fail(w, r, "PLATFORM_NOT_SUPPORTED", "One-click install is not supported on Windows. Please install manually.", http.StatusBadRequest)
+		return
+	}
+
+	logger.Log.Info().Msg("starting SkillHub CLI installation")
+
+	// Create install script
+	installScript := `#!/usr/bin/env bash
+set -euo pipefail
+
+KIT_URL="https://skillhub-1251783334.cos.ap-guangzhou.myqcloud.com/install/latest.tar.gz"
+
+TMP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR"' EXIT
+
+echo "Downloading SkillHub CLI..."
+curl -fsSL "$KIT_URL" -o "$TMP_DIR/latest.tar.gz"
+
+echo "Extracting..."
+tar -xzf "$TMP_DIR/latest.tar.gz" -C "$TMP_DIR"
+
+INSTALLER="$TMP_DIR/cli/install.sh"
+if [[ ! -f "$INSTALLER" ]]; then
+  echo "Error: install.sh not found at $INSTALLER" >&2
+  find "$TMP_DIR" -maxdepth 3 -print >&2
+  exit 1
+fi
+
+echo "Running installer..."
+bash "$INSTALLER" "$@"
+`
+
+	// Save script to temp file
+	tmpDir := os.TempDir()
+	scriptPath := filepath.Join(tmpDir, "skillhub-install.sh")
+	err := os.WriteFile(scriptPath, []byte(installScript), 0755)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("failed to create install script")
+		web.Fail(w, r, "SCRIPT_CREATE_FAILED", err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer os.Remove(scriptPath)
+
+	// Execute install script
+	cmd := exec.Command("bash", scriptPath)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	done := make(chan error, 1)
+	go func() {
+		done <- cmd.Run()
+	}()
+
+	select {
+	case err := <-done:
+		output := stdout.String()
+		errOutput := stderr.String()
+
+		if err != nil {
+			logger.Log.Error().Err(err).Str("stdout", output).Str("stderr", errOutput).Msg("SkillHub installation failed")
+
+			// Check for permission errors
+			if strings.Contains(errOutput, "Permission denied") || strings.Contains(output, "Permission denied") {
+				web.Fail(w, r, "PERMISSION_DENIED", "Permission denied. Please run with sudo or as administrator.", http.StatusForbidden)
+				return
+			}
+
+			web.Fail(w, r, "INSTALL_FAILED", errOutput+"\n"+output, http.StatusInternalServerError)
+			return
+		}
+
+		logger.Log.Info().Str("output", output).Msg("SkillHub CLI installed successfully")
+		web.OK(w, r, map[string]interface{}{
+			"success": true,
+			"output":  output,
+		})
+
+	case <-time.After(5 * time.Minute):
+		if cmd.Process != nil {
+			cmd.Process.Kill()
+		}
+		web.Fail(w, r, "INSTALL_TIMEOUT", "Installation timed out after 5 minutes", http.StatusGatewayTimeout)
+	}
+}
+
+// ProxyData proxies the SkillHub JSON data
+// GET /api/v1/skillhub/data?url=<encoded_url>
+func (h *SkillHubHandler) ProxyData(w http.ResponseWriter, r *http.Request) {
+	dataURL := r.URL.Query().Get("url")
+	if dataURL == "" {
+		dataURL = "https://cloudcache.tencentcs.com/qcloud/tea/app/data/skills.33d56946.json"
+	}
+
+	logger.Log.Info().Str("url", dataURL).Msg("proxying SkillHub data")
+
+	// Create HTTP client with timeout (large file ~3-5MB, needs more time)
+	client := &http.Client{
+		Timeout: 2 * time.Minute,
+	}
+
+	resp, err := client.Get(dataURL)
+	if err != nil {
+		logger.Log.Error().Err(err).Str("url", dataURL).Msg("failed to fetch SkillHub data")
+		web.Fail(w, r, "FETCH_FAILED", err.Error(), http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		logger.Log.Error().Int("status", resp.StatusCode).Str("url", dataURL).Msg("SkillHub data fetch returned non-200")
+		web.Fail(w, r, "FETCH_FAILED", "upstream returned "+resp.Status, http.StatusBadGateway)
+		return
+	}
+
+	// Read response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("failed to read SkillHub data response")
+		web.Fail(w, r, "READ_FAILED", err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Validate JSON
+	var data interface{}
+	if err := json.Unmarshal(body, &data); err != nil {
+		logger.Log.Error().Err(err).Msg("invalid JSON from SkillHub data source")
+		web.Fail(w, r, "INVALID_JSON", err.Error(), http.StatusBadGateway)
+		return
+	}
+
+	// Return standard API response format
+	web.OK(w, r, data)
+}

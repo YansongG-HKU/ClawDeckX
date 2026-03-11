@@ -8,6 +8,8 @@ import { useConfirm } from '../components/ConfirmDialog';
 import CustomSelect from '../components/CustomSelect';
 import TranslateModelPicker from '../components/TranslateModelPicker';
 import EmptyState from '../components/EmptyState';
+import PluginCenter from './PluginCenter';
+import SkillHub from './SkillHub';
 
 interface SkillsProps { language: Language; }
 
@@ -25,7 +27,7 @@ interface SkillStatus {
 
 interface SkillsConfig { [key: string]: { enabled?: boolean; apiKey?: string; env?: Record<string, string> } }
 
-type TabId = 'all' | 'eligible' | 'missing' | 'market';
+type TabId = 'all' | 'market' | 'plugins' | 'skillhub';
 type FilterId = 'all' | 'eligible' | 'missing';
 
 type SkillMessage = { kind: 'success' | 'error'; message: string };
@@ -656,9 +658,9 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
   // 过滤技能
   const filteredSkills = useMemo(() => {
     let list = skills;
-    // Tab 过滤
-    if (activeTab === 'eligible') list = list.filter(s => s.eligible);
-    else if (activeTab === 'missing') {
+    // Filter within skills tab
+    if (filter === 'eligible') list = list.filter(s => s.eligible);
+    else if (filter === 'missing') {
       list = list.filter(s => !s.eligible && !s.always);
       // 排序：可安装的在前，不支持当前系统的在后
       list = [...list].sort((a, b) => {
@@ -684,7 +686,7 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
       });
     }
     // Sort
-    if (activeTab !== 'missing') {
+    if (filter !== 'missing') {
       list = [...list].sort((a, b) => {
         if (sortBy === 'status') {
           const aScore = a.eligible ? 0 : a.missing.os.length > 0 ? 2 : 1;
@@ -698,7 +700,7 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
       });
     }
     return list;
-  }, [skills, activeTab, searchQuery, translations, sortBy]);
+  }, [skills, filter, searchQuery, translations, sortBy]);
   const renderedSkills = useMemo(() => filteredSkills.slice(0, 120), [filteredSkills]);
   const omittedSkills = Math.max(0, filteredSkills.length - renderedSkills.length);
 
@@ -898,10 +900,16 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
   }, [marketCursor, marketQuery, marketLoadingMore, marketSort, fetchMarketList]);
 
   const tabs: { id: TabId; label: string; count?: number }[] = [
+    { id: 'all', label: sk.skillsTab || sk.allSkills, count: skills.length },
+    { id: 'plugins', label: sk.pluginCenter || 'Plugins' },
+    { id: 'market', label: 'ClawHub' },
+    { id: 'skillhub', label: 'SkillHub' },
+  ];
+
+  const skillFilters: { id: FilterId; label: string; count: number }[] = [
     { id: 'all', label: sk.allSkills, count: skills.length },
     { id: 'eligible', label: sk.onlyEligible, count: eligibleCount },
     { id: 'missing', label: sk.onlyMissing, count: missingCount },
-    { id: 'market', label: sk.marketplace },
   ];
 
   return (
@@ -923,6 +931,7 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
         </div>
 
         {/* 搜索栏 */}
+        {activeTab !== 'plugins' && activeTab !== 'skillhub' && (
         <div className="p-3 flex flex-row items-center gap-2">
           {activeTab !== 'market' ? (
             <>
@@ -930,6 +939,18 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
                 <span className="material-symbols-outlined absolute start-3 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">search</span>
                 <input ref={searchRef} className="w-full h-9 ps-9 pe-4 bg-white dark:bg-[#1a1c22] border border-slate-200 dark:border-white/10 rounded-lg text-xs text-slate-800 dark:text-white placeholder:text-slate-400 focus:ring-1 focus:ring-primary outline-none"
                   placeholder={`${sk.search} (Ctrl+K)`} value={searchInput} onChange={e => setSearchInput(e.target.value)} />
+              </div>
+              {/* Filter pills: all / eligible / missing */}
+              <div className="flex bg-slate-200 dark:bg-black/40 p-0.5 rounded-lg shadow-inner shrink-0">
+                {skillFilters.map(f => (
+                  <button key={f.id} onClick={() => setFilter(f.id)}
+                    className={`px-2 py-1 rounded text-[10px] font-bold transition-all whitespace-nowrap flex items-center gap-1 ${filter === f.id
+                      ? 'bg-white dark:bg-primary shadow-sm text-slate-900 dark:text-white'
+                      : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    }`}>
+                    {f.label}<span className="opacity-60">({f.count})</span>
+                  </button>
+                ))}
               </div>
               {/* 自动翻译开关 + 模型选择 + 进度 + 刷新 */}
               {language !== 'en' && (
@@ -1106,9 +1127,21 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
             </>
           )}
         </div>
+        )}
       </div>
 
+      {/* 插件中心 */}
+      {activeTab === 'plugins' && (
+        <PluginCenter language={language} />
+      )}
+
+      {/* SkillHub */}
+      {activeTab === 'skillhub' && (
+        <SkillHub language={language} />
+      )}
+
       {/* 内容区 */}
+      {activeTab !== 'plugins' && activeTab !== 'skillhub' && (
       <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
         <div className="max-w-6xl mx-auto">
           {/* 加载/错误状态 */}
@@ -1361,8 +1394,10 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
           )}
         </div>
       </div>
+      )}
 
       {/* 底部状态栏 */}
+      {activeTab !== 'plugins' && (
       <footer className="h-8 px-4 border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-black/20 flex items-center justify-between shrink-0 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/20">
         <div className="flex items-center gap-3">
           <span>{skills.length} {sk.skillCount}</span>
@@ -1376,6 +1411,7 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
           <span>{sk.bundled}: {skills.filter(s => s.bundled).length}</span>
         </div>
       </footer>
+      )}
 
       {/* 配置弹窗 */}
       {configSkill && (

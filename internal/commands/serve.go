@@ -567,9 +567,18 @@ func RunServe(args []string) int {
 	router.GET("/api/v1/clawhub/installed", clawHubHandler.InstalledList)
 
 	pluginInstallHandler := handlers.NewPluginInstallHandler(gwClient)
+	router.GET("/api/v1/plugins/list", pluginInstallHandler.List)
+	router.GET("/api/v1/plugins/status", pluginInstallHandler.Status)
 	router.GET("/api/v1/plugins/can-install", pluginInstallHandler.CanInstall)
 	router.GET("/api/v1/plugins/check", pluginInstallHandler.CheckInstalled)
 	router.POST("/api/v1/plugins/install", web.RequireAdmin(pluginInstallHandler.Install))
+	router.POST("/api/v1/plugins/uninstall", web.RequireAdmin(pluginInstallHandler.Uninstall))
+	router.POST("/api/v1/plugins/update", web.RequireAdmin(pluginInstallHandler.Update))
+
+	skillHubHandler := handlers.NewSkillHubHandler()
+	router.GET("/api/v1/skillhub/cli-status", skillHubHandler.CLIStatus)
+	router.POST("/api/v1/skillhub/install", web.RequireAdmin(skillHubHandler.Install))
+	router.GET("/api/v1/skillhub/data", skillHubHandler.ProxyData)
 
 	router.GET("/api/v1/export/activities", exportHandler.ExportActivities)
 	router.GET("/api/v1/export/alerts", exportHandler.ExportAlerts)

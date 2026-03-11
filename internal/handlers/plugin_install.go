@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -239,6 +240,18 @@ func (h *PluginInstallHandler) Install(w http.ResponseWriter, r *http.Request) {
 	}
 
 	output := stdout.String()
+
+	// CLI may exit 0 but still report failure in output.
+	if strings.Contains(output, "Failed to install") || strings.Contains(output, "Failed to update") {
+		logger.Log.Warn().Str("spec", spec).Str("output", output).Msg("plugin install command exited 0 but output indicates failure")
+		web.OK(w, r, map[string]interface{}{
+			"success": false,
+			"spec":    spec,
+			"output":  output,
+		})
+		return
+	}
+
 	logger.Log.Info().Str("spec", spec).Str("output", output).Msg("plugin installed successfully")
 
 	web.OK(w, r, map[string]interface{}{
@@ -246,6 +259,525 @@ func (h *PluginInstallHandler) Install(w http.ResponseWriter, r *http.Request) {
 		"spec":    spec,
 		"output":  output,
 	})
+}
+
+// PluginInfo represents a single plugin's combined status from Gateway config.
+type PluginInfo struct {
+	ID        string `json:"id"`
+	Spec      string `json:"spec,omitempty"`
+	Installed bool   `json:"installed"`
+	Enabled   bool   `json:"enabled"`
+}
+
+// List returns all known plugins from Gateway config (plugins.installs + plugins.entries).
+// GET /api/v1/plugins/list
+func (h *PluginInstallHandler) List(w http.ResponseWriter, r *http.Request) {
+	if h.gwClient == nil {
+		web.OK(w, r, map[string]interface{}{
+			"plugins":     []PluginInfo{},
+			"can_install": true,
+			"is_remote":   false,
+		})
+		return
+	}
+
+	isRemote := h.isRemoteGateway()
+
+	resp, err := h.gwClient.Request("config.get", map[string]interface{}{})
+	if err != nil {
+		logger.Log.Debug().Err(err).Msg("plugins list: failed to get config from gateway")
+		web.OK(w, r, map[string]interface{}{
+			"plugins":     []PluginInfo{},
+			"can_install": !isRemote,
+			"is_remote":   isRemote,
+		})
+		return
+	}
+
+	var respMap map[string]interface{}
+	if err := json.Unmarshal(resp, &respMap); err != nil {
+		logger.Log.Debug().Err(err).Msg("plugins list: failed to unmarshal config")
+		web.OK(w, r, map[string]interface{}{
+			"plugins":     []PluginInfo{},
+			"can_install": !isRemote,
+			"is_remote":   isRemote,
+		})
+		return
+	}
+
+	configObj := respMap
+	if cfg, ok := respMap["config"].(map[string]interface{}); ok {
+		configObj = cfg
+	}
+
+	// Collect plugins from installs and entries
+	seen := map[string]bool{}
+	var plugins []PluginInfo
+
+	if pluginsObj, ok := configObj["plugins"].(map[string]interface{}); ok {
+		// plugins.installs: Record<pluginId, { spec?, ... }>
+		if installs, ok := pluginsObj["installs"].(map[string]interface{}); ok {
+			for pluginId, install := range installs {
+				seen[pluginId] = true
+				info := PluginInfo{
+					ID:        pluginId,
+					Installed: true,
+					Enabled:   true, // default enabled unless entries says otherwise
+				}
+				if installMap, ok := install.(map[string]interface{}); ok {
+					if spec, ok := installMap["spec"].(string); ok {
+						info.Spec = spec
+					}
+				}
+				plugins = append(plugins, info)
+			}
+		}
+
+		// plugins.entries: Record<pluginId, { enabled? }>
+		if entries, ok := pluginsObj["entries"].(map[string]interface{}); ok {
+			for pluginId, entry := range entries {
+				if entryMap, ok := entry.(map[string]interface{}); ok {
+					if enabled, ok := entryMap["enabled"].(bool); ok {
+						// Update existing or add new
+						found := false
+						for i := range plugins {
+							if plugins[i].ID == pluginId {
+								plugins[i].Enabled = enabled
+								found = true
+								break
+							}
+						}
+						if !found && !seen[pluginId] {
+							seen[pluginId] = true
+							plugins = append(plugins, PluginInfo{
+								ID:        pluginId,
+								Installed: false,
+								Enabled:   enabled,
+							})
+						}
+					}
+				}
+			}
+		}
+	}
+
+	web.OK(w, r, map[string]interface{}{
+		"plugins":     plugins,
+		"can_install": !isRemote,
+		"is_remote":   isRemote,
+	})
+}
+
+// Status returns runtime plugin status from Gateway (works on both local and remote).
+// GET /api/v1/plugins/status
+// This calls the Gateway RPC "plugins.status" which returns loaded/disabled/error plugins
+// plus diagnostics, slots, allow/deny lists — all readable on any gateway.
+func (h *PluginInstallHandler) Status(w http.ResponseWriter, r *http.Request) {
+	isRemote := h.isRemoteGateway()
+
+	if h.gwClient == nil {
+		web.OK(w, r, map[string]interface{}{
+			"plugins":     []interface{}{},
+			"diagnostics": []interface{}{},
+			"slots":       map[string]interface{}{},
+			"allow":       []string{},
+			"deny":        []string{},
+			"can_install": true,
+			"is_remote":   false,
+		})
+		return
+	}
+
+	// Get runtime plugin status via JSON-RPC
+	statusResp, err := h.gwClient.Request("plugins.status", map[string]interface{}{})
+	if err != nil {
+		logger.Log.Debug().Err(err).Msg("plugins.status RPC failed, falling back to config.get")
+		// Fallback: build status from config.get
+		h.statusFromConfig(w, r, isRemote)
+		return
+	}
+
+	var statusMap map[string]interface{}
+	if err := json.Unmarshal(statusResp, &statusMap); err != nil {
+		logger.Log.Debug().Err(err).Msg("plugins.status: failed to unmarshal response")
+		h.statusFromConfig(w, r, isRemote)
+		return
+	}
+
+	// Pass through the RPC response, adding gateway info
+	statusMap["can_install"] = !isRemote
+	statusMap["is_remote"] = isRemote
+	web.OK(w, r, statusMap)
+}
+
+// statusFromConfig builds a minimal plugin status from config.get when plugins.status RPC is unavailable.
+func (h *PluginInstallHandler) statusFromConfig(w http.ResponseWriter, r *http.Request, isRemote bool) {
+	resp, err := h.gwClient.Request("config.get", map[string]interface{}{})
+	if err != nil {
+		web.OK(w, r, map[string]interface{}{
+			"plugins":     []interface{}{},
+			"diagnostics": []interface{}{},
+			"slots":       map[string]interface{}{},
+			"allow":       []string{},
+			"deny":        []string{},
+			"can_install": !isRemote,
+			"is_remote":   isRemote,
+		})
+		return
+	}
+
+	var respMap map[string]interface{}
+	if err := json.Unmarshal(resp, &respMap); err != nil {
+		web.OK(w, r, map[string]interface{}{
+			"plugins":     []interface{}{},
+			"diagnostics": []interface{}{},
+			"slots":       map[string]interface{}{},
+			"allow":       []string{},
+			"deny":        []string{},
+			"can_install": !isRemote,
+			"is_remote":   isRemote,
+		})
+		return
+	}
+
+	configObj := respMap
+	if cfg, ok := respMap["config"].(map[string]interface{}); ok {
+		configObj = cfg
+	}
+
+	var plugins []map[string]interface{}
+	var allow []string
+	var deny []string
+	slots := map[string]interface{}{}
+
+	if pluginsObj, ok := configObj["plugins"].(map[string]interface{}); ok {
+		// Build plugin list from installs + entries
+		seen := map[string]bool{}
+		if installs, ok := pluginsObj["installs"].(map[string]interface{}); ok {
+			for pluginId, install := range installs {
+				seen[pluginId] = true
+				info := map[string]interface{}{
+					"id":        pluginId,
+					"status":    "loaded",
+					"installed": true,
+					"enabled":   true,
+					"source":    "config",
+				}
+				if installMap, ok := install.(map[string]interface{}); ok {
+					if spec, ok := installMap["spec"].(string); ok {
+						info["spec"] = spec
+					}
+					if version, ok := installMap["version"].(string); ok {
+						info["version"] = version
+					}
+					if src, ok := installMap["source"].(string); ok {
+						info["installSource"] = src
+					}
+					if installPath, ok := installMap["installPath"].(string); ok {
+						info["installPath"] = installPath
+					}
+					if installedAt, ok := installMap["installedAt"].(string); ok {
+						info["installedAt"] = installedAt
+					}
+				}
+				plugins = append(plugins, info)
+			}
+		}
+		if entries, ok := pluginsObj["entries"].(map[string]interface{}); ok {
+			for pluginId, entry := range entries {
+				if entryMap, ok := entry.(map[string]interface{}); ok {
+					if enabled, ok := entryMap["enabled"].(bool); ok {
+						found := false
+						for i := range plugins {
+							if plugins[i]["id"] == pluginId {
+								plugins[i]["enabled"] = enabled
+								if !enabled {
+									plugins[i]["status"] = "disabled"
+								}
+								found = true
+								break
+							}
+						}
+						if !found && !seen[pluginId] {
+							seen[pluginId] = true
+							status := "loaded"
+							if !enabled {
+								status = "disabled"
+							}
+							plugins = append(plugins, map[string]interface{}{
+								"id":        pluginId,
+								"status":    status,
+								"installed": false,
+								"enabled":   enabled,
+								"source":    "config",
+							})
+						}
+					}
+				}
+			}
+		}
+		if allowList, ok := pluginsObj["allow"].([]interface{}); ok {
+			for _, a := range allowList {
+				if s, ok := a.(string); ok {
+					allow = append(allow, s)
+				}
+			}
+		}
+		if denyList, ok := pluginsObj["deny"].([]interface{}); ok {
+			for _, d := range denyList {
+				if s, ok := d.(string); ok {
+					deny = append(deny, s)
+				}
+			}
+		}
+		if slotsObj, ok := pluginsObj["slots"].(map[string]interface{}); ok {
+			slots = slotsObj
+		}
+	}
+
+	web.OK(w, r, map[string]interface{}{
+		"plugins":     plugins,
+		"diagnostics": []interface{}{},
+		"slots":       slots,
+		"allow":       allow,
+		"deny":        deny,
+		"can_install": !isRemote,
+		"is_remote":   isRemote,
+	})
+}
+
+// Uninstall removes a plugin. Local gateway only.
+// POST /api/v1/plugins/uninstall  { "id": "plugin-id" }
+func (h *PluginInstallHandler) Uninstall(w http.ResponseWriter, r *http.Request) {
+	if h.isRemoteGateway() {
+		web.Fail(w, r, "REMOTE_GATEWAY", "plugin uninstall is only supported on local gateway", http.StatusBadRequest)
+		return
+	}
+
+	var body struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || strings.TrimSpace(body.ID) == "" {
+		web.Fail(w, r, "INVALID_PARAMS", "id is required", http.StatusBadRequest)
+		return
+	}
+
+	pluginId := strings.TrimSpace(body.ID)
+	// Validate: no dangerous characters
+	for _, ch := range []string{";", "&", "|", "`", "$", "(", ")", "{", "}", "<", ">", "\\", "\n", "\r"} {
+		if strings.Contains(pluginId, ch) {
+			web.Fail(w, r, "INVALID_PARAMS", "invalid plugin id", http.StatusBadRequest)
+			return
+		}
+	}
+
+	logger.Log.Info().Str("id", pluginId).Msg("uninstalling plugin")
+
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd.exe", "/c", "openclaw", "plugins", "uninstall", pluginId, "--force")
+	} else {
+		cmd = exec.Command("openclaw", "plugins", "uninstall", pluginId, "--force")
+	}
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	done := make(chan error, 1)
+	go func() {
+		done <- cmd.Run()
+	}()
+
+	select {
+	case err := <-done:
+		if err != nil {
+			errMsg := stderr.String()
+			if errMsg == "" {
+				errMsg = stdout.String()
+			}
+			if errMsg == "" {
+				errMsg = err.Error()
+			}
+			logger.Log.Error().Err(err).Str("id", pluginId).Str("stderr", errMsg).Msg("plugin uninstall failed")
+			web.Fail(w, r, "UNINSTALL_FAILED", errMsg, http.StatusInternalServerError)
+			return
+		}
+	case <-time.After(2 * time.Minute):
+		if cmd.Process != nil {
+			cmd.Process.Kill()
+		}
+		web.Fail(w, r, "UNINSTALL_TIMEOUT", "uninstall timed out", http.StatusGatewayTimeout)
+		return
+	}
+
+	output := stdout.String()
+	logger.Log.Info().Str("id", pluginId).Str("output", output).Msg("plugin uninstalled successfully")
+
+	web.OK(w, r, map[string]interface{}{
+		"success": true,
+		"id":      pluginId,
+		"output":  output,
+	})
+}
+
+// Update updates one or all npm-installed plugins. Local gateway only.
+// POST /api/v1/plugins/update  { "id": "plugin-id" } or { "all": true }
+func (h *PluginInstallHandler) Update(w http.ResponseWriter, r *http.Request) {
+	if h.isRemoteGateway() {
+		web.Fail(w, r, "REMOTE_GATEWAY", "plugin update is only supported on local gateway", http.StatusBadRequest)
+		return
+	}
+
+	var body struct {
+		ID  string `json:"id"`
+		All bool   `json:"all"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		web.Fail(w, r, "INVALID_PARAMS", "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	pluginId := strings.TrimSpace(body.ID)
+	if !body.All && pluginId == "" {
+		web.Fail(w, r, "INVALID_PARAMS", "id or all=true is required", http.StatusBadRequest)
+		return
+	}
+
+	// Validate id if present
+	if pluginId != "" {
+		for _, ch := range []string{";", "&", "|", "`", "$", "(", ")", "{", "}", "<", ">", "\\", "\n", "\r"} {
+			if strings.Contains(pluginId, ch) {
+				web.Fail(w, r, "INVALID_PARAMS", "invalid plugin id", http.StatusBadRequest)
+				return
+			}
+		}
+	}
+
+	var args []string
+	if body.All {
+		args = []string{"plugins", "update", "--all"}
+		logger.Log.Info().Msg("updating all plugins")
+	} else {
+		args = []string{"plugins", "update", pluginId}
+		logger.Log.Info().Str("id", pluginId).Msg("updating plugin")
+	}
+
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd.exe", append([]string{"/c", "openclaw"}, args...)...)
+	} else {
+		cmd = exec.Command("openclaw", args...)
+	}
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	done := make(chan error, 1)
+	go func() {
+		done <- cmd.Run()
+	}()
+
+	select {
+	case err := <-done:
+		if err != nil {
+			errMsg := stderr.String()
+			if errMsg == "" {
+				errMsg = stdout.String()
+			}
+			if errMsg == "" {
+				errMsg = err.Error()
+			}
+			logger.Log.Error().Err(err).Str("id", pluginId).Bool("all", body.All).Str("stderr", errMsg).Msg("plugin update failed")
+			web.Fail(w, r, "UPDATE_FAILED", errMsg, http.StatusInternalServerError)
+			return
+		}
+	case <-time.After(5 * time.Minute):
+		if cmd.Process != nil {
+			cmd.Process.Kill()
+		}
+		web.Fail(w, r, "UPDATE_TIMEOUT", "update timed out", http.StatusGatewayTimeout)
+		return
+	}
+
+	output := stdout.String()
+
+	// CLI may exit 0 but still report failure in output (e.g. prerelease version resolution).
+	// When the failure is due to prerelease-only packages, automatically retry with @beta tag.
+	if strings.Contains(output, "Failed to update") || strings.Contains(output, "Failed to install") {
+		// Try smart prerelease retry: extract spec from "Resolved <spec> to prerelease version"
+		if !body.All && strings.Contains(output, "prereleases are only installed when explicitly requested") {
+			retrySpec := extractPrereleaseSpec(output)
+			if retrySpec != "" {
+				betaSpec := retrySpec + "@beta"
+				logger.Log.Info().Str("id", pluginId).Str("betaSpec", betaSpec).Msg("retrying plugin update with @beta tag")
+
+				retryArgs := []string{"plugins", "install", betaSpec}
+				var retryCmd *exec.Cmd
+				if runtime.GOOS == "windows" {
+					retryCmd = exec.Command("cmd.exe", append([]string{"/c", "openclaw"}, retryArgs...)...)
+				} else {
+					retryCmd = exec.Command("openclaw", retryArgs...)
+				}
+				var retryStdout, retryStderr bytes.Buffer
+				retryCmd.Stdout = &retryStdout
+				retryCmd.Stderr = &retryStderr
+
+				retryDone := make(chan error, 1)
+				go func() { retryDone <- retryCmd.Run() }()
+
+				select {
+				case retryErr := <-retryDone:
+					retryOutput := retryStdout.String()
+					if retryErr == nil && !strings.Contains(retryOutput, "Failed to install") && !strings.Contains(retryOutput, "Failed to update") {
+						logger.Log.Info().Str("id", pluginId).Str("betaSpec", betaSpec).Str("output", retryOutput).Msg("plugin updated successfully via @beta retry")
+						web.OK(w, r, map[string]interface{}{
+							"success": true,
+							"id":      pluginId,
+							"all":     false,
+							"output":  retryOutput,
+						})
+						return
+					}
+					logger.Log.Warn().Str("id", pluginId).Str("betaSpec", betaSpec).Str("output", retryOutput).Msg("@beta retry also failed")
+				case <-time.After(5 * time.Minute):
+					if retryCmd.Process != nil {
+						retryCmd.Process.Kill()
+					}
+					logger.Log.Warn().Str("id", pluginId).Msg("@beta retry timed out")
+				}
+			}
+		}
+
+		logger.Log.Warn().Str("id", pluginId).Bool("all", body.All).Str("output", output).Msg("plugin update command exited 0 but output indicates failure")
+		web.OK(w, r, map[string]interface{}{
+			"success": false,
+			"id":      pluginId,
+			"all":     body.All,
+			"output":  output,
+		})
+		return
+	}
+
+	logger.Log.Info().Str("id", pluginId).Bool("all", body.All).Str("output", output).Msg("plugin update completed")
+
+	web.OK(w, r, map[string]interface{}{
+		"success": true,
+		"id":      pluginId,
+		"all":     body.All,
+		"output":  output,
+	})
+}
+
+// extractPrereleaseSpec extracts the npm package spec from prerelease error output.
+// Looks for pattern: "Resolved <spec> to prerelease version"
+var prereleaseSpecRe = regexp.MustCompile(`Resolved\s+(\S+)\s+to prerelease version`)
+
+func extractPrereleaseSpec(output string) string {
+	matches := prereleaseSpecRe.FindStringSubmatch(output)
+	if len(matches) >= 2 {
+		return matches[1]
+	}
+	return ""
 }
 
 // isValidNpmSpec validates npm package spec format.

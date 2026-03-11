@@ -46,6 +46,8 @@ func Run(args []string) int {
 		return handleSettings(args[2:])
 	case "reset-password":
 		return commands.ResetPassword(args[2:])
+	case "unlock":
+		return commands.Unlock(args[2:])
 	default:
 		return commands.RunServe(args[1:])
 	}

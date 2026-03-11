@@ -143,17 +143,29 @@ StandardOutput=journal
 StandardError=journal
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
 EOF
     
     echo -e "${GREEN}✓ Created service file / 已创建服务文件${NC}"
     
     # Reload daemon and enable service (but don't start)
-    systemctl --user daemon-reload
-    systemctl --user enable clawdeckx
-    
-    echo -e "${GREEN}✓ Auto-start service installed / 自动启动服务已安装${NC}"
-    echo -e "${GREEN}✓ Service will start automatically on next system boot / 服务将在下次系统启动时自动运行${NC}"
+    # systemctl --user requires a D-Bus session bus which may not exist
+    # in non-interactive pipes (curl | bash) or SSH sessions without lingering.
+    if systemctl --user daemon-reload 2>/dev/null; then
+        systemctl --user enable clawdeckx 2>/dev/null
+        echo -e "${GREEN}✓ Auto-start service installed / 自动启动服务已安装${NC}"
+        echo -e "${GREEN}✓ Service will start automatically on next system boot / 服务将在下次系统启动时自动运行${NC}"
+    else
+        echo -e "${YELLOW}⚠ Could not enable service automatically (no D-Bus session bus)."
+        echo -e "   无法自动启用服务（没有 D-Bus 会话总线）。${NC}"
+        echo -e "${CYAN}After logging in, run these commands to enable the service:"
+        echo -e "登录后请运行以下命令启用服务：${NC}"
+        echo -e "  ${GREEN}systemctl --user daemon-reload${NC}"
+        echo -e "  ${GREEN}systemctl --user enable clawdeckx${NC}"
+        # Enable lingering so user services start at boot without login
+        echo -e "${CYAN}To start service at boot without login / 无需登录即可在开机时启动服务：${NC}"
+        echo -e "  ${GREEN}loginctl enable-linger \$(whoami)${NC}"
+    fi
     echo -e "${YELLOW}⚠ Service is NOT started yet / 服务尚未启动${NC}"
 }
 

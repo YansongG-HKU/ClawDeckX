@@ -608,10 +608,68 @@ export const openclawApi = {
 };
 
 // ==================== 插件安装 ====================
+export interface PluginListItem {
+  id: string;
+  spec?: string;
+  installed: boolean;
+  enabled: boolean;
+}
+export interface PluginListResponse {
+  plugins: PluginListItem[];
+  can_install: boolean;
+  is_remote: boolean;
+}
+export interface PluginStatusPlugin {
+  id: string;
+  name?: string;
+  version?: string;
+  description?: string;
+  kind?: string;
+  source?: string;
+  origin?: string;
+  status: 'loaded' | 'disabled' | 'error';
+  error?: string;
+  enabled?: boolean;
+  installed?: boolean;
+  spec?: string;
+  installSource?: string;
+  installPath?: string;
+  installedAt?: string;
+  toolNames?: string[];
+  hookNames?: string[];
+  channelIds?: string[];
+  providerIds?: string[];
+  gatewayMethods?: string[];
+  cliCommands?: string[];
+  services?: string[];
+  commands?: string[];
+  httpRoutes?: number;
+  hookCount?: number;
+  configSchema?: boolean;
+}
+export interface PluginDiagnostic {
+  level: 'error' | 'warn';
+  pluginId?: string;
+  source?: string;
+  message: string;
+}
+export interface PluginStatusResponse {
+  plugins: PluginStatusPlugin[];
+  diagnostics: PluginDiagnostic[];
+  slots: Record<string, string>;
+  allow: string[];
+  deny: string[];
+  can_install: boolean;
+  is_remote: boolean;
+}
 export const pluginApi = {
+  list: () => get<PluginListResponse>('/api/v1/plugins/list'),
+  status: () => get<PluginStatusResponse>('/api/v1/plugins/status'),
   canInstall: () => get<{ can_install: boolean; is_remote: boolean }>('/api/v1/plugins/can-install'),
   checkInstalled: (spec: string) => get<{ installed: boolean; spec: string }>(`/api/v1/plugins/check?spec=${encodeURIComponent(spec)}`),
   install: (spec: string) => post<{ success: boolean; spec: string; output: string }>('/api/v1/plugins/install', { spec }),
+  uninstall: (id: string) => post<{ success: boolean; id: string; output: string }>('/api/v1/plugins/uninstall', { id }),
+  update: (id?: string, all?: boolean) => post<{ success: boolean; id: string; all: boolean; output: string }>('/api/v1/plugins/update', { id, all }),
 };
 
 // ==================== Gateway 代理 API ====================
@@ -1211,4 +1269,43 @@ export const workflowApi = {
     ),
   stop: (instanceId: string) =>
     post<{ instanceId: string; status: string }>('/api/v1/workflow/stop', { instanceId }),
+};
+
+// ==================== SkillHub ====================
+export interface SkillHubCLIStatus {
+  installed: boolean;
+  version: string | null;
+  path: string | null;
+}
+
+export interface SkillHubSkill {
+  slug: string;
+  name: string;
+  homepage: string;
+  version: string;
+  description: string;
+  description_zh?: string;
+  stars: number;
+  downloads: number;
+  installs: number;
+  tags: string[];
+  updated_at: number;
+  score: number;
+}
+
+export interface SkillHubData {
+  total: number;
+  generated_at: string;
+  featured: string[];
+  categories: Record<string, string[]>;
+  skills: SkillHubSkill[];
+}
+
+export const skillHubApi = {
+  cliStatus: () => get<SkillHubCLIStatus>('/api/v1/skillhub/cli-status'),
+  install: () => post<{ success: boolean; output: string }>('/api/v1/skillhub/install', {}),
+  getData: (url?: string) => {
+    const endpoint = url ? `/api/v1/skillhub/data?url=${encodeURIComponent(url)}` : '/api/v1/skillhub/data';
+    return get<SkillHubData>(endpoint);
+  },
 };

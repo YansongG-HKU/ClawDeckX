@@ -21,6 +21,7 @@ const (
 	ActionLogin                  = "login"
 	ActionLoginFailed            = "login.failed"
 	ActionAccountLocked          = "account.locked"
+	ActionAccountUnlocked        = "account.unlocked"
 	ActionLogout                 = "logout"
 	ActionAuthFailed             = "auth.failed"
 	ActionForbidden              = "forbidden"
