@@ -174,7 +174,6 @@ func modelTestFriendlyMessage(status int, modelID string) string {
 	}
 }
 
-
 // DiscoverModels discovers model IDs from provider endpoints.
 // POST /api/v1/setup/discover-models
 func (h *WizardHandler) DiscoverModels(w http.ResponseWriter, r *http.Request) {
@@ -183,9 +182,30 @@ func (h *WizardHandler) DiscoverModels(w http.ResponseWriter, r *http.Request) {
 		web.FailErr(w, r, web.ErrInvalidBody)
 		return
 	}
-	if strings.TrimSpace(req.Provider) == "" {
+	req.Provider = strings.TrimSpace(req.Provider)
+	req.APIKey = strings.TrimSpace(req.APIKey)
+	req.BaseURL = strings.TrimSpace(req.BaseURL)
+	req.APIType = strings.TrimSpace(req.APIType)
+
+	if req.Provider == "" {
 		web.FailErr(w, r, web.ErrInvalidParam)
 		return
+	}
+
+	if resolvedFromRef := strings.TrimSpace(h.resolveAPIKeyReference(req.APIKey)); resolvedFromRef != req.APIKey {
+		req.APIKey = resolvedFromRef
+	}
+
+	// For existing provider configs loaded via config.get(redact=true), apiKey may
+	// arrive as a redacted placeholder. Resolve the real key via gateway config.get(redact=false).
+	if req.Provider != "ollama" && isRedactedAPIKey(req.APIKey) {
+		if realKey := h.resolveProviderAPIKeyViaGW(req.Provider); realKey != "" {
+			req.APIKey = strings.TrimSpace(h.resolveAPIKeyReference(realKey))
+		} else if localKey := h.resolveProviderAPIKeyViaLocalConfig(req.Provider); localKey != "" {
+			req.APIKey = localKey
+		} else if fallbackKey := h.resolveProviderAPIKeyViaEnv(req.Provider); fallbackKey != "" {
+			req.APIKey = fallbackKey
+		}
 	}
 
 	models, source, err := discoverModels(req)
@@ -709,7 +729,10 @@ func (h *WizardHandler) resolveProviderAPIKeyViaGW(provider string) string {
 	if h.gwClient == nil {
 		return ""
 	}
-	raw, err := h.gwClient.Request("config.get", map[string]interface{}{})
+	// Request unredacted config to get real API keys
+	raw, err := h.gwClient.Request("config.get", map[string]interface{}{
+		"redact": false,
+	})
 	if err != nil {
 		return ""
 	}
@@ -1414,7 +1437,6 @@ func (h *WizardHandler) mergeConfig(config map[string]interface{}) error {
 	return nil
 }
 
-
 // writeEnvKey writes an API key to ~/.openclaw/.env.
 func (h *WizardHandler) writeEnvKey(key, value string) {
 	home, err := os.UserHomeDir()
@@ -1449,7 +1471,6 @@ func (h *WizardHandler) writeEnvKey(key, value string) {
 	os.MkdirAll(dir, 0o700)
 	os.WriteFile(envPath, []byte(content), 0o600)
 }
-
 
 // providerEnvKey returns the env var name for a provider.
 func providerEnvKey(provider string) string {
