@@ -892,11 +892,32 @@ if [ "$(id -u)" = "0" ]; then
         adduser --gecos "" --disabled-password openclaw
         echo -e "${GREEN}✓ User created / 用户已创建${NC}"
         
-        # 设置密码
+        # 设置密码（最多重试 3 次）
         echo ""
-        echo -e "${YELLOW}Please set password for 'openclaw' (enter twice):"
-        echo -e "请为 'openclaw' 设置密码（需输入两次）：${NC}"
-        passwd openclaw </dev/tty
+        PASSWD_SET=false
+        for i in 1 2 3; do
+            echo -e "${YELLOW}Please set password for 'openclaw' (enter twice):"
+            echo -e "请为 'openclaw' 设置密码（需输入两次）：${NC}"
+            if passwd openclaw </dev/tty; then
+                PASSWD_SET=true
+                break
+            fi
+            echo ""
+            if [ "$i" -lt 3 ]; then
+                echo -e "${RED}Passwords did not match, please try again ($i/3)"
+                echo -e "密码不匹配，请重试 ($i/3)${NC}"
+                echo ""
+            fi
+        done
+        
+        if [ "$PASSWD_SET" = false ]; then
+            echo -e "${RED}✗ Failed to set password after 3 attempts. Removing user 'openclaw'..."
+            echo -e "✗ 3 次密码设置均失败，正在删除用户 'openclaw'...${NC}"
+            userdel -r openclaw 2>/dev/null
+            echo -e "${YELLOW}Please re-run the script to try again."
+            echo -e "请重新运行脚本重试。${NC}"
+            exit 1
+        fi
         
         # 添加到 sudo 组
         usermod -aG sudo openclaw
