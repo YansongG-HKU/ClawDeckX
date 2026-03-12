@@ -596,7 +596,7 @@ const SkillHub: React.FC<SkillHubProps> = ({ language }) => {
               { value: 'all', label: sk.categoryAll || 'All Categories' },
               ...categories.map(cat => ({ value: cat, label: cat }))
             ]}
-            className="shrink-0"
+            className="h-9 px-2 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-[10px] font-bold text-slate-600 dark:text-white/60 outline-none shrink-0"
           />
 
           {/* Featured toggle */}
