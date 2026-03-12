@@ -148,7 +148,9 @@
     "disabledLabel": "無効",
     "marketFetchFailed": "マーケットデータの取得に失敗しました",
     "marketSearchFailed": "検索に失敗しました",
-    "refreshMarket": "マーケットデータを更新"
+    "marketRateLimited": "ClawHub APIのレート制限に達しました。しばらくしてから再試行してください",
+    "refreshMarket": "マーケットデータを更新",
+    "rateLimitInfo": "APIレート制限"
   },
   "skillsMarket": {
     "title": "スキルマーケット",

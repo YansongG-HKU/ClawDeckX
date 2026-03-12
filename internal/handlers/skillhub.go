@@ -9,6 +9,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -20,12 +22,15 @@ import (
 // SkillHubHandler handles SkillHub-related operations
 type SkillHubHandler struct {
 	// Server-side cache for proxied SkillHub data (avoids re-fetching 3-5MB JSON from CDN)
-	cacheMu   sync.Mutex
-	cacheData json.RawMessage
-	cacheURL  string
-	cacheTime time.Time
-	cacheTTL  time.Duration
-	gwClient  GatewayClient
+	cacheMu        sync.Mutex
+	cacheData      json.RawMessage
+	cacheURL       string
+	cacheTime      time.Time
+	cacheTTL       time.Duration
+	warmingUp      bool // prevents multiple concurrent WarmCache goroutines
+	gwClient       GatewayClient
+	diskCacheDir   string
+	defaultDataURL string
 }
 
 // GatewayClient interface for OpenClaw Gateway RPC calls
@@ -47,11 +52,121 @@ func managedSkillsDir() string {
 	return filepath.Join(home, ".openclaw", "skills")
 }
 
-// NewSkillHubHandler creates a new SkillHub handler
-func NewSkillHubHandler() *SkillHubHandler {
-	return &SkillHubHandler{
-		cacheTTL: 1 * time.Hour,
+// NewSkillHubHandler creates a new SkillHub handler.
+// dataURL is the upstream SkillHub JSON URL (configurable via config.skillhub.data_url).
+func NewSkillHubHandler(dataDir string, dataURL string) *SkillHubHandler {
+	cacheDir := filepath.Join(dataDir, "cache")
+	os.MkdirAll(cacheDir, 0o755)
+
+	if dataURL == "" {
+		dataURL = "https://cloudcache.tencentcs.com/qcloud/tea/app/data/skills.33d56946.json"
 	}
+
+	h := &SkillHubHandler{
+		cacheTTL:       1 * time.Hour,
+		diskCacheDir:   cacheDir,
+		defaultDataURL: dataURL,
+	}
+	// Load disk cache on startup for instant first response
+	h.loadDiskCache()
+	return h
+}
+
+const diskCacheFile = "skillhub_data.json"
+
+// diskCacheMeta is stored alongside the cached data on disk.
+type diskCacheMeta struct {
+	URL       string    `json:"url"`
+	FetchedAt time.Time `json:"fetched_at"`
+}
+
+// loadDiskCache restores cached data from disk into memory.
+func (h *SkillHubHandler) loadDiskCache() {
+	dataPath := filepath.Join(h.diskCacheDir, diskCacheFile)
+	metaPath := dataPath + ".meta"
+
+	data, err := os.ReadFile(dataPath)
+	if err != nil || !json.Valid(data) {
+		return
+	}
+
+	var meta diskCacheMeta
+	if metaBytes, err := os.ReadFile(metaPath); err == nil {
+		json.Unmarshal(metaBytes, &meta)
+	}
+
+	h.cacheMu.Lock()
+	h.cacheData = json.RawMessage(data)
+	h.cacheURL = meta.URL
+	h.cacheTime = meta.FetchedAt
+	h.cacheMu.Unlock()
+	logger.Log.Info().Str("age", time.Since(meta.FetchedAt).String()).Msg("SkillHub disk cache loaded")
+}
+
+// saveDiskCache persists the in-memory cache to disk.
+func (h *SkillHubHandler) saveDiskCache(data []byte, url string) {
+	dataPath := filepath.Join(h.diskCacheDir, diskCacheFile)
+	metaPath := dataPath + ".meta"
+
+	if err := os.WriteFile(dataPath, data, 0o644); err != nil {
+		logger.Log.Warn().Err(err).Msg("failed to save SkillHub disk cache")
+		return
+	}
+
+	meta := diskCacheMeta{URL: url, FetchedAt: time.Now()}
+	if metaBytes, err := json.Marshal(meta); err == nil {
+		os.WriteFile(metaPath, metaBytes, 0o644)
+	}
+}
+
+// WarmCache fetches upstream data in the background to pre-warm the cache.
+// Call this at startup after creating the handler.
+func (h *SkillHubHandler) WarmCache() {
+	h.cacheMu.Lock()
+	hasFreshCache := h.cacheData != nil && time.Since(h.cacheTime) < h.cacheTTL
+	alreadyWarming := h.warmingUp
+	if !hasFreshCache && !alreadyWarming {
+		h.warmingUp = true
+	}
+	h.cacheMu.Unlock()
+
+	if hasFreshCache || alreadyWarming {
+		return
+	}
+
+	go func() {
+		defer func() {
+			h.cacheMu.Lock()
+			h.warmingUp = false
+			h.cacheMu.Unlock()
+		}()
+		dataURL := h.defaultDataURL
+		client := &http.Client{Timeout: 2 * time.Minute}
+		resp, err := client.Get(dataURL)
+		if err != nil {
+			logger.Log.Warn().Err(err).Msg("SkillHub cache warm-up failed")
+			return
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return
+		}
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil || !json.Valid(body) {
+			return
+		}
+
+		h.cacheMu.Lock()
+		h.cacheData = json.RawMessage(body)
+		h.cacheURL = dataURL
+		h.cacheTime = time.Now()
+		h.cacheMu.Unlock()
+
+		h.saveDiskCache(body, dataURL)
+		logger.Log.Info().Int("bytes", len(body)).Msg("SkillHub cache warmed up")
+	}()
 }
 
 // SetGatewayClient sets the Gateway client for RPC calls
@@ -290,7 +405,7 @@ func (h *SkillHubHandler) InstallSkill(w http.ResponseWriter, r *http.Request) {
 func (h *SkillHubHandler) ProxyData(w http.ResponseWriter, r *http.Request) {
 	dataURL := r.URL.Query().Get("url")
 	if dataURL == "" {
-		dataURL = "https://cloudcache.tencentcs.com/qcloud/tea/app/data/skills.33d56946.json"
+		dataURL = h.defaultDataURL
 	}
 
 	// Check server-side cache (same URL + within TTL)
@@ -346,6 +461,9 @@ func (h *SkillHubHandler) ProxyData(w http.ResponseWriter, r *http.Request) {
 	h.cacheURL = dataURL
 	h.cacheTime = time.Now()
 	h.cacheMu.Unlock()
+
+	// Persist to disk for cold-start resilience
+	h.saveDiskCache(body, dataURL)
 
 	// Return standard API response format
 	web.OK(w, r, json.RawMessage(body))
@@ -429,5 +547,236 @@ func (h *SkillHubHandler) GetInstalledSkills(w http.ResponseWriter, r *http.Requ
 
 	web.OK(w, r, map[string]interface{}{
 		"skills": installedSkills,
+	})
+}
+
+// skillHubSkill is the parsed form of a single skill from the upstream JSON.
+type skillHubSkill struct {
+	Slug          string   `json:"slug"`
+	Name          string   `json:"name"`
+	Homepage      string   `json:"homepage,omitempty"`
+	Version       string   `json:"version"`
+	Description   string   `json:"description"`
+	DescriptionZH string   `json:"description_zh,omitempty"`
+	Stars         int      `json:"stars"`
+	Downloads     int      `json:"downloads"`
+	Installs      int      `json:"installs"`
+	Tags          []string `json:"tags"`
+	UpdatedAt     int64    `json:"updated_at"`
+	Score         float64  `json:"score"`
+}
+
+type skillHubFullData struct {
+	Total       int                 `json:"total"`
+	GeneratedAt string              `json:"generated_at"`
+	Featured    []string            `json:"featured"`
+	Categories  map[string][]string `json:"categories"`
+	Skills      []skillHubSkill     `json:"skills"`
+}
+
+// getCachedSkills parses the in-memory cached JSON into structured data.
+// Returns nil if no cache is available.
+func (h *SkillHubHandler) getCachedSkills() *skillHubFullData {
+	h.cacheMu.Lock()
+	raw := h.cacheData
+	h.cacheMu.Unlock()
+
+	if raw == nil {
+		return nil
+	}
+
+	var data skillHubFullData
+	if err := json.Unmarshal(raw, &data); err != nil {
+		return nil
+	}
+	return &data
+}
+
+// slimSkill returns a skill with only fields needed for list display.
+type slimSkill struct {
+	Slug          string   `json:"slug"`
+	Name          string   `json:"name"`
+	Version       string   `json:"version"`
+	Description   string   `json:"description"`
+	DescriptionZH string   `json:"description_zh,omitempty"`
+	Stars         int      `json:"stars"`
+	Downloads     int      `json:"downloads"`
+	Tags          []string `json:"tags"`
+	UpdatedAt     int64    `json:"updated_at"`
+}
+
+func toSlim(s skillHubSkill) slimSkill {
+	return slimSkill{
+		Slug:          s.Slug,
+		Name:          s.Name,
+		Version:       s.Version,
+		Description:   s.Description,
+		DescriptionZH: s.DescriptionZH,
+		Stars:         s.Stars,
+		Downloads:     s.Downloads,
+		Tags:          s.Tags,
+		UpdatedAt:     s.UpdatedAt,
+	}
+}
+
+// ListSkills returns a paginated, sorted, filtered list of skills from cached data.
+// GET /api/v1/skillhub/skills?page=1&size=60&sort=newest&category=all&featured=false
+func (h *SkillHubHandler) ListSkills(w http.ResponseWriter, r *http.Request) {
+	data := h.getCachedSkills()
+	if data == nil {
+		// Cache not yet ready — trigger warm-up and wait up to 10s for it
+		h.WarmCache()
+		for i := 0; i < 20; i++ {
+			time.Sleep(500 * time.Millisecond)
+			data = h.getCachedSkills()
+			if data != nil {
+				break
+			}
+		}
+		if data == nil {
+			web.Fail(w, r, "CACHE_EMPTY", "SkillHub data not yet loaded, please try again shortly", http.StatusServiceUnavailable)
+			return
+		}
+	}
+
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	if page < 1 {
+		page = 1
+	}
+	size, _ := strconv.Atoi(r.URL.Query().Get("size"))
+	if size < 1 || size > 200 {
+		size = 60
+	}
+	sortBy := r.URL.Query().Get("sort")
+	category := r.URL.Query().Get("category")
+	featured := r.URL.Query().Get("featured") == "true"
+
+	skills := data.Skills
+
+	// Featured filter
+	if featured {
+		featSet := make(map[string]bool, len(data.Featured))
+		for _, f := range data.Featured {
+			featSet[f] = true
+		}
+		filtered := skills[:0:0]
+		for _, s := range skills {
+			if featSet[s.Slug] {
+				filtered = append(filtered, s)
+			}
+		}
+		skills = filtered
+	}
+
+	// Category filter
+	if category != "" && category != "all" {
+		if tags, ok := data.Categories[category]; ok {
+			tagSet := make(map[string]bool, len(tags))
+			for _, t := range tags {
+				tagSet[strings.ToLower(t)] = true
+			}
+			filtered := skills[:0:0]
+			for _, s := range skills {
+				for _, t := range s.Tags {
+					if tagSet[strings.ToLower(t)] {
+						filtered = append(filtered, s)
+						break
+					}
+				}
+			}
+			skills = filtered
+		}
+	}
+
+	// Sort
+	switch sortBy {
+	case "downloads":
+		sort.Slice(skills, func(i, j int) bool { return skills[i].Downloads > skills[j].Downloads })
+	case "stars":
+		sort.Slice(skills, func(i, j int) bool { return skills[i].Stars > skills[j].Stars })
+	default: // newest
+		sort.Slice(skills, func(i, j int) bool { return skills[i].UpdatedAt > skills[j].UpdatedAt })
+	}
+
+	total := len(skills)
+	start := (page - 1) * size
+	if start > total {
+		start = total
+	}
+	end := start + size
+	if end > total {
+		end = total
+	}
+	pageSkills := skills[start:end]
+
+	// Convert to slim
+	slim := make([]slimSkill, len(pageSkills))
+	for i, s := range pageSkills {
+		slim[i] = toSlim(s)
+	}
+
+	web.OK(w, r, map[string]interface{}{
+		"skills":     slim,
+		"total":      total,
+		"page":       page,
+		"size":       size,
+		"hasMore":    end < total,
+		"categories": data.Categories,
+		"featured":   data.Featured,
+	})
+}
+
+// SearchSkills searches cached skills by query string.
+// GET /api/v1/skillhub/search?q=xxx&limit=20
+func (h *SkillHubHandler) SearchSkills(w http.ResponseWriter, r *http.Request) {
+	query := strings.TrimSpace(r.URL.Query().Get("q"))
+	if query == "" {
+		web.Fail(w, r, "INVALID_PARAMS", "q is required", http.StatusBadRequest)
+		return
+	}
+
+	data := h.getCachedSkills()
+	if data == nil {
+		h.WarmCache()
+		for i := 0; i < 20; i++ {
+			time.Sleep(500 * time.Millisecond)
+			data = h.getCachedSkills()
+			if data != nil {
+				break
+			}
+		}
+		if data == nil {
+			web.Fail(w, r, "CACHE_EMPTY", "SkillHub data not yet loaded, please try again shortly", http.StatusServiceUnavailable)
+			return
+		}
+	}
+
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if limit < 1 || limit > 200 {
+		limit = 20
+	}
+
+	q := strings.ToLower(query)
+	var results []slimSkill
+	for _, s := range data.Skills {
+		if strings.Contains(strings.ToLower(s.Name), q) ||
+			strings.Contains(strings.ToLower(s.Slug), q) ||
+			strings.Contains(strings.ToLower(s.Description), q) ||
+			strings.Contains(strings.ToLower(s.DescriptionZH), q) {
+			results = append(results, toSlim(s))
+			if len(results) >= limit {
+				break
+			}
+		}
+	}
+
+	if results == nil {
+		results = []slimSkill{}
+	}
+
+	web.OK(w, r, map[string]interface{}{
+		"skills": results,
+		"total":  len(results),
+		"query":  query,
 	})
 }

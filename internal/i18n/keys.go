@@ -143,6 +143,9 @@ const (
 	MsgCliCmdDoctor        = "cli.cmd_doctor"
 	MsgCliCmdSettings      = "cli.cmd_settings"
 	MsgCliCmdResetPassword = "cli.cmd_reset_password"
+	MsgCliCmdResetUsername = "cli.cmd_reset_username"
+	MsgCliCmdListUsers     = "cli.cmd_list_users"
+	MsgCliCmdUnlock        = "cli.cmd_unlock"
 	MsgCliExamples         = "cli.examples"
 	MsgCliExampleStart     = "cli.example_start"
 	MsgCliExamplePort      = "cli.example_port"
@@ -156,33 +159,33 @@ const (
 
 // Serve messages
 const (
-	MsgServeConfigLoadFailed      = "serve.config_load_failed"
-	MsgServeConfigSaveFailed      = "serve.config_save_failed"
-	MsgServePortSaved             = "serve.port_saved"
-	MsgServePasswordTooShort      = "serve.password_too_short"
-	MsgServePasswordEncryptFailed = "serve.password_encrypt_failed"
-	MsgServeUserCreateFailed      = "serve.user_create_failed"
-	MsgServeUserCreated           = "serve.user_created"
-	MsgServeUserExists            = "serve.user_exists"
-	MsgServeAlreadyRunning        = "serve.already_running"
+	MsgServeConfigLoadFailed        = "serve.config_load_failed"
+	MsgServeConfigSaveFailed        = "serve.config_save_failed"
+	MsgServePortSaved               = "serve.port_saved"
+	MsgServePasswordTooShort        = "serve.password_too_short"
+	MsgServePasswordEncryptFailed   = "serve.password_encrypt_failed"
+	MsgServeUserCreateFailed        = "serve.user_create_failed"
+	MsgServeUserCreated             = "serve.user_created"
+	MsgServeUserExists              = "serve.user_exists"
+	MsgServeAlreadyRunning          = "serve.already_running"
 	MsgServeAlreadyRunningSolutions = "serve.already_running_solutions"
-	MsgServePortInUse             = "serve.port_in_use"
-	MsgServePortInUseSolutions    = "serve.port_in_use_solutions"
-	MsgServePortOccupiedBy        = "serve.port_occupied_by"
-	MsgServeKillProcessPrompt     = "serve.kill_process_prompt"
-	MsgServeKillProcessOk         = "serve.kill_process_ok"
-	MsgServeKillProcessFailed     = "serve.kill_process_failed"
-	MsgServePortStillInUse        = "serve.port_still_in_use"
-	MsgServeLoopbackConflict      = "serve.loopback_conflict"
-	MsgServeAccessWarning         = "serve.access_warning"
-	MsgServeBindAllWarning        = "serve.bind_all_warning"
-	MsgServeChangeBindingHint     = "serve.change_binding_hint"
-	MsgServeFirstTimeSetup        = "serve.first_time_setup"
-	MsgServeUsernameLabel         = "serve.username_label"
-	MsgServePasswordLabel         = "serve.password_label"
-	MsgServeChangePasswordWarning = "serve.change_password_warning"
-	MsgServeChangePasswordHint    = "serve.change_password_hint"
-	MsgServeAccessUrls            = "serve.access_urls"
+	MsgServePortInUse               = "serve.port_in_use"
+	MsgServePortInUseSolutions      = "serve.port_in_use_solutions"
+	MsgServePortOccupiedBy          = "serve.port_occupied_by"
+	MsgServeKillProcessPrompt       = "serve.kill_process_prompt"
+	MsgServeKillProcessOk           = "serve.kill_process_ok"
+	MsgServeKillProcessFailed       = "serve.kill_process_failed"
+	MsgServePortStillInUse          = "serve.port_still_in_use"
+	MsgServeLoopbackConflict        = "serve.loopback_conflict"
+	MsgServeAccessWarning           = "serve.access_warning"
+	MsgServeBindAllWarning          = "serve.bind_all_warning"
+	MsgServeChangeBindingHint       = "serve.change_binding_hint"
+	MsgServeFirstTimeSetup          = "serve.first_time_setup"
+	MsgServeUsernameLabel           = "serve.username_label"
+	MsgServePasswordLabel           = "serve.password_label"
+	MsgServeChangePasswordWarning   = "serve.change_password_warning"
+	MsgServeChangePasswordHint      = "serve.change_password_hint"
+	MsgServeAccessUrls              = "serve.access_urls"
 )
 
 // Doctor messages
@@ -279,6 +282,26 @@ const (
 	MsgResetPasswordEncryptFailed    = "reset_password.encrypt_failed"
 	MsgResetPasswordUpdateFailed     = "reset_password.update_failed"
 	MsgResetPasswordSuccess          = "reset_password.success"
+)
+
+// List users messages
+const (
+	MsgListUsersNoUsers          = "list_users.no_users"
+	MsgListUsersHeader           = "list_users.header"
+	MsgListUsersConfigLoadFailed = "list_users.config_load_failed"
+	MsgListUsersDbInitFailed     = "list_users.db_init_failed"
+)
+
+// Reset username messages
+const (
+	MsgResetUsernameUsage            = "reset_username.usage"
+	MsgResetUsernameTooShort         = "reset_username.username_too_short"
+	MsgResetUsernameConfigLoadFailed = "reset_username.config_load_failed"
+	MsgResetUsernameDbInitFailed     = "reset_username.db_init_failed"
+	MsgResetUsernameUserNotFound     = "reset_username.user_not_found"
+	MsgResetUsernameExists           = "reset_username.username_exists"
+	MsgResetUsernameUpdateFailed     = "reset_username.update_failed"
+	MsgResetUsernameSuccess          = "reset_username.success"
 )
 
 // Settings messages

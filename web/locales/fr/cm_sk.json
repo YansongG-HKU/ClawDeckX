@@ -148,7 +148,9 @@
     "disabledLabel": "désactivé",
     "marketFetchFailed": "Échec de récupération du marché",
     "marketSearchFailed": "Échec de la recherche",
-    "refreshMarket": "Actualiser les données du marché"
+    "marketRateLimited": "Limite de débit ClawHub API atteinte, veuillez réessayer plus tard",
+    "refreshMarket": "Actualiser les données du marché",
+    "rateLimitInfo": "Limite de débit API"
   },
   "skillsMarket": {
     "title": "Marché des skills",

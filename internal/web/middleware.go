@@ -3,6 +3,7 @@ package web
 import (
 	"bufio"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
@@ -403,6 +404,59 @@ func containsDangerousInput(s string) bool {
 		}
 	}
 	return false
+}
+
+// gzipResponseWriter wraps http.ResponseWriter to transparently compress response bodies.
+type gzipResponseWriter struct {
+	http.ResponseWriter
+	gz *gzip.Writer
+}
+
+func (g *gzipResponseWriter) Write(b []byte) (int, error) {
+	return g.gz.Write(b)
+}
+
+func (g *gzipResponseWriter) Flush() {
+	g.gz.Flush()
+	if f, ok := g.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
+var gzipWriterPool = sync.Pool{
+	New: func() interface{} {
+		gz, _ := gzip.NewWriterLevel(nil, gzip.DefaultCompression)
+		return gz
+	},
+}
+
+// GzipMiddleware compresses responses with gzip when the client accepts it
+// and the response Content-Type is compressible (JSON, HTML, JS, CSS, text).
+func GzipMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+			next.ServeHTTP(w, r)
+			return
+		}
+		// Skip for WebSocket upgrades and SSE streams
+		if r.Header.Get("Upgrade") != "" || r.Header.Get("Accept") == "text/event-stream" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		gz := gzipWriterPool.Get().(*gzip.Writer)
+		defer gzipWriterPool.Put(gz)
+
+		gz.Reset(w)
+
+		w.Header().Set("Content-Encoding", "gzip")
+		w.Header().Set("Vary", "Accept-Encoding")
+		w.Header().Del("Content-Length")
+
+		grw := &gzipResponseWriter{ResponseWriter: w, gz: gz}
+		next.ServeHTTP(grw, r)
+		gz.Close()
+	})
 }
 
 func Chain(h http.Handler, middlewares ...func(http.Handler) http.Handler) http.Handler {

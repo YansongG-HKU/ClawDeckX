@@ -1301,6 +1301,22 @@ export interface SkillHubData {
   skills: SkillHubSkill[];
 }
 
+export interface SkillHubPageResponse {
+  skills: SkillHubSkill[];
+  total: number;
+  page: number;
+  size: number;
+  hasMore: boolean;
+  categories: Record<string, string[]>;
+  featured: string[];
+}
+
+export interface SkillHubSearchResponse {
+  skills: SkillHubSkill[];
+  total: number;
+  query: string;
+}
+
 export const skillHubApi = {
   cliStatus: () => get<SkillHubCLIStatus>('/api/v1/skillhub/cli-status'),
   install: () => post<{ success: boolean; output: string }>('/api/v1/skillhub/install', {}),
@@ -1309,5 +1325,13 @@ export const skillHubApi = {
     const endpoint = url ? `/api/v1/skillhub/data?url=${encodeURIComponent(url)}` : '/api/v1/skillhub/data';
     return get<SkillHubData>(endpoint);
   },
+  listSkills: (page = 1, size = 60, sort = 'newest', category = 'all', featured = false) => {
+    let url = `/api/v1/skillhub/skills?page=${page}&size=${size}&sort=${sort}`;
+    if (category && category !== 'all') url += `&category=${encodeURIComponent(category)}`;
+    if (featured) url += '&featured=true';
+    return get<SkillHubPageResponse>(url);
+  },
+  searchSkills: (q: string, limit = 20) =>
+    get<SkillHubSearchResponse>(`/api/v1/skillhub/search?q=${encodeURIComponent(q)}&limit=${limit}`),
   getInstalledSkills: () => get<{ skills: string[] }>('/api/v1/skillhub/installed'),
 };

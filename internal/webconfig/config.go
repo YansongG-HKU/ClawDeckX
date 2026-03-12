@@ -60,6 +60,10 @@ type AlertConfig struct {
 	Channels   []string `json:"channels"`
 }
 
+type SkillHubConfig struct {
+	DataURL string `json:"data_url"`
+}
+
 type Config struct {
 	Server   ServerConfig   `json:"server"`
 	Auth     AuthConfig     `json:"auth"`
@@ -68,6 +72,7 @@ type Config struct {
 	OpenClaw OpenClawConfig `json:"openclaw"`
 	Monitor  MonitorConfig  `json:"monitor"`
 	Alert    AlertConfig    `json:"alert"`
+	SkillHub SkillHubConfig `json:"skillhub"`
 }
 
 // DataDir returns the default data directory for the application.
@@ -131,6 +136,9 @@ func Default() Config {
 		Alert: AlertConfig{
 			Enabled:  false,
 			Channels: []string{},
+		},
+		SkillHub: SkillHubConfig{
+			DataURL: "https://cloudcache.tencentcs.com/qcloud/tea/app/data/skills.33d56946.json",
 		},
 	}
 }

@@ -195,6 +195,7 @@
     "disabledLabel": "off",
     "marketFetchFailed": "Market fetch failed",
     "marketSearchFailed": "Search failed",
+    "marketRateLimited": "ClawHub API rate limited, please try again later",
     "refreshMarket": "Refresh market data",
     "rateLimitInfo": "API Rate Limit",
     "pluginCenter": "Plugins",

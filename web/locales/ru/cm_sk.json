@@ -148,7 +148,9 @@
     "disabledLabel": "выкл",
     "marketFetchFailed": "Ошибка загрузки магазина",
     "marketSearchFailed": "Ошибка поиска",
-    "refreshMarket": "Обновить данные магазина"
+    "marketRateLimited": "Превышен лимит запросов ClawHub API, попробуйте позже",
+    "refreshMarket": "Обновить данные магазина",
+    "rateLimitInfo": "Лимит API"
   },
   "skillsMarket": {
     "title": "Магазин навыков",

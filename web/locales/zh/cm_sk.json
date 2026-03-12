@@ -186,6 +186,7 @@
     "disabledLabel": "已关闭",
     "marketFetchFailed": "市场数据获取失败",
     "marketSearchFailed": "搜索失败",
+    "marketRateLimited": "ClawHub API 请求频率受限，请稍后重试",
     "refreshMarket": "刷新市场数据",
     "rateLimitInfo": "API 速率限制",
     "pluginCenter": "插件",

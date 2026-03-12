@@ -1,11 +1,12 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { Language } from '../types';
 import { getTranslation } from '../locales';
-import { skillHubApi, SkillHubSkill, SkillHubData } from '../services/api';
+import { skillHubApi, SkillHubSkill, SkillHubData, SkillHubPageResponse } from '../services/api';
 import { useToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
 import CustomSelect from '../components/CustomSelect';
 import { copyToClipboard } from '../utils/clipboard';
+import { idbGet, idbSet, idbDelete } from '../utils/idbCache';
 
 interface SkillHubProps { language: Language; }
 
@@ -241,92 +242,148 @@ const SkillHub: React.FC<SkillHubProps> = ({ language }) => {
   const [cliStatus, setCLIStatus] = useState<'checking' | 'not-installed' | 'installing' | 'installed' | 'error' | 'dismissed'>('checking');
   const [cliError, setCLIError] = useState<string>('');
   
-  // Load cache immediately to avoid showing loading indicator
-  const initialCache = useMemo(() => {
-    try {
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (!cached) return null;
-      const parsed: CacheData = JSON.parse(cached);
-      const age = Date.now() - parsed.timestamp;
-      const maxAge = CACHE_EXPIRY_HOURS * 60 * 60 * 1000;
-      if (age > maxAge) {
-        localStorage.removeItem(CACHE_KEY);
-        return null;
-      }
-      return parsed;
-    } catch {
-      return null;
-    }
-  }, []);
-
-  const [data, setData] = useState<SkillHubData | null>(initialCache?.data || null);
-  const [loading, setLoading] = useState(!initialCache); // Only show loading if no cache
+  const [data, setData] = useState<SkillHubData | null>(null);
+  const [skills, setSkills] = useState<SkillHubSkill[]>([]);
+  const [totalSkills, setTotalSkills] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [categoriesList, setCategoriesList] = useState<Record<string, string[]>>({});
+  const [featuredList, setFeaturedList] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [category, setCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'downloads' | 'stars'>('newest');
   const [showFeatured, setShowFeatured] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<number | null>(initialCache?.timestamp || null);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const [detailSkill, setDetailSkill] = useState<SkillHubSkill | null>(null);
-  const [displayLimit, setDisplayLimit] = useState(60); // Initial load: 60 skills
   const [installingSlug, setInstallingSlug] = useState<string | null>(null);
   const [confirmSkill, setConfirmSkill] = useState<SkillHubSkill | null>(null);
   const [installedSkillNames, setInstalledSkillNames] = useState<Set<string>>(new Set());
+  const [usePaginatedApi, setUsePaginatedApi] = useState(true);
 
   const searchRef = useRef<HTMLInputElement>(null);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load cache
-  const loadCache = useCallback((): CacheData | null => {
+  // Load cache from IndexedDB (with localStorage migration fallback)
+  const loadCache = useCallback(async (): Promise<CacheData | null> => {
     try {
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (!cached) return null;
-      const parsed: CacheData = JSON.parse(cached);
-      const age = Date.now() - parsed.timestamp;
-      const maxAge = CACHE_EXPIRY_HOURS * 60 * 60 * 1000;
-      if (age > maxAge) {
-        localStorage.removeItem(CACHE_KEY);
-        return null;
+      const cached = await idbGet<CacheData>(CACHE_KEY);
+      if (cached) {
+        const age = Date.now() - cached.timestamp;
+        const maxAge = CACHE_EXPIRY_HOURS * 60 * 60 * 1000;
+        if (age > maxAge) {
+          idbDelete(CACHE_KEY);
+          return null;
+        }
+        return cached;
       }
-      return parsed;
+      // Migrate from localStorage if exists
+      const lsData = localStorage.getItem(CACHE_KEY);
+      if (lsData) {
+        const parsed: CacheData = JSON.parse(lsData);
+        localStorage.removeItem(CACHE_KEY);
+        const age = Date.now() - parsed.timestamp;
+        if (age <= CACHE_EXPIRY_HOURS * 60 * 60 * 1000) {
+          idbSet(CACHE_KEY, parsed);
+          return parsed;
+        }
+      }
+      return null;
     } catch {
       return null;
     }
   }, []);
 
-  // Save cache
+  // Save cache to IndexedDB
   const saveCache = useCallback((data: SkillHubData, url: string) => {
-    try {
-      const cacheData: CacheData = { data, timestamp: Date.now(), url };
-      localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-      setLastUpdated(Date.now());
-    } catch { /* quota exceeded */ }
+    const cacheData: CacheData = { data, timestamp: Date.now(), url };
+    idbSet(CACHE_KEY, cacheData);
+    setLastUpdated(Date.now());
   }, []);
 
-  // Fetch data
-  const fetchData = useCallback(async (force = false) => {
+  // Apply paginated response to state
+  const applyPageResponse = useCallback((res: SkillHubPageResponse, append: boolean) => {
+    if (append) {
+      setSkills(prev => [...prev, ...res.skills]);
+    } else {
+      setSkills(res.skills);
+    }
+    setTotalSkills(res.total);
+    setHasMore(res.hasMore);
+    setCurrentPage(res.page);
+    if (res.categories) setCategoriesList(res.categories);
+    if (res.featured) setFeaturedList(res.featured);
+    setLastUpdated(Date.now());
+  }, []);
+
+  // Fetch page via paginated API (primary path)
+  const fetchPage = useCallback(async (page = 1, append = false) => {
     try {
-      // Try cache first
-      const cached = loadCache();
-      if (!force && cached) {
-        // Cache exists, use it immediately (already loaded in initialCache)
-        // Don't show loading indicator, just return
+      if (page === 1 && !append) setLoading(true);
+      else setLoadingMore(true);
+
+      const res = await skillHubApi.listSkills(page, 60, sortBy, category, showFeatured);
+      applyPageResponse(res, append);
+      setLoading(false);
+      setLoadingMore(false);
+    } catch (err: any) {
+      setLoadingMore(false);
+      // Fallback to full data API if paginated API not available
+      if (page === 1) {
+        setUsePaginatedApi(false);
+        await fetchDataFallback();
+      } else {
+        setLoading(false);
+        toast('error', `${sk.loadFailed || 'Load failed'}: ${err?.message || ''}`);
+      }
+    }
+  }, [sortBy, category, showFeatured, applyPageResponse, sk, toast]);
+
+  // Server-side search
+  const fetchSearch = useCallback(async (q: string) => {
+    try {
+      setLoading(true);
+      const res = await skillHubApi.searchSkills(q, 60);
+      setSkills(res.skills);
+      setTotalSkills(res.total);
+      setHasMore(false);
+      setLoading(false);
+    } catch {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fallback: full data API (old path) — used if paginated API unavailable
+  const fetchDataFallback = useCallback(async () => {
+    try {
+      // Try IndexedDB cache first
+      const cached = await loadCache();
+      if (cached) {
+        setData(cached.data);
+        setLastUpdated(cached.timestamp);
+        setLoading(false);
         return;
       }
-
-      // If no cache or force refresh, show loading only if we don't have data yet
-      if (!data || force) {
-        setLoading(true);
-      }
-      
+      setLoading(true);
       const result = await skillHubApi.getData();
       setData(result);
       saveCache(result, '');
       setLoading(false);
     } catch (err: any) {
       setLoading(false);
-      const errorMsg = err?.message || 'Unknown error';
-      toast('error', `${sk.loadFailed || 'Load failed'}: ${errorMsg}`);
+      toast('error', `${sk.loadFailed || 'Load failed'}: ${err?.message || ''}`);
     }
-  }, [loadCache, saveCache, sk, toast, data]);
+  }, [loadCache, saveCache, sk, toast]);
+
+  // Unified fetch entry point
+  const fetchData = useCallback(async (force = false) => {
+    if (usePaginatedApi) {
+      await fetchPage(1);
+    } else {
+      await fetchDataFallback();
+    }
+  }, [usePaginatedApi, fetchPage, fetchDataFallback]);
 
   // Check CLI status
   const checkCLI = useCallback(async () => {
@@ -391,33 +448,25 @@ const SkillHub: React.FC<SkillHubProps> = ({ language }) => {
     } else {
       checkCLI();
     }
-    // Only fetch if no cache exists (initialCache is null)
-    if (!initialCache) {
-      fetchData();
-    }
+    fetchData();
     fetchInstalledSkills();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
 
-  // Filter and sort skills
+  // Client-side filtering (only used in fallback mode when paginated API is unavailable)
   const filteredSkills = useMemo(() => {
-    if (!data) return [];
+    if (usePaginatedApi || !data) return [];
     let list = data.skills;
 
-    // Featured filter
     if (showFeatured) {
       const featuredSet = new Set(data.featured);
       list = list.filter(s => featuredSet.has(s.slug));
     }
-
-    // Category filter
     if (category !== 'all') {
       const categoryTags = data.categories[category] || [];
       const tagSet = new Set(categoryTags.map(t => t.toLowerCase()));
       list = list.filter(s => s.tags.some(t => tagSet.has(t.toLowerCase())));
     }
-
-    // Search filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter(s =>
@@ -427,24 +476,40 @@ const SkillHub: React.FC<SkillHubProps> = ({ language }) => {
         s.description_zh?.toLowerCase().includes(q)
       );
     }
-
-    // Sort
     list = [...list].sort((a, b) => {
       if (sortBy === 'downloads') return b.downloads - a.downloads;
       if (sortBy === 'stars') return b.stars - a.stars;
-      return b.updated_at - a.updated_at; // newest
+      return b.updated_at - a.updated_at;
     });
-
     return list;
-  }, [data, showFeatured, category, searchQuery, sortBy]);
+  }, [data, showFeatured, category, searchQuery, sortBy, usePaginatedApi]);
 
-  const renderedSkills = useMemo(() => filteredSkills.slice(0, displayLimit), [filteredSkills, displayLimit]);
-  const hasMore = filteredSkills.length > displayLimit;
+  // Unified rendered skills list
+  const renderedSkills = useMemo(() => {
+    if (usePaginatedApi) return skills;
+    return filteredSkills.slice(0, 60);
+  }, [usePaginatedApi, skills, filteredSkills]);
 
-  // Reset display limit when filters change
+  // Re-fetch when sort/category/featured change (paginated mode)
   useEffect(() => {
-    setDisplayLimit(60);
-  }, [searchQuery, category, sortBy, showFeatured]);
+    if (!usePaginatedApi) return;
+    if (searchQuery.trim()) return; // search has its own handler
+    fetchPage(1);
+  }, [sortBy, category, showFeatured]);
+
+  // Debounced server-side search
+  useEffect(() => {
+    if (!usePaginatedApi) return;
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (!searchQuery.trim()) {
+      fetchPage(1);
+      return;
+    }
+    searchDebounceRef.current = setTimeout(() => {
+      fetchSearch(searchQuery.trim());
+    }, 300);
+    return () => { if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current); };
+  }, [searchQuery]);
 
   // Copy prompt
   const handleCopyPrompt = useCallback((skill: SkillHubSkill) => {
@@ -499,9 +564,10 @@ const SkillHub: React.FC<SkillHubProps> = ({ language }) => {
   }, [installingSlug, sk, toast, fetchInstalledSkills]);
 
   const categories = useMemo(() => {
+    if (usePaginatedApi) return Object.keys(categoriesList);
     if (!data) return [];
     return Object.keys(data.categories);
-  }, [data]);
+  }, [usePaginatedApi, categoriesList, data]);
 
   const cacheAge = useMemo(() => {
     if (!lastUpdated) return '';
@@ -579,7 +645,7 @@ const SkillHub: React.FC<SkillHubProps> = ({ language }) => {
           <CLIBanner status={cliStatus} onInstall={handleInstallCLI} onDismiss={handleDismissBanner} error={cliError} sk={sk} />
 
           {/* Loading */}
-          {loading && !data && (
+          {loading && !data && skills.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 text-slate-400">
               <span className="material-symbols-outlined text-4xl animate-spin mb-3">progress_activity</span>
               <span className="text-xs">{sk.loading || 'Loading...'}</span>
@@ -587,8 +653,8 @@ const SkillHub: React.FC<SkillHubProps> = ({ language }) => {
             </div>
           )}
 
-          {/* Error - no data and not loading */}
-          {!loading && !data && (
+          {/* Error - no data at all and not loading */}
+          {!loading && !data && skills.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 text-slate-400">
               <span className="material-symbols-outlined text-4xl mb-3 text-red-500">error</span>
               <span className="text-xs mb-3">{sk.loadFailed || 'Failed to load data'}</span>
@@ -599,17 +665,17 @@ const SkillHub: React.FC<SkillHubProps> = ({ language }) => {
           )}
 
           {/* Empty */}
-          {!loading && data && filteredSkills.length === 0 && (
+          {!loading && renderedSkills.length === 0 && (data || skills.length === 0) && (
             <EmptyState icon="search_off" title={sk.noResults || 'No skills found'} />
           )}
 
           {/* Skills grid */}
-          {filteredSkills.length > 0 && (
+          {renderedSkills.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {renderedSkills.map(skill => {
                 const desc = language === 'zh' || language === 'zh-TW' ? (skill.description_zh || skill.description) : skill.description;
                 return (
-                  <div key={skill.slug} className="bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 rounded-2xl p-4 hover:border-primary/30 transition-all group shadow-sm flex flex-col cursor-pointer" onClick={() => setDetailSkill(skill)}>
+                  <div key={skill.slug} className="bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 rounded-2xl p-4 hover:border-primary/30 transition-all group shadow-sm flex flex-col cursor-pointer" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 220px' }} onClick={() => setDetailSkill(skill)}>
                     {/* Header */}
                     <div className="flex items-start gap-3 mb-2">
                       <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/15 to-purple-500/15 flex items-center justify-center shrink-0 border border-slate-200/50 dark:border-white/5">
@@ -684,11 +750,16 @@ const SkillHub: React.FC<SkillHubProps> = ({ language }) => {
           {hasMore && (
             <div className="flex justify-center mt-6">
               <button 
-                onClick={() => setDisplayLimit(prev => prev + 60)} 
-                className="h-10 px-6 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 rounded-lg text-sm font-bold text-slate-700 dark:text-white/70 transition-colors flex items-center gap-2"
+                onClick={() => usePaginatedApi ? fetchPage(currentPage + 1, true) : null}
+                disabled={loadingMore}
+                className="h-10 px-6 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 rounded-lg text-sm font-bold text-slate-700 dark:text-white/70 transition-colors flex items-center gap-2 disabled:opacity-50"
               >
-                <span className="material-symbols-outlined text-[18px]">expand_more</span>
-                {sk.loadMore || 'Load More'} ({filteredSkills.length - displayLimit} {sk.remaining || 'remaining'})
+                {loadingMore ? (
+                  <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                ) : (
+                  <span className="material-symbols-outlined text-[18px]">expand_more</span>
+                )}
+                {sk.loadMore || 'Load More'} ({totalSkills - renderedSkills.length} {sk.remaining || 'remaining'})
               </button>
             </div>
           )}

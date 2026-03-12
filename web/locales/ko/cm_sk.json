@@ -148,7 +148,9 @@
     "disabledLabel": "비활성",
     "marketFetchFailed": "마켓 데이터 불러오기 실패",
     "marketSearchFailed": "검색 실패",
-    "refreshMarket": "마켓 데이터 새로고침"
+    "marketRateLimited": "ClawHub API 속도 제한, 나중에 다시 시도하세요",
+    "refreshMarket": "마켓 데이터 새로고침",
+    "rateLimitInfo": "API 속도 제한"
   },
   "skillsMarket": {
     "title": "스킬 마켓",

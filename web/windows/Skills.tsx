@@ -814,7 +814,10 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
     if (reqId === marketListReqSeqRef.current) {
       if (lastErr) {
         if (!append) setMarketResults([]);
-        toast('error', `${sk.marketFetchFailed || 'Market fetch failed'} (${lastErr?.message || ''})`);
+        const isRateLimit = lastErr?.code === 'RATE_LIMITED' || lastErr?.code === 'CLAWHUB_UPSTREAM_ERROR' && lastErr?.message?.includes('429');
+        toast('error', isRateLimit
+          ? (sk.marketRateLimited || 'ClawHub API rate limited, please try again later')
+          : `${sk.marketFetchFailed || 'Market fetch failed'} (${lastErr?.message || ''})`);
       }
       setMarketLoading(false);
       setMarketLoadingMore(false);
@@ -861,6 +864,7 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
         const items = Array.isArray(res) ? res : (res?.results || res?.skills || res?.data || res?.items || []);
         setMarketResults(Array.isArray(items) ? items : []);
         setMarketCursor(null);
+        if (res?._rateLimit) setMarketRateLimit(res._rateLimit);
         lastErr = null;
         break;
       } catch (err: any) {
@@ -873,7 +877,10 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
     if (reqId === marketSearchReqSeqRef.current) {
       if (lastErr) {
         setMarketResults([]);
-        toast('error', `${sk.marketSearchFailed || 'Search failed'} (${lastErr?.message || ''})`);
+        const isRateLimit = lastErr?.code === 'RATE_LIMITED' || lastErr?.code === 'CLAWHUB_UPSTREAM_ERROR' && lastErr?.message?.includes('429');
+        toast('error', isRateLimit
+          ? (sk.marketRateLimited || 'ClawHub API rate limited, please try again later')
+          : `${sk.marketSearchFailed || 'Search failed'} (${lastErr?.message || ''})`);
       }
       setMarketSearching(false);
     }
@@ -1091,15 +1098,15 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
                     }
                     return null;
                   })()}
-                  {/* 速率限制信息 */}
-                  {marketRateLimit && (
-                    <span className="h-9 px-2 flex items-center gap-1 text-[10px] text-slate-500 dark:text-white/50 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-lg whitespace-nowrap"
-                      title={`${sk.rateLimitInfo || 'API Rate Limit'}: ${marketRateLimit.remaining}/${marketRateLimit.limit}${marketRateLimit.reset ? ` (reset: ${marketRateLimit.reset}s)` : ''}`}>
-                      <span className="material-symbols-outlined text-[12px]">schedule</span>
-                      {marketRateLimit.remaining}/{marketRateLimit.limit}
-                    </span>
-                  )}
                 </div>
+              )}
+              {/* 速率限制信息 */}
+              {marketRateLimit && (
+                <span className="h-9 px-2 flex items-center gap-1 text-[10px] text-slate-500 dark:text-white/50 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-lg whitespace-nowrap shrink-0"
+                  title={`${sk.rateLimitInfo || 'API Rate Limit'}: ${marketRateLimit.remaining}/${marketRateLimit.limit}${marketRateLimit.reset ? ` (reset: ${marketRateLimit.reset}s)` : ''}`}>
+                  <span className="material-symbols-outlined text-[12px]">schedule</span>
+                  {marketRateLimit.remaining}/{marketRateLimit.limit}
+                </span>
               )}
               {/* 刷新数据按钮 */}
               <button onClick={() => { setMarketResults([]); setMarketCursor(null); setMarketLoaded(false); if (marketQuery.trim()) handleMarketSearch(); else fetchMarketList(marketSort); }}

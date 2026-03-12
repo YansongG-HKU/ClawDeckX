@@ -148,7 +148,9 @@
     "disabledLabel": "बंद",
     "marketFetchFailed": "मार्केट डेटा प्राप्त करना विफल",
     "marketSearchFailed": "खोज विफल",
-    "refreshMarket": "मार्केट डेटा रिफ्रेश करें"
+    "marketRateLimited": "ClawHub API दर सीमित, कृपया बाद में पुनः प्रयास करें",
+    "refreshMarket": "मार्केट डेटा रिफ्रेश करें",
+    "rateLimitInfo": "API दर सीमा"
   },
   "skillsMarket": {
     "title": "स्किल्स मार्केट",

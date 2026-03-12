@@ -143,7 +143,7 @@ Install ClawDeckX on your local machine and connect to remote OpenClaw instances
 
 ---
 
-### One-Click Install | 一键安装
+### One-Click Install & Maintain | 一键安装 卸载 维护
 
 **macOS / Linux**
 
@@ -184,6 +184,20 @@ Download the binary from [Releases](https://github.com/ClawDeckX/ClawDeckX/relea
 | `--user` | `-u` | Initial admin username (first run only) | 初始管理员用户名（仅首次） |
 | `--pass` | | Initial admin password (min 6 chars) | 初始管理员密码（至少 6 位） |
 | `--debug` | | Enable debug logging | 启用调试日志 |
+
+### CLI Commands | 命令行工具
+
+| Command | Usage | Description | 说明 |
+| :--- | :--- | :--- | :--- |
+| `reset-password` | `ClawDeckX reset-password <user> <pass>` | Reset a user's password | 重置用户密码 |
+| `reset-username` | `ClawDeckX reset-username <old> <new>` | Change a user's username | 修改用户名 |
+| `list-users` | `ClawDeckX list-users` | List all registered users | 列出所有已注册用户 |
+| `unlock` | `ClawDeckX unlock <user>` | Unlock a locked user account | 解锁被锁定的用户账户 |
+
+> [!TIP]
+> **Forgot your credentials?** Run `ClawDeckX list-users` to find your username, then `ClawDeckX reset-password <username> <new_password>` to reset your password.
+>
+> **忘记登录凭据？** 运行 `ClawDeckX list-users` 查看用户名，然后 `ClawDeckX reset-password <用户名> <新密码>` 重置密码。
 
 > [!IMPORTANT]
 > **Security Reminder:** On first run, if no `--user` and `--pass` are provided, the auto-generated admin credentials will be printed to the console. Please change your username and password in the settings page immediately after logging in.

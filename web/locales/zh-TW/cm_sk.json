@@ -195,7 +195,9 @@
     "disabledLabel": "已關閉",
     "marketFetchFailed": "市場資料獲取失敗",
     "marketSearchFailed": "搜尋失敗",
-    "refreshMarket": "重新整理市場資料"
+    "marketRateLimited": "ClawHub API 請求頻率受限，請稍後重試",
+    "refreshMarket": "重新整理市場資料",
+    "rateLimitInfo": "API 速率限制"
   },
   "skillsMarket": {
     "title": "技能市場",

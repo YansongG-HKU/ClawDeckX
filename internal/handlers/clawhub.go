@@ -238,6 +238,19 @@ func (h *ClawHubHandler) Search(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if json.Valid(body) {
+		// Inject rate limit headers into response
+		var result map[string]interface{}
+		if json.Unmarshal(body, &result) == nil {
+			result["_rateLimit"] = map[string]string{
+				"limit":     resp.Header.Get("Ratelimit-Limit"),
+				"remaining": resp.Header.Get("Ratelimit-Remaining"),
+				"reset":     resp.Header.Get("Ratelimit-Reset"),
+			}
+			if enriched, err := json.Marshal(result); err == nil {
+				body = enriched
+			}
+		}
+
 		h.cacheMu.Lock()
 		h.cacheMap[cacheKey] = &listCache{data: body, fetchedAt: time.Now()}
 		h.cacheMu.Unlock()

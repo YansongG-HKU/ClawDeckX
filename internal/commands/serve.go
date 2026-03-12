@@ -575,12 +575,15 @@ func RunServe(args []string) int {
 	router.POST("/api/v1/plugins/uninstall", web.RequireAdmin(pluginInstallHandler.Uninstall))
 	router.POST("/api/v1/plugins/update", web.RequireAdmin(pluginInstallHandler.Update))
 
-	skillHubHandler := handlers.NewSkillHubHandler()
+	skillHubHandler := handlers.NewSkillHubHandler(webconfig.DataDir(), cfg.SkillHub.DataURL)
 	skillHubHandler.SetGatewayClient(gwClient)
+	skillHubHandler.WarmCache()
 	router.GET("/api/v1/skillhub/cli-status", skillHubHandler.CLIStatus)
 	router.POST("/api/v1/skillhub/install", web.RequireAdmin(skillHubHandler.Install))
 	router.POST("/api/v1/skillhub/install-skill", web.RequireAdmin(skillHubHandler.InstallSkill))
 	router.GET("/api/v1/skillhub/data", skillHubHandler.ProxyData)
+	router.GET("/api/v1/skillhub/skills", skillHubHandler.ListSkills)
+	router.GET("/api/v1/skillhub/search", skillHubHandler.SearchSkills)
 	router.GET("/api/v1/skillhub/installed", skillHubHandler.GetInstalledSkills)
 
 	multiAgentHandler := handlers.NewMultiAgentHandler(gwClient)
@@ -638,6 +641,7 @@ func RunServe(args []string) int {
 	handler := web.Chain(
 		router,
 		web.RecoveryMiddleware,
+		web.GzipMiddleware,
 		web.SecurityHeadersMiddleware,
 		web.RequestIDMiddleware,
 		web.RequestLogMiddleware,

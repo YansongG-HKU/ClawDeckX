@@ -148,7 +148,9 @@
     "disabledLabel": "desactivado",
     "marketFetchFailed": "Error al obtener datos del mercado",
     "marketSearchFailed": "Error en la búsqueda",
-    "refreshMarket": "Actualizar datos del mercado"
+    "marketRateLimited": "Límite de tasa de ClawHub API, intente de nuevo más tarde",
+    "refreshMarket": "Actualizar datos del mercado",
+    "rateLimitInfo": "Límite de API"
   },
   "skillsMarket": {
     "title": "Mercado de Skills",

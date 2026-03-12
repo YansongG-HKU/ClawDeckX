@@ -148,7 +148,9 @@
     "disabledLabel": "mati",
     "marketFetchFailed": "Gagal mengambil data pasar",
     "marketSearchFailed": "Pencarian gagal",
-    "refreshMarket": "Segarkan data pasar"
+    "marketRateLimited": "ClawHub API dibatasi, coba lagi nanti",
+    "refreshMarket": "Segarkan data pasar",
+    "rateLimitInfo": "Batas API"
   },
   "skillsMarket": {
     "title": "Pasar Skill",

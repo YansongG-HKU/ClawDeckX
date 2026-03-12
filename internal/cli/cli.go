@@ -46,6 +46,10 @@ func Run(args []string) int {
 		return handleSettings(args[2:])
 	case "reset-password":
 		return commands.ResetPassword(args[2:])
+	case "reset-username":
+		return commands.ResetUsername(args[2:])
+	case "list-users":
+		return commands.ListUsers(args[2:])
 	case "unlock":
 		return commands.Unlock(args[2:])
 	default:
@@ -74,6 +78,9 @@ func usage() string {
 	fmt.Fprintln(b, i18n.T(i18n.MsgCliCmdDoctor))
 	fmt.Fprintln(b, i18n.T(i18n.MsgCliCmdSettings))
 	fmt.Fprintln(b, i18n.T(i18n.MsgCliCmdResetPassword))
+	fmt.Fprintln(b, i18n.T(i18n.MsgCliCmdResetUsername))
+	fmt.Fprintln(b, i18n.T(i18n.MsgCliCmdListUsers))
+	fmt.Fprintln(b, i18n.T(i18n.MsgCliCmdUnlock))
 	fmt.Fprintln(b, "")
 	fmt.Fprintln(b, i18n.T(i18n.MsgCliExamples))
 	fmt.Fprintln(b, i18n.T(i18n.MsgCliExampleStart))
