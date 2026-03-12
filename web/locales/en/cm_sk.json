@@ -288,27 +288,5 @@
     "pluginArchiveSource": "archive",
     "pluginLocalOnlyAction": "This action is only available on local gateway",
     "pluginClose": "Close"
-  },
-  "skillsMarket": {
-    "title": "Skills Market",
-    "subtitle": "Extend your agent capabilities",
-    "loading": "Loading...",
-    "active": "active",
-    "searchPlaceholder": "Search skills...",
-    "noSkills": "No skills found",
-    "ready": "Ready",
-    "needsSetup": "Needs setup",
-    "configure": "Configure",
-    "configHint": "Enter required credentials",
-    "select": "Select...",
-    "cancel": "Cancel",
-    "saving": "Saving...",
-    "saveAndEnable": "Save & Enable",
-    "configured": "Skill configured",
-    "configFailed": "Failed to configure",
-    "enabled": "Skill enabled",
-    "disabled": "Skill disabled",
-    "toggleFailed": "Failed to toggle",
-    "noDescription": "No description available"
   }
 }

@@ -1,0 +1,24 @@
+{
+  "skillsMarket": {
+    "title": "Marché des skills",
+    "subtitle": "Étendez les capacités de votre agent",
+    "loading": "Chargement...",
+    "active": "actif",
+    "searchPlaceholder": "Rechercher des skills...",
+    "noSkills": "Aucun skill trouvé",
+    "ready": "Prêt",
+    "needsSetup": "Configuration requise",
+    "configure": "Configurer",
+    "configHint": "Entrez les identifiants requis",
+    "select": "Sélectionner...",
+    "cancel": "Annuler",
+    "saving": "Enregistrement...",
+    "saveAndEnable": "Enregistrer et activer",
+    "configured": "Skill configuré",
+    "configFailed": "Échec de la configuration",
+    "enabled": "Skill activé",
+    "disabled": "Skill désactivé",
+    "toggleFailed": "Échec du basculement",
+    "noDescription": "Aucune description disponible"
+  }
+}

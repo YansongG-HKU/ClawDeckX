@@ -621,5 +621,12 @@
   "securityAuditGuideDismiss": "知道了",
   "securityAuditViewAll": "查看全部",
   "securityAuditCollapse": "收起",
-  "relatedFaq": "相关 FAQ"
+  "relatedFaq": "相关 FAQ",
+  "memoryTitle": "记忆系统",
+  "memoryProvider": "供应商",
+  "memoryEmbedding": "嵌入向量",
+  "memoryEmbeddingOk": "可用",
+  "memoryEmbeddingFail": "不可用",
+  "memoryAgent": "Agent",
+  "memoryUnavailable": "记忆系统不可用"
 }

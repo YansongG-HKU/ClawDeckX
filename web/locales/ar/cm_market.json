@@ -1,0 +1,24 @@
+{
+  "skillsMarket": {
+    "title": "سوق المهارات",
+    "subtitle": "وسّع قدرات وكيلك",
+    "loading": "جارٍ التحميل...",
+    "active": "نشط",
+    "searchPlaceholder": "بحث في المهارات...",
+    "noSkills": "لا توجد مهارات",
+    "ready": "جاهز",
+    "needsSetup": "يحتاج إعداد",
+    "configure": "إعداد",
+    "configHint": "أدخل بيانات الاعتماد المطلوبة",
+    "select": "اختر...",
+    "cancel": "إلغاء",
+    "saving": "جارٍ الحفظ...",
+    "saveAndEnable": "حفظ وتفعيل",
+    "configured": "تم إعداد المهارة",
+    "configFailed": "فشل الإعداد",
+    "enabled": "تم تفعيل المهارة",
+    "disabled": "تم تعطيل المهارة",
+    "toggleFailed": "فشل التبديل",
+    "noDescription": "لا يوجد وصف متاح"
+  }
+}

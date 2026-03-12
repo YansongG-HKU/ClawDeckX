@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Language } from '../types';
 import { getTranslation } from '../locales';
-import { doctorApi } from '../services/api';
+import { doctorApi, gwApi } from '../services/api';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
 import { TestCenterPanel } from '../components/maintenance';
@@ -346,6 +346,8 @@ const Doctor: React.FC<DoctorProps> = ({ language }) => {
   );
   const [sourceFilter, setSourceFilter] = useState<SummarySourceKey>('all');
   const [doctorFaqIndex, setDoctorFaqIndex] = useState<Map<string, KnowledgeItem[]>>(new Map());
+  const [memoryStatus, setMemoryStatus] = useState<{ agentId: string; provider?: string; embedding: { ok: boolean; error?: string } } | null>(null);
+  const [memoryLoading, setMemoryLoading] = useState(false);
   const summaryRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const summaryBucketsRef = useRef<SummaryWindowBuckets>({ medium: [], high: [], critical: [], hour: [], day: [] });
 
@@ -358,6 +360,19 @@ const Doctor: React.FC<DoctorProps> = ({ language }) => {
   useEffect(() => {
     templateSystem.getDoctorFaqIndex(language).then(idx => setDoctorFaqIndex(idx)).catch(() => {});
   }, [language]);
+
+  // Load memory status from gateway RPC
+  const loadMemoryStatus = useCallback(async () => {
+    setMemoryLoading(true);
+    try {
+      const data = await gwApi.memoryStatus();
+      setMemoryStatus(data);
+    } catch {
+      setMemoryStatus(null);
+    } finally {
+      setMemoryLoading(false);
+    }
+  }, []);
 
   // Security audit history comparison
   useEffect(() => {
@@ -491,7 +506,7 @@ const Doctor: React.FC<DoctorProps> = ({ language }) => {
     setLoading(force || (!result && !overview));
     setLoadError('');
     try {
-      await Promise.all([runDoctor(force), loadOverview(force), loadSummary(force)]);
+      await Promise.all([runDoctor(force), loadOverview(force), loadSummary(force), loadMemoryStatus()]);
       if (typeof window !== 'undefined') window.localStorage.setItem(DOCTOR_HAS_RUN_KEY, '1');
       setShowFirstRunPrompt(false);
     } catch (err: any) {
@@ -1595,7 +1610,7 @@ const Doctor: React.FC<DoctorProps> = ({ language }) => {
                 </div>
 
                 {/* #11 Snapshot Cards with Trend Arrows */}
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mt-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2.5 mt-3">
                   <button type="button" onClick={() => jumpToWindow('gateway')} className="rounded-xl bg-white/80 dark:bg-white/[0.03] border border-slate-200/70 dark:border-white/10 p-3 text-start hover:border-primary/30 transition-colors">
                     <p className="text-[10px] text-slate-400 dark:text-white/35 uppercase tracking-wider">{text.summaryGateway}</p>
                     <div className="flex items-center gap-1.5 mt-1">
@@ -1659,6 +1674,35 @@ const Doctor: React.FC<DoctorProps> = ({ language }) => {
                       {formatText(text.summarySessionErrorsDetail || '{errors} errors / {sessions} sessions', { errors: chatSessionErrors.totalErrors, sessions: chatSessionErrors.errorSessions })}
                     </p>
                   </button>
+                  {/* Memory System Status Card */}
+                  <div className="rounded-xl bg-white/80 dark:bg-white/[0.03] border border-slate-200/70 dark:border-white/10 p-3 text-start">
+                    <p className="text-[10px] text-slate-400 dark:text-white/35 uppercase tracking-wider flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[10px]">psychology</span>
+                      {text.memoryTitle || 'Memory'}
+                    </p>
+                    {memoryLoading ? (
+                      <div className="flex items-center gap-1 mt-1">
+                        <span className="material-symbols-outlined text-[12px] animate-spin text-slate-400">progress_activity</span>
+                      </div>
+                    ) : memoryStatus ? (
+                      <>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <p className={`text-[12px] font-bold ${memoryStatus.embedding.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                            {memoryStatus.embedding.ok ? (text.memoryEmbeddingOk || 'OK') : (text.memoryEmbeddingFail || 'Unavailable')}
+                          </p>
+                          <span className={`material-symbols-outlined text-[12px] ${memoryStatus.embedding.ok ? 'text-emerald-500' : 'text-amber-500'}`}>
+                            {memoryStatus.embedding.ok ? 'check_circle' : 'warning'}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 dark:text-white/40 mt-1 truncate">
+                          {memoryStatus.provider || 'none'}
+                          {memoryStatus.embedding.error && !memoryStatus.embedding.ok ? ` · ${memoryStatus.embedding.error}` : ''}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-[10px] text-slate-400 dark:text-white/30 mt-1">{text.memoryUnavailable || 'N/A'}</p>
+                    )}
+                  </div>
                 </div>
 
                 {/* #8 Score Deduction Panel — compact arc chips */}

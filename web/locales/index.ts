@@ -22,6 +22,7 @@ import cmSecEn from './en/cm_sec.json';
 import cmSetEn from './en/cm_set.json';
 import cmExtraEn from './en/cm_extra.json';
 import cmMultiEn from './en/cm_multi.json';
+import cmMarketEn from './en/cm_market.json';
 import swEn from './en/sw.json';
 import mwEn from './en/mw.json';
 import cwEn from './en/cw.json';
@@ -42,16 +43,16 @@ function mergeCommon(...parts: any[]) {
 function buildLocale(
   cm: any, cmDash: any, cmChat: any, cmAgt: any, cmEdit: any,
   cmUsage: any, cmSk: any, cmSch: any, cmAct: any, cmAlrt: any,
-  cmSec: any, cmSet: any, cmExtra: any, cmMulti: any,
+  cmSec: any, cmSet: any, cmExtra: any, cmMulti: any, cmMarket: any,
   sw: any, mw: any, cw: any, ow: any, gw: any, es: any, nd: any, dr: any,
 ) {
-  const common = mergeCommon(cm, cmDash, cmChat, cmAgt, cmEdit, cmUsage, cmSk, cmSch, cmAct, cmAlrt, cmSec, cmSet, cmExtra, cmMulti);
+  const common = mergeCommon(cm, cmDash, cmChat, cmAgt, cmEdit, cmUsage, cmSk, cmSch, cmAct, cmAlrt, cmSec, cmSet, cmExtra, cmMulti, cmMarket);
   return { ...common, sw, mw, cw, ow, gw, es, nd, dr };
 }
 
 const en = buildLocale(
   cmEn, cmDashEn, cmChatEn, cmAgtEn, cmEditEn, cmUsageEn, cmSkEn, cmSchEn,
-  cmActEn, cmAlrtEn, cmSecEn, cmSetEn, cmExtraEn, cmMultiEn,
+  cmActEn, cmAlrtEn, cmSecEn, cmSetEn, cmExtraEn, cmMultiEn, cmMarketEn,
   swEn, mwEn, cwEn, owEn, gwEn, esEn, ndEn, drEn,
 );
 
@@ -71,7 +72,7 @@ const jsonModules = import.meta.glob<{ default: any }>(
 
 const fileKeys = [
   'cm', 'cm_dash', 'cm_chat', 'cm_agt', 'cm_edit', 'cm_usage', 'cm_sk', 'cm_sch',
-  'cm_act', 'cm_alrt', 'cm_sec', 'cm_set', 'cm_extra', 'cm_multi',
+  'cm_act', 'cm_alrt', 'cm_sec', 'cm_set', 'cm_extra', 'cm_multi', 'cm_market',
   'sw', 'mw', 'cw', 'ow', 'gw', 'es', 'nd', 'dr',
 ] as const;
 
@@ -90,14 +91,14 @@ const makePartialLocaleLoader = (lang: Exclude<Language, 'en'>): LocaleLoader =>
 
   const [
     cm, cmDash, cmChat, cmAgt, cmEdit, cmUsage, cmSk, cmSch,
-    cmAct, cmAlrt, cmSec, cmSet, cmExtra, cmMulti,
+    cmAct, cmAlrt, cmSec, cmSet, cmExtra, cmMulti, cmMarket,
     sw, mw, cw, ow, gw, es, nd, dr,
   ] = parts;
 
   return {
     locale: buildLocale(
       cm, cmDash, cmChat, cmAgt, cmEdit, cmUsage, cmSk, cmSch,
-      cmAct, cmAlrt, cmSec, cmSet, cmExtra, cmMulti,
+      cmAct, cmAlrt, cmSec, cmSet, cmExtra, cmMulti, cmMarket,
       sw, mw, cw, ow, gw, es, nd, dr,
     ),
     tooltips,

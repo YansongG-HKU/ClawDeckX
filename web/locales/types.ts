@@ -9,6 +9,8 @@ export interface TranslationMap extends Record<string, string | LocaleNamespace>
   ok: string;
 
   // Nested namespaces
+  sk: LocaleNamespace;
+  skillsMarket: LocaleNamespace;
   set: LocaleNamespace;
   sw: LocaleNamespace;
   mw: LocaleNamespace;

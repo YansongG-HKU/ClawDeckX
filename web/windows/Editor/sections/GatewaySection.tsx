@@ -10,6 +10,13 @@ const GatewaySection: React.FC<SectionProps> = ({ setField, getField, language }
   const g = (p: string[]) => getField(['gateway', ...p]);
   const s = (p: string[], v: any) => setField(['gateway', ...p], v);
 
+  // Breaking change detection: if both token and password are configured
+  // but auth.mode is not explicitly set, OpenClaw v2026.3+ will refuse to start.
+  const authMode = g(['auth', 'mode']);
+  const authToken = g(['auth', 'token']);
+  const authPassword = g(['auth', 'password']);
+  const hasAmbiguousAuth = !authMode && !!authToken && !!authPassword;
+
   const bindOptions = useMemo(() => [
     { value: 'auto', label: es.bindAuto },
     { value: 'lan', label: es.bindLan },
@@ -24,6 +31,7 @@ const GatewaySection: React.FC<SectionProps> = ({ setField, getField, language }
   ], [es]);
 
   const authModeOptions = useMemo(() => [
+    { value: '', label: es.authModePlaceholder || '— Select —' },
     { value: 'token', label: es.authToken },
     { value: 'password', label: es.authPassword },
     { value: 'trusted-proxy', label: es.authTrustedProxy || 'Trusted Proxy' },
@@ -65,11 +73,30 @@ const GatewaySection: React.FC<SectionProps> = ({ setField, getField, language }
       </ConfigSection>
 
       <ConfigSection title={es.authentication} icon="lock" iconColor="text-red-500">
-        <SelectField label={es.authMode} tooltip={tip('gateway.auth.mode')} value={g(['auth', 'mode']) || 'token'} onChange={v => s(['auth', 'mode'], v)} options={authModeOptions} />
-        {g(['auth', 'mode']) === 'token' && (
+        {hasAmbiguousAuth && (
+          <div className="rounded-lg border border-amber-300/60 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 mb-2">
+            <div className="flex items-start gap-2">
+              <span className="material-symbols-outlined text-[16px] text-amber-600 dark:text-amber-400 mt-0.5 shrink-0">warning</span>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-amber-800 dark:text-amber-300">{es.authModeAmbiguousTitle || 'Auth mode required'}</p>
+                <p className="text-[10px] text-amber-700 dark:text-amber-400/80 mt-0.5">{es.authModeAmbiguousDesc || 'Both token and password are configured. OpenClaw v2026.3+ requires an explicit auth mode when both are set. Please select one below.'}</p>
+                <div className="flex gap-2 mt-2">
+                  <button onClick={() => s(['auth', 'mode'], 'token')} className="px-2.5 py-1 rounded text-[10px] font-bold bg-amber-600 text-white hover:bg-amber-700 transition-colors">
+                    {es.authModeSetToken || 'Use Token'}
+                  </button>
+                  <button onClick={() => s(['auth', 'mode'], 'password')} className="px-2.5 py-1 rounded text-[10px] font-bold border border-amber-500/50 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors">
+                    {es.authModeSetPassword || 'Use Password'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        <SelectField label={es.authMode} tooltip={tip('gateway.auth.mode')} value={g(['auth', 'mode']) || ''} onChange={v => s(['auth', 'mode'], v)} options={authModeOptions} />
+        {(g(['auth', 'mode']) === 'token' || (!g(['auth', 'mode']) && !authPassword)) && (
           <PasswordField label={es.authToken} tooltip={tip('gateway.auth.token')} value={g(['auth', 'token']) || ''} onChange={v => s(['auth', 'token'], v)} />
         )}
-        {g(['auth', 'mode']) === 'password' && (
+        {(g(['auth', 'mode']) === 'password' || (!g(['auth', 'mode']) && !!authPassword && !authToken)) && (
           <PasswordField label={es.authPassword} tooltip={tip('gateway.auth.password')} value={g(['auth', 'password']) || ''} onChange={v => s(['auth', 'password'], v)} />
         )}
         {g(['auth', 'mode']) === 'trusted-proxy' && (

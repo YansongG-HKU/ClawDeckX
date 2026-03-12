@@ -854,6 +854,33 @@ export const gwApi = {
     rpc('web.login.start', params),
   webLoginWait: (params?: { timeoutMs?: number; accountId?: string }) =>
     rpc('web.login.wait', params),
+  // Doctor: Memory status
+  memoryStatus: () => rpc<{
+    agentId: string;
+    provider?: string;
+    embedding: { ok: boolean; error?: string };
+  }>('doctor.memory.status'),
+  // Tools catalog
+  toolsCatalog: (params?: { agentId?: string; includePlugins?: boolean }) =>
+    rpc<{
+      agentId: string;
+      profiles: Array<{ id: string; label: string }>;
+      groups: Array<{
+        id: string;
+        label: string;
+        source: 'core' | 'plugin';
+        pluginId?: string;
+        tools: Array<{
+          id: string;
+          label: string;
+          description: string;
+          source: 'core' | 'plugin';
+          pluginId?: string;
+          optional?: boolean;
+          defaultProfiles: string[];
+        }>;
+      }>;
+    }>('tools.catalog', params),
   // Generic proxy (escape hatch)
   proxy: (method: string, params?: any) => rpc(method, params),
 };

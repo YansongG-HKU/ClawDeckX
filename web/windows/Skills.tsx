@@ -2,6 +2,7 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { Language } from '../types';
 import { getTranslation } from '../locales';
+import type { LocaleNamespace } from '../locales/types';
 import { gwApi, clawHubApi, skillTranslationApi } from '../services/api';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
@@ -10,6 +11,7 @@ import TranslateModelPicker from '../components/TranslateModelPicker';
 import EmptyState from '../components/EmptyState';
 import PluginCenter from './PluginCenter';
 import SkillHub from './SkillHub';
+import ToolsCatalog from '../components/ToolsCatalog';
 import { copyToClipboard } from '../utils/clipboard';
 
 interface SkillsProps { language: Language; }
@@ -28,7 +30,7 @@ interface SkillStatus {
 
 interface SkillsConfig { [key: string]: { enabled?: boolean; apiKey?: string; env?: Record<string, string> } }
 
-type TabId = 'all' | 'market' | 'plugins' | 'skillhub';
+type TabId = 'all' | 'market' | 'plugins' | 'skillhub' | 'tools';
 type FilterId = 'all' | 'eligible' | 'missing';
 
 type SkillMessage = { kind: 'success' | 'error'; message: string };
@@ -331,7 +333,8 @@ const SkillCard: React.FC<{
 
 const Skills: React.FC<SkillsProps> = ({ language }) => {
   const t = useMemo(() => getTranslation(language), [language]);
-  const sk = t.sk as any;
+  const sk = t.sk as LocaleNamespace;
+  const skillsMarket = t.skillsMarket as LocaleNamespace;
   const { toast } = useToast();
   const { confirm } = useConfirm();
 
@@ -901,6 +904,7 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
 
   const tabs: { id: TabId; label: string; count?: number }[] = [
     { id: 'all', label: sk.skillsTab || sk.allSkills, count: skills.length },
+    { id: 'tools', label: skillsMarket.toolsCatalog || sk.toolsCatalog || 'Tools' },
     { id: 'plugins', label: sk.pluginCenter || 'Plugins' },
     { id: 'market', label: 'ClawHub' },
     { id: 'skillhub', label: 'SkillHub' },
@@ -931,7 +935,7 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
         </div>
 
         {/* 搜索栏 */}
-        {activeTab !== 'plugins' && activeTab !== 'skillhub' && (
+        {activeTab !== 'plugins' && activeTab !== 'skillhub' && activeTab !== 'tools' && (
         <div className="p-3 flex flex-row items-center gap-2">
           {activeTab !== 'market' ? (
             <>
@@ -1130,6 +1134,15 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
         )}
       </div>
 
+      {/* Tools Catalog */}
+      {activeTab === 'tools' && (
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
+          <div className="max-w-6xl mx-auto">
+            <ToolsCatalog language={language} />
+          </div>
+        </div>
+      )}
+
       {/* 插件中心 */}
       {activeTab === 'plugins' && (
         <PluginCenter language={language} />
@@ -1141,7 +1154,7 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
       )}
 
       {/* 内容区 */}
-      {activeTab !== 'plugins' && activeTab !== 'skillhub' && (
+      {activeTab !== 'plugins' && activeTab !== 'skillhub' && activeTab !== 'tools' && (
       <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
         <div className="max-w-6xl mx-auto">
           {/* 加载/错误状态 */}

@@ -1,0 +1,24 @@
+{
+  "skillsMarket": {
+    "title": "Mercado de Skills",
+    "subtitle": "Estender as capacidades do seu agente",
+    "loading": "Carregando...",
+    "active": "ativo",
+    "searchPlaceholder": "Buscar skills...",
+    "noSkills": "Nenhum skill encontrado",
+    "ready": "Pronto",
+    "needsSetup": "Precisa de configuração",
+    "configure": "Configurar",
+    "configHint": "Insira as credenciais necessárias",
+    "select": "Selecionar...",
+    "cancel": "Cancelar",
+    "saving": "Salvando...",
+    "saveAndEnable": "Salvar e Ativar",
+    "configured": "Skill configurado",
+    "configFailed": "Falha ao configurar",
+    "enabled": "Skill ativado",
+    "disabled": "Skill desativado",
+    "toggleFailed": "Falha ao alternar",
+    "noDescription": "Nenhuma descrição disponível"
+  }
+}
