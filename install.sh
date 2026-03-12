@@ -73,8 +73,23 @@ get_config_port() {
     PORT=$DEFAULT_PORT
 }
 
+# Ensure XDG_RUNTIME_DIR and DBUS_SESSION_BUS_ADDRESS are set for systemctl --user.
+# Without these, systemctl --user fails with "Failed to connect to bus: No medium found"
+# when the user session was started via su (not a login shell).
+ensure_user_systemd_env() {
+    local uid
+    uid=$(id -u)
+    if [ -z "$XDG_RUNTIME_DIR" ]; then
+        export XDG_RUNTIME_DIR="/run/user/$uid"
+    fi
+    if [ -z "$DBUS_SESSION_BUS_ADDRESS" ] && [ -S "$XDG_RUNTIME_DIR/bus" ]; then
+        export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
+    fi
+}
+
 # Function to check if systemd service is installed
 check_systemd_service() {
+    ensure_user_systemd_env
     SYSTEMD_SERVICE_INSTALLED=false
     SYSTEMD_SERVICE_TYPE=""
     
@@ -112,6 +127,7 @@ check_systemd_service() {
 
 # Function to install systemd service
 install_systemd_service() {
+    ensure_user_systemd_env
     echo ""
     echo -e "${YELLOW}═══════════════════════════════════════════════════════════${NC}"
     echo -e "${YELLOW}  Install Auto-Start Service / 安装自动启动服务${NC}"
@@ -364,6 +380,7 @@ uninstall() {
 
 # Helper function to perform the actual uninstall
 perform_uninstall() {
+    ensure_user_systemd_env
     local SYSTEMD_UNINSTALL=$1
     local REMOVE_CONFIG=$2
     local REMOVE_DATA=$3
@@ -473,6 +490,7 @@ stop_port_process() {
 
 # Function to stop ClawDeckX
 stop_clawdeckx() {
+    ensure_user_systemd_env
     echo -e "${CYAN}Stopping ClawDeckX... / 正在停止 ClawDeckX...${NC}"
     
     # Try to stop systemd service first
@@ -501,6 +519,7 @@ stop_clawdeckx() {
 
 # Function to start ClawDeckX
 start_clawdeckx() {
+    ensure_user_systemd_env
     echo -e "${CYAN}Starting ClawDeckX... / 正在启动 ClawDeckX...${NC}"
     
     # Kill any stale process or port holder to avoid conflict
