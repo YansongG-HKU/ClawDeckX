@@ -234,3 +234,102 @@ func (h *MaintenanceHandler) ContextOptimize(w http.ResponseWriter, r *http.Requ
 		"changes":      changes,
 	})
 }
+
+// ContextOptimizeAll optimizes all context files for an agent.
+func (h *MaintenanceHandler) ContextOptimizeAll(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		AgentID string `json:"agentId"`
+	}
+	if r.Body != nil {
+		json.NewDecoder(r.Body).Decode(&req)
+	}
+
+	agentID := req.AgentID
+	if agentID == "" {
+		agentID = "main"
+	}
+
+	if h.client == nil || !h.client.IsConnected() {
+		web.Fail(w, r, "GATEWAY_NOT_CONNECTED", "Gateway not connected", http.StatusServiceUnavailable)
+		return
+	}
+
+	contextFiles := []string{"SOUL.md", "TOOLS.md", "MEMORY.md", "AGENTS.md", "IDENTITY.md", "USER.md", "HEARTBEAT.md"}
+	results := []map[string]interface{}{}
+	totalSaved := 0
+
+	for _, fname := range contextFiles {
+		data, err := h.client.RequestWithTimeout("agents.files.get", map[string]interface{}{
+			"agentId": agentID,
+			"name":    fname,
+		}, 5*time.Second)
+		if err != nil {
+			continue
+		}
+
+		var fileResp struct {
+			Content string `json:"content"`
+			Exists  bool   `json:"exists"`
+		}
+		if json.Unmarshal(data, &fileResp) != nil || !fileResp.Exists {
+			continue
+		}
+
+		originalSize := int64(len(fileResp.Content))
+		newContent := fileResp.Content
+		changes := []string{}
+
+		// Remove excessive blank lines
+		for strings.Contains(newContent, "\n\n\n") {
+			newContent = strings.ReplaceAll(newContent, "\n\n\n", "\n\n")
+			if len(changes) == 0 || changes[len(changes)-1] != "Removed excessive blank lines" {
+				changes = append(changes, "Removed excessive blank lines")
+			}
+		}
+
+		// Trim trailing whitespace per line
+		lines := strings.Split(newContent, "\n")
+		trimmed := false
+		for i, line := range lines {
+			t := strings.TrimRight(line, " \t")
+			if t != line {
+				lines[i] = t
+				trimmed = true
+			}
+		}
+		if trimmed {
+			newContent = strings.Join(lines, "\n")
+			changes = append(changes, "Trimmed trailing whitespace")
+		}
+
+		newSize := int64(len(newContent))
+		savedTokens := int((originalSize - newSize) / 4)
+
+		if newSize < originalSize {
+			_, err = h.client.RequestWithTimeout("agents.files.set", map[string]interface{}{
+				"agentId": agentID,
+				"name":    fname,
+				"content": newContent,
+			}, 10*time.Second)
+			if err != nil {
+				continue
+			}
+		}
+
+		if len(changes) > 0 {
+			results = append(results, map[string]interface{}{
+				"file":         fname,
+				"originalSize": originalSize,
+				"newSize":      newSize,
+				"savedTokens":  savedTokens,
+				"changes":      changes,
+			})
+			totalSaved += savedTokens
+		}
+	}
+
+	web.OK(w, r, map[string]interface{}{
+		"results":    results,
+		"totalSaved": totalSaved,
+	})
+}

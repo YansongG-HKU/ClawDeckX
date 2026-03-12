@@ -363,6 +363,8 @@ func RunServe(args []string) int {
 	recipeHandler := handlers.NewRecipeHandler()
 	badgeHandler := handlers.NewBadgeHandler()
 	badgeHandler.SetGWClient(gwClient)
+	maintenanceHandler := handlers.NewMaintenanceHandler(svc)
+	maintenanceHandler.SetGWClient(gwClient)
 
 	router := web.NewRouter()
 
@@ -454,6 +456,10 @@ func RunServe(args []string) int {
 	router.POST("/api/v1/doctor/fix", web.RequireAdmin(doctorHandler.Fix))
 
 	router.POST("/api/v1/recipe/apply-step", web.RequireAdmin(recipeHandler.ApplyStep))
+
+	router.GET("/api/v1/maintenance/context/analyze", maintenanceHandler.ContextAnalyze)
+	router.POST("/api/v1/maintenance/context/optimize", web.RequireAdmin(maintenanceHandler.ContextOptimize))
+	router.POST("/api/v1/maintenance/context/optimize-all", web.RequireAdmin(maintenanceHandler.ContextOptimizeAll))
 
 	router.GET("/api/v1/llm/models-status", llmHealthHandler.ModelsStatus)
 	router.GET("/api/v1/llm/auth-health", llmHealthHandler.AuthHealth)
