@@ -172,7 +172,7 @@
   "wecomPitfall": "⚠️ Häufige Fehler: 1) Callback-URL muss öffentlich sein: http://IP:18789/wecom; 2) Erst OpenClaw konfigurieren; 3) encodingAESKey = 43 Zeichen; 4) Port 18789 freigeben",
   "wecomHelpUrl": "https://open.work.weixin.qq.com/help/wap/detail?docid=21657",
   "wecom_kfPrep": [
-    "WeCom App-Plugin installieren: openclaw plugins install @openclaw-china/wecom-app (oder Gesamtpaket @openclaw-china/channels)",
+    "WeCom App-Plugin installieren: openclaw plugins install @wecom/wecom-openclaw-plugin-app",
     "Bei WeCom-Administrationskonsole work.weixin.qq.com anmelden",
     "In App-Verwaltung → Selbst erstellt eine App erstellen, AgentId und Secret (corpSecret) holen",
     "Corp-ID von der Seite 'Mein Unternehmen' holen",

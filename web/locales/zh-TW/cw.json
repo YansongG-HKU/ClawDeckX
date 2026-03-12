@@ -173,7 +173,7 @@
   "wecomPitfall": "⚠️ 常見踩坑：1) 必須選擇「長連接」創建方式，不要選 Webhook；2) Bot ID 和 Secret 由系統自動生成，不要手動修改；3) 配對密鑰直接複製粘貼即可；4) 長連接模式無需公網地址和端口配置",
   "wecomHelpUrl": "https://open.work.weixin.qq.com/help/wap/detail?docid=21657",
   "wecom_kfPrep": [
-    "安装企微自建应用插件：openclaw plugins install @openclaw-china/wecom-app（或安装全渠道包 @openclaw-china/channels）",
+    "安装企微自建应用插件：openclaw plugins install @wecom/wecom-openclaw-plugin-app",
     "登录企业微信管理后台 work.weixin.qq.com",
     "在「应用管理」→「自建」中创建应用，获取 AgentId 和 Secret（即 corpSecret）",
     "在「我的企业」页获取企业 ID（corpId）",

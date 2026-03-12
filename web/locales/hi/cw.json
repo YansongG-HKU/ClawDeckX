@@ -172,7 +172,7 @@
   "wecomPitfall": "⚠️ Common pitfalls: 1) Callback URL must be publicly accessible, format: http://IP:18789/wecom; 2) Must configure OpenClaw and start gateway first, then click \"Create\" in WeCom — otherwise verification fails; 3) encodingAESKey must be exactly 43 characters; 4) Ensure firewall/security group allows port 18789",
   "wecomHelpUrl": "https://open.work.weixin.qq.com/help/wap/detail?docid=21657",
   "wecom_kfPrep": [
-    "Install WeCom App plugin: openclaw plugins install @openclaw-china/wecom-app (or full bundle @openclaw-china/channels)",
+    "Install WeCom App plugin: openclaw plugins install @wecom/wecom-openclaw-plugin-app",
     "Sign in to WeCom admin console work.weixin.qq.com",
     "In App Management → Self-built, create an app, get AgentId and Secret (corpSecret)",
     "Get Corp ID from My Enterprise page",
