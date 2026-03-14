@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -284,16 +285,73 @@ func DetectOpenClawBinary() (cmd string, version string, installed bool) {
 }
 
 func NpmUninstallGlobal(ctx context.Context, pkg string) (string, error) {
-	cmdStr := "npm uninstall -g " + pkg
-	if runtime.GOOS != "windows" && !isRunningAsRoot() {
-		cmdStr = "sudo " + cmdStr
+	var c *exec.Cmd
+	if runtime.GOOS == "windows" {
+		c = exec.CommandContext(ctx, "cmd", "/c", "npm", "uninstall", "-g", pkg)
+	} else {
+		cmdStr := "npm uninstall -g " + pkg
+		if !isRunningAsRoot() {
+			cmdStr = "sudo " + cmdStr
+		}
+		c = exec.CommandContext(ctx, "sh", "-c", cmdStr)
 	}
-	c := exec.CommandContext(ctx, "sh", "-c", cmdStr)
 	out, err := c.CombinedOutput()
 	if err != nil {
 		return strings.TrimSpace(string(out)), fmt.Errorf("npm uninstall -g %s: %s", pkg, strings.TrimSpace(string(out)))
 	}
 	return strings.TrimSpace(string(out)), nil
+}
+
+// ForceRemoveOpenClaw removes OpenClaw files directly from disk as a last resort
+// when both `openclaw uninstall` and `npm uninstall -g` fail (e.g., file locks on Windows).
+func ForceRemoveOpenClaw(pkg string) error {
+	npmGlobalDir := resolveNpmGlobalDir()
+	if npmGlobalDir == "" {
+		return fmt.Errorf("cannot determine npm global directory")
+	}
+
+	// Remove the package directory
+	pkgDir := filepath.Join(npmGlobalDir, "node_modules", pkg)
+	if err := os.RemoveAll(pkgDir); err != nil {
+		return fmt.Errorf("failed to remove %s: %w", pkgDir, err)
+	}
+
+	// Remove bin files
+	binNames := []string{pkg}
+	if runtime.GOOS == "windows" {
+		binNames = append(binNames, pkg+".cmd", pkg+".ps1")
+	}
+	for _, name := range binNames {
+		_ = os.Remove(filepath.Join(npmGlobalDir, name))
+	}
+
+	// Clean up npm temp directories (e.g., .openclaw-Fs1wLkSf)
+	entries, _ := os.ReadDir(filepath.Join(npmGlobalDir, "node_modules"))
+	for _, e := range entries {
+		if strings.HasPrefix(e.Name(), "."+pkg+"-") {
+			_ = os.RemoveAll(filepath.Join(npmGlobalDir, "node_modules", e.Name()))
+		}
+	}
+
+	return nil
+}
+
+// resolveNpmGlobalDir returns the npm global prefix directory.
+func resolveNpmGlobalDir() string {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var c *exec.Cmd
+	if runtime.GOOS == "windows" {
+		c = exec.CommandContext(ctx, "cmd", "/c", "npm", "config", "get", "prefix")
+	} else {
+		c = exec.CommandContext(ctx, "npm", "config", "get", "prefix")
+	}
+	out, err := c.Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
 }
 
 func isRunningAsRoot() bool {

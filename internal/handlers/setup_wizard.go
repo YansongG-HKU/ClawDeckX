@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"ClawDeckX/internal/database"
@@ -424,31 +425,50 @@ func (h *SetupWizardHandler) Uninstall(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Minute)
 	defer cancel()
 
-	// Try openclaw uninstall first; if it fails (e.g. broken modules), fall through to npm uninstall
+	var warnings []string
+
+	// Layer 1: try openclaw uninstall (cleans config + state)
 	output, err := openclaw.RunCLI(ctx, "uninstall", "--all", "--yes", "--non-interactive")
+	if err != nil {
+		warnings = append(warnings, "openclaw uninstall: "+err.Error())
+	}
 
-	npmPkg := clawCmd
-	npmOutput, npmErr := openclaw.NpmUninstallGlobal(ctx, npmPkg)
+	// Layer 2: try npm uninstall -g (removes the npm package)
+	npmOutput, npmErr := openclaw.NpmUninstallGlobal(ctx, clawCmd)
+	if npmErr != nil {
+		warnings = append(warnings, "npm uninstall: "+npmErr.Error())
+	}
 
-	// Both failed — report the errors
+	// Layer 3: if npm also failed, force-remove files from disk
+	if npmErr != nil {
+		if forceErr := openclaw.ForceRemoveOpenClaw(clawCmd); forceErr != nil {
+			warnings = append(warnings, "force remove: "+forceErr.Error())
+		} else {
+			npmErr = nil // force remove succeeded, clear the npm error
+		}
+	}
+
+	// Also clean up .openclaw config directory
+	stateDir := openclaw.ResolveStateDir()
+	if stateDir != "" {
+		_ = os.RemoveAll(stateDir)
+	}
+
+	// All three layers failed — report
 	if err != nil && npmErr != nil {
 		web.Fail(w, r, "UNINSTALL_FAILED",
-			"openclaw uninstall: "+err.Error()+"; npm uninstall: "+npmErr.Error(),
+			strings.Join(warnings, "; "),
 			http.StatusInternalServerError)
 		return
 	}
 
-	// At least one succeeded
 	result := map[string]string{
 		"message": "ok",
 		"output":  output + "\n" + npmOutput,
 		"command": clawCmd,
 	}
-	if err != nil {
-		result["warning"] = "openclaw uninstall failed (fell back to npm): " + err.Error()
-	}
-	if npmErr != nil {
-		result["warning"] = "npm uninstall failed: " + npmErr.Error()
+	if len(warnings) > 0 {
+		result["warning"] = strings.Join(warnings, "; ")
 	}
 	web.OK(w, r, result)
 }
