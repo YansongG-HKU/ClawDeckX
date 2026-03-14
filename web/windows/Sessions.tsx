@@ -131,8 +131,13 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
   const [gwChecked, setGwChecked] = useState(false);
   const lastGwReconnectAtRef = useRef(0);
 
-  // Sessions
-  const [sessions, setSessions] = useState<GwSession[]>([]);
+  // Sessions — restore from sessionStorage for instant display
+  const [sessions, setSessions] = useState<GwSession[]>(() => {
+    try {
+      const cached = sessionStorage.getItem('clawdeck-sessions-cache');
+      return cached ? JSON.parse(cached) : [];
+    } catch { return []; }
+  });
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [initialDetecting, setInitialDetecting] = useState(false);
   const hasStartedInitialDetectingRef = useRef(false);
@@ -546,7 +551,7 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
       }) as any;
       // Gateway returns { sessions: [...] }
       const list = Array.isArray(res?.sessions) ? res.sessions : [];
-      setSessions(list.map((s: any) => ({
+      const mapped = list.map((s: any) => ({
         key: s.key || s.id || '',
         label: s.derivedTitle || s.label || s.displayName || s.key || '',
         kind: s.chatType || s.kind || '',
@@ -564,17 +569,24 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
         derivedTitle: s.derivedTitle || '',
         maxContextTokens: s.maxContextTokens || s.contextWindow || s.maxTokens || 0,
         compacted: !!s.compacted,
-      })));
+      }));
+      setSessions(mapped);
+      // Persist to sessionStorage for instant display on next window open
+      try { sessionStorage.setItem('clawdeck-sessions-cache', JSON.stringify(mapped)); } catch { /* ignore */ }
     } catch { /* ignore */ }
     finally { setSessionsLoading(false); }
   }, [gwReady]);
 
+  // Track message count via ref to avoid loadHistory dependency on messages array
+  const messagesLenRef = useRef(0);
+  messagesLenRef.current = messages.length;
+
   // Load chat history (via REST proxy)
   const loadHistory = useCallback(async (opts?: { silent?: boolean }) => {
     if (!gwReady) return;
-    if (!opts?.silent) {
-      setChatLoading(true);
-    }
+    // Only show loading spinner on first load (no existing messages)
+    const showSpinner = !opts?.silent && messagesLenRef.current === 0;
+    if (showSpinner) setChatLoading(true);
     try {
       const res = await gwApi.proxy('chat.history', { sessionKey, limit: 200 }) as any;
       const msgs = Array.isArray(res?.messages) ? res.messages : [];
@@ -586,20 +598,20 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
     } catch {
       setMessages([]);
     } finally {
-      if (!opts?.silent) {
-        setChatLoading(false);
-      }
+      if (showSpinner) setChatLoading(false);
     }
   }, [gwReady, sessionKey]);
 
-  // On ready: load sessions list and refresh it periodically.
+  // On ready: load history first (user-visible), then sessions list (sidebar has cache).
   useEffect(() => {
     if (!gwReady) return;
     if (!hasStartedInitialDetectingRef.current) {
       hasStartedInitialDetectingRef.current = true;
       setInitialDetecting(true);
-      Promise.allSettled([loadSessions(), loadHistory()]).finally(() => {
+      // Priority: show chat history ASAP, then refresh sidebar sessions
+      loadHistory().finally(() => {
         setInitialDetecting(false);
+        loadSessions();
       });
     } else {
       loadSessions();
@@ -1710,9 +1722,28 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
               </div>
             )}
 
-            {chatLoading && messages.length === 0 && (
-              <div className="flex items-center justify-center py-16 gap-2 text-slate-400">
-                <span className="material-symbols-outlined text-[20px] animate-spin">progress_activity</span>
+            {(chatLoading || initialDetecting) && messages.length === 0 && (
+              <div className="space-y-4 animate-pulse">
+                {/* Skeleton chat bubbles */}
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-slate-200/60 dark:bg-white/5 shrink-0" />
+                  <div className="space-y-1.5 flex-1 max-w-[70%]">
+                    <div className="h-3 w-32 rounded bg-slate-200/60 dark:bg-white/5" />
+                    <div className="h-16 rounded-2xl bg-slate-100/80 dark:bg-white/[0.03] border border-slate-200/40 dark:border-white/[0.04]" />
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 justify-end">
+                  <div className="space-y-1.5 max-w-[60%]">
+                    <div className="h-10 rounded-2xl bg-primary/5 border border-primary/10" />
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-slate-200/60 dark:bg-white/5 shrink-0" />
+                  <div className="space-y-1.5 flex-1 max-w-[80%]">
+                    <div className="h-3 w-24 rounded bg-slate-200/60 dark:bg-white/5" />
+                    <div className="h-28 rounded-2xl bg-slate-100/80 dark:bg-white/[0.03] border border-slate-200/40 dark:border-white/[0.04]" />
+                  </div>
+                </div>
               </div>
             )}
 
