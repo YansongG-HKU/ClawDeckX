@@ -108,7 +108,7 @@ export const UsagePanel: React.FC<UsagePanelProps> = ({ sessionKey, gwReady, loa
           </div>
         )}
 
-        {/* Context Window */}
+        {/* Context Window + Session Stats (merged row) */}
         {s?.totalTokens ? (
           <div>
             <div className="text-[9px] font-bold text-slate-400 dark:text-white/30 uppercase mb-1.5">{a.context || 'Context'}</div>
@@ -128,36 +128,32 @@ export const UsagePanel: React.FC<UsagePanelProps> = ({ sessionKey, gwReady, loa
                   {s.compacted && <span className="material-symbols-outlined text-[11px] text-amber-500" title={a.ctxCompacted || 'Compacted'}>compress</span>}
                 </div>
               ) : null}
-            </div>
-          </div>
-        ) : null}
-
-        {/* Quick Stats Row */}
-        {(s?.messageCount || s?.thinkingLevel) ? (
-          <div>
-            <div className="text-[9px] font-bold text-slate-400 dark:text-white/30 uppercase mb-1.5">{a.session || 'Session'}</div>
-            <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[9px]">
-              {s?.messageCount ? (
-                <div className="text-slate-500 dark:text-white/35">
-                  <span className="material-symbols-outlined text-[10px] align-middle me-0.5">chat</span>
-                  {s.messageCount} msg
-                </div>
-              ) : null}
-              {s?.thinkingLevel ? (
-                <div className="text-slate-500 dark:text-white/35">
-                  <span className="material-symbols-outlined text-[10px] align-middle me-0.5">psychology</span>
-                  {s.thinkingLevel}
-                </div>
-              ) : null}
-              {(s?.runPhase === 'streaming' || s?.runPhase === 'sending') && s?.liveElapsed ? (
-                <div className="text-primary font-mono tabular-nums">
-                  <span className="material-symbols-outlined text-[10px] align-middle me-0.5">timer</span>
-                  {(s.liveElapsed / 1000).toFixed(1)}s
-                </div>
-              ) : s?.lastLatencyMs && s?.runPhase === 'idle' ? (
-                <div className="text-slate-500 dark:text-white/35 font-mono tabular-nums">
-                  <span className="material-symbols-outlined text-[10px] align-middle me-0.5">speed</span>
-                  {(s.lastLatencyMs / 1000).toFixed(1)}s
+              {/* Session quick stats inline */}
+              {(s.messageCount || s.thinkingLevel || s.lastLatencyMs || s.liveElapsed) ? (
+                <div className="flex items-center flex-wrap gap-x-2.5 gap-y-0.5 text-[9px] pt-0.5">
+                  {s.messageCount ? (
+                    <span className="text-slate-500 dark:text-white/35">
+                      <span className="material-symbols-outlined text-[10px] align-middle me-0.5">chat</span>
+                      {s.messageCount} msg
+                    </span>
+                  ) : null}
+                  {s.thinkingLevel ? (
+                    <span className="text-slate-500 dark:text-white/35">
+                      <span className="material-symbols-outlined text-[10px] align-middle me-0.5">psychology</span>
+                      {s.thinkingLevel}
+                    </span>
+                  ) : null}
+                  {(s.runPhase === 'streaming' || s.runPhase === 'sending') && s.liveElapsed ? (
+                    <span className="text-primary font-mono tabular-nums">
+                      <span className="material-symbols-outlined text-[10px] align-middle me-0.5">timer</span>
+                      {(s.liveElapsed / 1000).toFixed(1)}s
+                    </span>
+                  ) : s.lastLatencyMs && s.runPhase === 'idle' ? (
+                    <span className="text-slate-500 dark:text-white/35 font-mono tabular-nums">
+                      <span className="material-symbols-outlined text-[10px] align-middle me-0.5">speed</span>
+                      {(s.lastLatencyMs / 1000).toFixed(1)}s
+                    </span>
+                  ) : null}
                 </div>
               ) : null}
             </div>
