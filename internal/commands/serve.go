@@ -666,7 +666,7 @@ func RunServe(args []string) int {
 		web.RequestIDMiddleware,
 		web.RequestLogMiddleware,
 		web.CORSMiddleware(cfg.Server.CORSOrigins),
-		web.MaxBodySizeMiddleware(2<<20), // 2 MB
+		web.MaxBodySizeMiddleware(20<<20), // 20 MB (image attachments need ~13 MB base64 for 10 MB file)
 		web.RateLimitMiddleware(loginLimiter, rateLimitPaths),
 		web.InputSanitizeMiddleware,
 		web.AuthMiddleware(cfg.Auth.JWTSecret, skipAuthPaths),

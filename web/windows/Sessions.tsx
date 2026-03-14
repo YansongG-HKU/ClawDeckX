@@ -862,7 +862,8 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
     if (msg) contentBlocks.push({ type: 'text', text: msg });
     for (const att of attachments_) {
       if (att.isImage) {
-        contentBlocks.push({ type: 'image', source: { type: 'base64', media_type: att.mimeType, data: att.dataUrl } });
+        const rawB64 = att.dataUrl.replace(/^data:[^;]+;base64,/, '');
+        contentBlocks.push({ type: 'image', source: { type: 'base64', media_type: att.mimeType, data: rawB64 } });
       } else {
         contentBlocks.push({ type: 'text', text: `📎 ${att.fileName}` });
       }
