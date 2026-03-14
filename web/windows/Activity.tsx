@@ -52,6 +52,7 @@ const Activity: React.FC<ActivityProps> = ({ language, onNavigateToSession }) =>
   const [costTrend, setCostTrend] = useState<Array<{ date: string; totalCost: number }>>([]);
   const [cardDensity, setCardDensity] = useState<'compact' | 'normal' | 'large'>('normal');
   const [usageAggregates, setUsageAggregates] = useState<any>(null);
+  const [usageByKey, setUsageByKey] = useState<Record<string, any>>({});
 
 
   const loadSessions = useCallback(async () => {
@@ -82,6 +83,14 @@ const Activity: React.FC<ActivityProps> = ({ language, onNavigateToSession }) =>
     try {
       const data = await gwApi.sessionsUsage({ limit: 50 }) as any;
       if (data?.aggregates) setUsageAggregates(data.aggregates);
+      // Build per-session usage lookup map
+      if (data?.sessions && Array.isArray(data.sessions)) {
+        const map: Record<string, any> = {};
+        for (const s of data.sessions) {
+          if (s.key && s.usage) map[s.key] = s.usage;
+        }
+        setUsageByKey(map);
+      }
     } catch { /* non-critical */ }
   }, []);
 
@@ -406,6 +415,7 @@ const Activity: React.FC<ActivityProps> = ({ language, onNavigateToSession }) =>
                       )}
                       <SessionCard
                         session={row}
+                        sessionUsage={usageByKey[row.key]}
                         onSelect={() => { if (batchMode) toggleBatchItem(row.key); }}
                         onChat={onNavigateToSession}
                         onCompact={compactSession}

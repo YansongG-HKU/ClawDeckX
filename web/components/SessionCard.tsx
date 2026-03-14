@@ -58,6 +58,7 @@ const HEAT_GRADIENT: Record<string, string> = {
 
 interface SessionCardProps {
   session: Record<string, any>;
+  sessionUsage?: any;
   selected?: boolean;
   onSelect: (key: string) => void;
   onChat?: (key: string) => void;
@@ -69,7 +70,7 @@ interface SessionCardProps {
 }
 
 export const SessionCard: React.FC<SessionCardProps> = ({
-  session: s, selected, onSelect, onChat, onCompact, onReset, onDelete, relativeTime, labels: a
+  session: s, sessionUsage, selected, onSelect, onChat, onCompact, onReset, onDelete, relativeTime, labels: a
 }) => {
   const [metaOpen, setMetaOpen] = useState(false);
   const inp = s.inputTokens || 0;
@@ -235,6 +236,77 @@ export const SessionCard: React.FC<SessionCardProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Per-session usage details (messages, tools, latency) */}
+        {sessionUsage && (() => {
+          const mc = sessionUsage.messageCounts;
+          const tu = sessionUsage.toolUsage;
+          const lat = sessionUsage.latency;
+          const hasMessages = mc && mc.total > 0;
+          const hasTools = tu && tu.totalCalls > 0;
+          const hasLatency = lat && lat.count > 0;
+          if (!hasMessages && !hasTools && !hasLatency) return null;
+          return (
+            <div className="mb-3 p-2.5 rounded-xl bg-slate-50/80 dark:bg-white/[0.02] border border-slate-100/60 dark:border-white/[0.04]">
+              {/* Messages stacked bar */}
+              {hasMessages && (
+                <div className="mb-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[8px] font-bold text-slate-400 dark:text-white/30 uppercase">{a.messages || 'Messages'}</span>
+                    <span className="text-[9px] font-extrabold text-slate-600 dark:text-white/60 tabular-nums">{mc.total}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-100 dark:bg-white/5 overflow-hidden flex">
+                    {mc.total > 0 && <>
+                      <div className="h-full bg-blue-400/80" style={{ width: `${(mc.user / mc.total) * 100}%` }} title={`${a.userMsg || 'User'}: ${mc.user}`} />
+                      <div className="h-full bg-emerald-400/80" style={{ width: `${(mc.assistant / mc.total) * 100}%` }} title={`${a.assistantMsg || 'Assistant'}: ${mc.assistant}`} />
+                      {mc.toolCalls > 0 && <div className="h-full bg-purple-400/80" style={{ width: `${(mc.toolCalls / mc.total) * 100}%` }} title={`${a.toolCallsLabel || 'Tools'}: ${mc.toolCalls}`} />}
+                      {mc.errors > 0 && <div className="h-full bg-red-400/80" style={{ width: `${(mc.errors / mc.total) * 100}%` }} title={`${a.errors || 'Errors'}: ${mc.errors}`} />}
+                    </>}
+                  </div>
+                  <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 mt-1 text-[7px]">
+                    <span className="text-blue-500">● {a.userMsg || 'User'} {mc.user}</span>
+                    <span className="text-emerald-500">● {a.assistantMsg || 'Asst'} {mc.assistant}</span>
+                    {mc.toolCalls > 0 && <span className="text-purple-500">● {a.toolCallsLabel || 'Tools'} {mc.toolCalls}</span>}
+                    {mc.errors > 0 && <span className="text-red-500">● {a.errors || 'Err'} {mc.errors}</span>}
+                  </div>
+                </div>
+              )}
+              {/* Tools + Latency row */}
+              {(hasTools || hasLatency) && (
+                <div className={`flex items-start gap-3 ${hasMessages ? '' : ''}`}>
+                  {/* Tool pills */}
+                  {hasTools && (
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[7px] font-bold text-slate-400 dark:text-white/30 uppercase mb-1">{a.toolUsage || 'Tools'}</div>
+                      <div className="flex flex-wrap gap-1">
+                        {tu.tools?.slice(0, 5).map((tool: any) => (
+                          <span key={tool.name} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-purple-500/8 dark:bg-purple-500/10 text-[7px] font-mono text-purple-600 dark:text-purple-400 border border-purple-500/10 dark:border-purple-500/15">
+                            <span className="truncate max-w-[60px]">{tool.name}</span>
+                            <span className="text-purple-400 dark:text-purple-500 font-bold">{tool.count}×</span>
+                          </span>
+                        ))}
+                        {tu.tools && tu.tools.length > 5 && (
+                          <span className="text-[7px] text-slate-400 dark:text-white/25">+{tu.tools.length - 5}</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {/* Latency mini stats */}
+                  {hasLatency && (
+                    <div className="shrink-0">
+                      <div className="text-[7px] font-bold text-slate-400 dark:text-white/30 uppercase mb-1">{a.latencyStats || 'Latency'}</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[11px] text-amber-500">speed</span>
+                        <span className="text-[9px] font-bold text-slate-600 dark:text-white/50 tabular-nums">{(lat.avgMs / 1000).toFixed(1)}s</span>
+                        <span className="text-[7px] text-slate-400 dark:text-white/25 tabular-nums">p95 {(lat.p95Ms / 1000).toFixed(1)}s</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Time row */}
         <div className="flex items-center gap-2 text-[9px] text-slate-400 dark:text-white/25 mb-2">
