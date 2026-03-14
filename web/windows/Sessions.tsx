@@ -1462,23 +1462,6 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
                     <span className="text-[10px] text-slate-400 dark:text-white/30 font-mono hidden md:inline">{(activeSession.totalTokens / 1000).toFixed(1)}k tok</span>
                   </>
                 ) : null}
-                {activeSession?.totalTokens && activeSession?.maxContextTokens ? (() => {
-                  const pct = Math.min(100, (activeSession.totalTokens / activeSession.maxContextTokens) * 100);
-                  const clr = pct > 90 ? 'bg-red-500' : pct > 70 ? 'bg-amber-500' : 'bg-emerald-500';
-                  const txtClr = pct > 90 ? 'text-red-500' : pct > 70 ? 'text-amber-500' : 'text-emerald-500';
-                  return (
-                    <>
-                      <span className="text-slate-300 dark:text-white/15">|</span>
-                      <div className="flex items-center gap-1" title={`${(activeSession.totalTokens / 1000).toFixed(1)}k / ${(activeSession.maxContextTokens / 1000).toFixed(0)}k`}>
-                        <div className="w-10 sm:w-12 h-1.5 rounded-full bg-slate-200/60 dark:bg-white/10 overflow-hidden">
-                          <div className={`h-full rounded-full ${clr} transition-all`} style={{ width: `${pct}%` }} />
-                        </div>
-                        <span className={`text-[9px] font-bold tabular-nums ${txtClr}`}>{pct.toFixed(0)}%</span>
-                      </div>
-                      {activeSession.compacted && <span className="material-symbols-outlined text-[11px] text-amber-500" title={c.ctxCompacted || 'Compacted'}>compress</span>}
-                    </>
-                  );
-                })() : null}
                 {messages.length > 0 && (
                   <>
                     <span className="text-slate-300 dark:text-white/15 hidden md:inline">|</span>
@@ -1489,11 +1472,6 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
                   <>
                     <span className="text-slate-300 dark:text-white/15">|</span>
                     <span className="text-[10px] text-primary font-mono tabular-nums">{(liveElapsed / 1000).toFixed(1)}s</span>
-                  </>
-                ) : lastLatencyMs && runPhase === 'idle' ? (
-                  <>
-                    <span className="text-slate-300 dark:text-white/15 hidden sm:inline">|</span>
-                    <span className="text-[10px] text-slate-400 dark:text-white/30 font-mono tabular-nums hidden sm:inline" title={c.latency || 'Latency'}>{(lastLatencyMs / 1000).toFixed(1)}s</span>
                   </>
                 ) : null}
               </div>
@@ -2183,6 +2161,18 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
           return res;
         }}
         labels={c}
+        session={{
+          model: activeSession?.model,
+          modelProvider: activeSession?.modelProvider,
+          totalTokens: activeSession?.totalTokens,
+          maxContextTokens: activeSession?.maxContextTokens,
+          compacted: activeSession?.compacted,
+          thinkingLevel: activeSession?.thinkingLevel,
+          messageCount: messages.length || undefined,
+          lastLatencyMs: lastLatencyMs,
+          liveElapsed: liveElapsed,
+          runPhase: runPhase,
+        }}
       />
       {/* Inject System Message Modal */}
       {injectOpen && (
