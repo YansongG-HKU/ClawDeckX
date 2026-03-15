@@ -69,10 +69,10 @@ interface LiveToolCall {
   phase: 'start' | 'running' | 'done';
 }
 
-const WAITING_PHRASES = [
-  'Pondering', 'Conjuring', 'Noodling', 'Moseying', 'Hobnobbing',
-  'Kerfuffling', 'Dillydallying', 'Twiddling thumbs', 'Bamboozling',
-];
+const WAITING_PHRASE_KEYS = [
+  'waitPondering', 'waitConjuring', 'waitNoodling', 'waitMoseying', 'waitHobnobbing',
+  'waitKerfuffling', 'waitDillydallying', 'waitTwiddling', 'waitBamboozling',
+] as const;
 
 function appendMessageDedup(
   prev: ChatMsg[],
@@ -686,18 +686,20 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
       }
       return;
     }
-    const idx = Math.floor(Math.random() * WAITING_PHRASES.length);
-    const phrase = WAITING_PHRASES[idx] || 'Waiting';
+    const pick = () => {
+      const key = WAITING_PHRASE_KEYS[Math.floor(Math.random() * WAITING_PHRASE_KEYS.length)];
+      return (c as any)[key] || c.runWaiting || 'Waiting';
+    };
+    const phrase = pick();
     waitingPhraseRef.current = phrase;
     setWaitingPhrase(phrase);
     const timer = setInterval(() => {
-      const nextIdx = Math.floor(Math.random() * WAITING_PHRASES.length);
-      const next = WAITING_PHRASES[nextIdx] || 'Waiting';
+      const next = pick();
       waitingPhraseRef.current = next;
       setWaitingPhrase(next);
     }, 3000);
     return () => clearInterval(timer);
-  }, [runPhase]);
+  }, [runPhase, c]);
 
   // Live elapsed timer during streaming
   useEffect(() => {
