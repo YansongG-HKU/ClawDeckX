@@ -2,7 +2,7 @@ import React, { useMemo, useState, Suspense, lazy } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-const ShikiHighlighter = lazy(() => import('react-shiki/core').then(mod => ({ default: mod.default })));
+const ShikiHighlighter = lazy(() => import('react-shiki'));
 
 const MAX_RENDER_CHARS = 50_000;
 
