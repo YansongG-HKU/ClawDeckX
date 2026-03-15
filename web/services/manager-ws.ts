@@ -1,5 +1,3 @@
-import { getToken } from './request';
-
 type ManagerWSStatus = 'connecting' | 'open' | 'closed';
 type ManagerWSMessageHandler = (msg: any) => void;
 type ManagerWSStatusHandler = (status: ManagerWSStatus) => void;
@@ -49,9 +47,8 @@ class ManagerWSBus {
     this.notifyStatus('connecting');
 
     const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const token = getToken();
-    const qs = token ? `?token=${encodeURIComponent(token)}` : '';
-    const ws = new WebSocket(`${proto}//${location.host}/api/v1/ws${qs}`);
+    // Auth via HttpOnly claw_token cookie (set on login) — avoids leaking JWT in console on connection errors
+    const ws = new WebSocket(`${proto}//${location.host}/api/v1/ws`);
     this.ws = ws;
 
     ws.onopen = () => {
