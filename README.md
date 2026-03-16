@@ -223,9 +223,48 @@ Open your browser at `http://localhost:18791`. The first run will auto-generate 
 docker logs clawdeckx
 ```
 
-> **Note:** By default, the container connects to an OpenClaw Gateway on the host machine at port `18789`. Edit `docker-compose.yml` to change `OCD_OPENCLAW_GATEWAY_HOST` and `OCD_OPENCLAW_GATEWAY_PORT` as needed.
+#### Docker Configuration | Docker 配置说明
+
+**Ports | 端口映射：**
+
+| Port | Service | Description | 说明 |
+| :--- | :--- | :--- | :--- |
+| `18791` | ClawDeckX Web UI | Main dashboard (mapped by default) | 主界面（默认已映射） |
+| `18789` | OpenClaw Gateway | Optional: expose for external debugging | 可选：映射后可从容器外调试 Gateway |
+
+To expose the Gateway port, add `- "18789:18789"` under `ports` in `docker-compose.yml`.
+
+如需从容器外访问 Gateway，在 `docker-compose.yml` 的 `ports` 中添加 `- "18789:18789"`。
+
+**Environment Variables | 环境变量：**
+
+| Variable | Default | Description | 说明 |
+| :--- | :--- | :--- | :--- |
+| `OCD_OPENCLAW_GATEWAY_HOST` | `host.docker.internal` | Gateway host address | Gateway 地址 |
+| `OCD_OPENCLAW_GATEWAY_PORT` | `18789` | Gateway port | Gateway 端口 |
+| `OCD_OPENCLAW_GATEWAY_TOKEN` | *(empty)* | Gateway auth token | Gateway 认证令牌 |
+| `OCD_PORT` | `18791` | ClawDeckX listen port | ClawDeckX 监听端口 |
+| `OCD_BIND` | `0.0.0.0` | ClawDeckX bind address | ClawDeckX 绑定地址 |
+| `TZ` | `UTC` | Container timezone (e.g. `Asia/Shanghai`) | 容器时区（如 `Asia/Shanghai`） |
+
+**Volumes | 数据卷：**
+
+| Volume | Mount Point | Description | 说明 |
+| :--- | :--- | :--- | :--- |
+| `clawdeckx-data` | `/data` | Database, logs, gateway logs | 数据库、日志、Gateway 日志 |
+| `clawdeckx-openclaw-state` | `/root/.local/state/openclaw` | OpenClaw config & session data | OpenClaw 配置与会话数据 |
+| `clawdeckx-npm-global` | `/usr/lib/node_modules` | OpenClaw npm installation | OpenClaw npm 安装目录 |
+
+> [!TIP]
+> OpenClaw installation and configuration are persisted across container updates. You do **not** need to reinstall OpenClaw after `docker pull` and recreate.
 >
-> **说明：** 默认连接宿主机 `18789` 端口的 OpenClaw Gateway，可在 `docker-compose.yml` 中修改 `OCD_OPENCLAW_GATEWAY_HOST` 和 `OCD_OPENCLAW_GATEWAY_PORT`。
+> OpenClaw 的安装和配置在容器更新后会保留。执行 `docker pull` 重建容器后**无需重新安装** OpenClaw。
+
+**Resource Limits | 资源限制：**
+
+The default `docker-compose.yml` sets memory limit to 2 GB and CPU limit to 2 cores. Adjust `deploy.resources.limits` as needed.
+
+默认 `docker-compose.yml` 限制内存 2 GB、CPU 2 核，可根据需要调整 `deploy.resources.limits`。
 
 <br>
 
