@@ -26,7 +26,7 @@ const GATEWAY_KEYS = [
   'gateway.http.*',
   'gateway.tools.*', 'gateway.nodes.*',
   'gateway.trustedProxies',
-  'gateway.apnsRelay.*',
+  'gateway.push.*',
   'discovery.*',
   'web.*',
 ];
@@ -56,7 +56,7 @@ const MESSAGES_KEYS = [
 const TOOLS_KEYS = [
   'tools.*',
   'canvasHost.enabled', 'canvasHost.root', 'canvasHost.port', 'canvasHost.liveReload',
-  'media.preserveFilenames', 'media.retentionTTLHours',
+  'media.preserveFilenames', 'media.ttlHours',
 ];
 
 // Commands

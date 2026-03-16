@@ -76,7 +76,7 @@ export const ToolsSection: React.FC<SectionProps> = ({ setField, getField, langu
 
       <ConfigSection title={es.mediaFiles} icon="perm_media" iconColor="text-orange-500" defaultOpen={false}>
         <SwitchField label={es.preserveFilenames} tooltip={tip('media.preserveFilenames')} value={getField(['media', 'preserveFilenames']) === true} onChange={v => setField(['media', 'preserveFilenames'], v)} />
-        <NumberField label={es.mediaRetentionTTL || 'Retention TTL (hours)'} tooltip={tip('media.retentionTTLHours')} value={getField(['media', 'retentionTTLHours'])} onChange={v => setField(['media', 'retentionTTLHours'], v)} min={0} step={1} />
+        <NumberField label={es.mediaRetentionTTL || 'Retention TTL (hours)'} tooltip={tip('media.ttlHours')} value={getField(['media', 'ttlHours'])} onChange={v => setField(['media', 'ttlHours'], v)} min={0} step={1} />
       </ConfigSection>
     </div>
   );
