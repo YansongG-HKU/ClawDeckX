@@ -4,6 +4,7 @@ import { Language } from '../types';
 import { getTranslation } from '../locales';
 import type { LocaleNamespace } from '../locales/types';
 import { gwApi, clawHubApi, skillTranslationApi } from '../services/api';
+import { useGatewayStatus } from '../hooks/useGatewayStatus';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
 import CustomSelect from '../components/CustomSelect';
@@ -362,6 +363,7 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [skillMessages, setSkillMessages] = useState<SkillMessageMap>({});
   const [groupView, setGroupView] = useState(false);
+  const { ready: gwReady } = useGatewayStatus();
   const [canSendToAgent, setCanSendToAgent] = useState(false);
 
   // Sort
@@ -455,11 +457,11 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
     return () => cancelAnimationFrame(raf);
   }, [fetchSkills]);
 
-  // 检测 Gateway 连接状态 + 是否有可用频道 + 是否配置了模型
+  // 检测是否有可用频道 + 是否配置了模型 (only when gateway is ready)
   useEffect(() => {
+    if (!gwReady) { setCanSendToAgent(false); return; }
     (async () => {
       try {
-        await gwApi.health();
         const [chData, cfgData] = await Promise.all([
           gwApi.channels() as Promise<any>,
           gwApi.configGet() as Promise<any>,
@@ -473,7 +475,7 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
         setCanSendToAgent(false);
       }
     })();
-  }, []);
+  }, [gwReady]);
 
   // 通用异步翻译批处理：查询缓存 → 触发翻译 → 轮询结果
   const translateBatch = useCallback(async (

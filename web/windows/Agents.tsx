@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { Language } from '../types';
 import { getTranslation } from '../locales';
 import { gwApi } from '../services/api';
+import { useGatewayStatus } from '../hooks/useGatewayStatus';
 import { subscribeManagerWS } from '../services/manager-ws';
 import { templateSystem, WorkspaceTemplate } from '../services/template-system';
 import { useToast } from '../components/Toast';
@@ -67,8 +68,8 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
   const { toast } = useToast();
   const { confirm } = useConfirm();
 
-  // Shared Manager WS subscription for agent chat streaming events
-  const [gwReady, setGwReady] = useState(false);
+  // Gateway connectivity (shared singleton hook)
+  const { ready: gwReady } = useGatewayStatus();
   const [wsConnecting, setWsConnecting] = useState(false);
   const runIdRef = useRef<string | null>(null);
   const runSessionRef = useRef<string | null>(null);
@@ -112,16 +113,10 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
     templateSystem.getAllTemplates(language).then(setFileTemplates).catch(() => { /* templates optional */ });
   }, [language]);
 
-  // Check GW proxy connectivity + connect Manager WS for agent chat streaming events
+  // Subscribe to shared Manager WS for agent chat streaming events
   useEffect(() => {
     setWsConnecting(true);
 
-    // 1) Check GW proxy is reachable via REST
-    gwApi.status().then((res: any) => {
-      if (res?.connected) setGwReady(true);
-    }).catch(() => { /* GW probe failure is expected when offline */ });
-
-    // 2) Subscribe to shared Manager WS for real-time chat streaming events
     let opened = false;
     const connectTimeout = setTimeout(() => {
       if (!opened) setWsConnecting(false);
@@ -169,7 +164,6 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
       if (status === 'open') {
         opened = true;
         clearTimeout(connectTimeout);
-        setGwReady(true);
         setWsConnecting(false);
       }
     });

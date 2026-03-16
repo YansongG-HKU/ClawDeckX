@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Language } from '../types';
 import { getTranslation } from '../locales';
-import { gatewayApi, gwApi } from '../services/api';
+import { gwApi } from '../services/api';
+import { useGatewayStatus } from '../hooks/useGatewayStatus';
 import { subscribeManagerWS } from '../services/manager-ws';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
@@ -225,9 +226,7 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
   const [wsError, setWsError] = useState<string | null>(null);
   const [wsConnecting, setWsConnecting] = useState(true);
   const wasWsDisconnectedRef = useRef(false);
-  const [gwReady, setGwReady] = useState(false);
-  const [gwChecked, setGwChecked] = useState(false);
-  const lastGwReconnectAtRef = useRef(0);
+  const { ready: gwReady, checked: gwChecked, refresh: gwRefresh } = useGatewayStatus();
 
   // Sessions — restore from sessionStorage for instant display
   const [sessions, setSessions] = useState<GwSession[]>(() => {
@@ -514,60 +513,21 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
   const omittedMessageCount = Math.max(0, messages.length - renderedMessages.length);
   const msgGroups = useMemo(() => groupMessages(renderedMessages), [renderedMessages]);
 
-  // Check GW proxy connectivity + connect Manager WS for chat streaming events
+  // Sync wsError with gateway status from shared hook
+  useEffect(() => {
+    if (gwChecked && !gwReady) {
+      setWsError(c.configMissing);
+      setWsConnecting(false);
+    } else if (gwReady) {
+      setWsError(null);
+    }
+  }, [gwChecked, gwReady, c.configMissing]);
+
+  // Subscribe to shared Manager WS for real-time chat streaming events
   useEffect(() => {
     setWsConnecting(true);
-    setWsError(null);
-    setGwChecked(false);
 
-    // 1) Check GW proxy is reachable via REST
-    const refreshGwReady = () => {
-      Promise.allSettled([gwApi.status(), gatewayApi.status()]).then(([rpc, svc]) => {
-        const rpcConnected = rpc.status === 'fulfilled' && !!(rpc.value as any)?.connected;
-        const gatewayRunning = svc.status === 'fulfilled' && !!(svc.value as any)?.running;
-        const ready = rpcConnected || gatewayRunning;
-        setGwReady(ready);
-        setGwChecked(true);
-
-        // Self-heal: gateway process is up but GW WS client is disconnected.
-        if (!rpcConnected && gatewayRunning) {
-          const now = Date.now();
-          if (now - lastGwReconnectAtRef.current > 10000) {
-            lastGwReconnectAtRef.current = now;
-            void gwApi.reconnect().catch(() => { /* ignore */ });
-          }
-        }
-
-        if (!ready) {
-          setWsError(c.configMissing);
-          // Once GW check finished AND is not ready, stop showing "connecting" spinner
-          setWsConnecting(false);
-          return;
-        }
-        // Clear ALL errors when gateway is reachable (not just configMissing).
-        setWsError(null);
-      }).catch(() => {
-        setGwReady(false);
-        setGwChecked(true);
-        setWsConnecting(false);
-        setWsError(c.configMissing);
-      });
-    };
-    refreshGwReady();
-    let gwTimer: ReturnType<typeof setInterval> | null = setInterval(refreshGwReady, 5000);
-    const onVisibility = () => {
-      if (document.hidden) {
-        if (gwTimer) { clearInterval(gwTimer); gwTimer = null; }
-      } else {
-        if (!gwTimer) {
-          gwTimer = setInterval(refreshGwReady, 5000);
-          refreshGwReady();
-        }
-      }
-    };
-    document.addEventListener('visibilitychange', onVisibility);
-
-    // 2) Subscribe to shared Manager WS for real-time chat streaming events
+    // Subscribe to shared Manager WS for real-time chat streaming events
     let opened = false;
     const connectTimeout = setTimeout(() => {
       if (!opened) {
@@ -618,11 +578,9 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
 
     return () => {
       clearTimeout(connectTimeout);
-      if (gwTimer) clearInterval(gwTimer);
-      document.removeEventListener('visibilitychange', onVisibility);
       unsubscribe();
     };
-  }, [c.configMissing, c.wsError]);
+  }, [c.wsError]);
 
   // Chat event handler (streaming) - defined before useEffect to avoid closure issues
   const handleChatEvent = useCallback((payload?: any) => {
@@ -1356,9 +1314,7 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
       setMessages(prev => [...prev, { role: 'assistant', content: [{ type: 'text', text: 'Error: ' + (err?.message || c.error) }], timestamp: Date.now() }]);
       pendingRunRef.current = null;
       // If gateway connection just flapped, force a status refresh sooner.
-      gwApi.status().then((res: any) => {
-        if (res?.connected) setGwReady(true);
-      }).catch(() => { /* ignore */ });
+      gwRefresh();
     } finally {
       sendingRef.current = false;
       setSending(false);

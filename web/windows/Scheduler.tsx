@@ -2,7 +2,8 @@
 import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { Language } from '../types';
 import { getTranslation } from '../locales';
-import { gwApi, gatewayApi } from '../services/api';
+import { gwApi } from '../services/api';
+import { useGatewayStatus } from '../hooks/useGatewayStatus';
 import { useToast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
 import CustomSelect from '../components/CustomSelect';
@@ -166,9 +167,8 @@ const Scheduler: React.FC<SchedulerProps> = ({ language }) => {
   const { toast } = useToast();
   const { confirm } = useConfirm();
 
-  // Gateway connectivity (mirrors Sessions page pattern)
-  const [gwReady, setGwReady] = useState(false);
-  const [gwChecked, setGwChecked] = useState(false);
+  // Gateway connectivity (shared singleton hook)
+  const { ready: gwReady, checked: gwChecked, refresh: gwRefresh } = useGatewayStatus();
 
   const SCHEDULER_CACHE_KEY = 'scheduler.cache.v1';
   const readCachedScheduler = (): { status: any; jobs: any[]; jobsTotal: number } | null => {
@@ -233,20 +233,6 @@ const Scheduler: React.FC<SchedulerProps> = ({ language }) => {
     return raw;
   }, [s]);
 
-  // Gateway connectivity check
-  useEffect(() => {
-    const check = () => {
-      Promise.allSettled([gwApi.status(), gatewayApi.status()]).then(([rpc, svc]) => {
-        const rpcOk = rpc.status === 'fulfilled' && !!(rpc.value as any)?.connected;
-        const gwOk = svc.status === 'fulfilled' && !!(svc.value as any)?.running;
-        setGwReady(rpcOk || gwOk);
-        setGwChecked(true);
-      }).catch(() => { setGwReady(false); setGwChecked(true); });
-    };
-    check();
-    const timer = setInterval(check, 8000);
-    return () => clearInterval(timer);
-  }, []);
 
   // Load jobs + status
   const loadAll = useCallback(async () => {
@@ -461,7 +447,7 @@ const Scheduler: React.FC<SchedulerProps> = ({ language }) => {
           <span className="material-symbols-outlined text-[48px] mb-4 text-mac-yellow">cloud_off</span>
           <p className="text-sm font-bold mb-1">{s.gwNotReady}</p>
           <p className="text-[11px] text-center mb-4">{s.gwNotReadyDesc}</p>
-          <button onClick={() => { setGwChecked(false); }} className="px-4 py-1.5 rounded-lg bg-primary text-white text-[11px] font-bold">{s.retry}</button>
+          <button onClick={gwRefresh} className="px-4 py-1.5 rounded-lg bg-primary text-white text-[11px] font-bold">{s.retry}</button>
         </div>
       </main>
     );
