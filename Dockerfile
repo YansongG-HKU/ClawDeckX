@@ -43,6 +43,8 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=backend /clawdeckx ./clawdeckx
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x ./clawdeckx /app/docker-entrypoint.sh
 VOLUME ["/data"]
 EXPOSE 18791
 ENV OCD_DB_SQLITE_PATH=/data/ClawDeckX.db \
@@ -52,4 +54,4 @@ ENV OCD_DB_SQLITE_PATH=/data/ClawDeckX.db \
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -sf http://localhost:${OCD_PORT}/api/v1/health || exit 1
 ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["/app/clawdeckx", "serve"]
+CMD ["/app/docker-entrypoint.sh"]
