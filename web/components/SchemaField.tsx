@@ -173,6 +173,7 @@ const SchemaFieldInner: React.FC<SchemaFieldInnerProps> = ({
   const hasDefault = defaultVal !== undefined && defaultVal !== null;
   const range = rangeHint(schema, fieldType);
   const isUsingDefault = value === undefined || value === null || value === '';
+  const tags = uiHints[path]?.tags;
 
   const hintBadges = (
     <div className="flex items-center gap-1 mt-0.5 flex-wrap">
@@ -188,6 +189,9 @@ const SchemaFieldInner: React.FC<SchemaFieldInnerProps> = ({
       {fieldType === 'enum' && schema.enum && (
         <span className="text-[8px] px-1 py-px rounded bg-sky-500/10 text-sky-500/60 font-mono">{schema.enum.length} opts</span>
       )}
+      {tags && tags.length > 0 && tags.map(tag => (
+        <span key={tag} className="text-[8px] px-1 py-px rounded bg-violet-500/10 text-violet-500/60 dark:bg-violet-400/10 dark:text-violet-400/60 font-mono">{tag}</span>
+      ))}
     </div>
   );
 
