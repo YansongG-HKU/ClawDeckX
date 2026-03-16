@@ -179,6 +179,7 @@
   "daemonStatusFailed": "无法查询服务状态",
   "daemonRemoteHint": "远程网关已经以服务方式运行，Daemon 管理仅适用于本地网关。",
   "daemonAlreadyManaged": "已由系统服务管理",
+  "daemonManageInSettings": "在设置中管理",
   "wsDisconnected": "数据通道未连接",
   "wsDisconnectedHint": "网关端口可达但 WebSocket 数据通道未建立，日志和仪表盘数据将不可用。请检查：1) 密钥是否正确 2) 远程服务器防火墙是否允许 WebSocket 连接 3) 是否有反向代理阻断了 WebSocket 升级",
   "svcWsTitle": "WebSocket 连接",

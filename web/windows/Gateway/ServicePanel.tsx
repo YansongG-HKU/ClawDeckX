@@ -101,7 +101,6 @@ function fmtLifecycleUptime(sec: number): string {
 const ServicePanel: React.FC<ServicePanelProps> = ({ status, healthCheckEnabled, healthStatus, gw, onCopy, toast, remote }) => {
   const [daemon, setDaemon] = useState<DaemonState | null>(null);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<'install' | 'uninstall' | null>(null);
   const [wsStatus, setWsStatus] = useState<WsStatus | null>(null);
   const [reconnecting, setReconnecting] = useState(false);
   const [lifecycleRecords, setLifecycleRecords] = useState<LifecycleRecord[]>([]);
@@ -163,31 +162,9 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ status, healthCheckEnabled,
     }
   }, [gw, toast, fetchWsStatus]);
 
-  const handleInstall = useCallback(async () => {
-    setActionLoading('install');
-    try {
-      const result: any = await gatewayApi.daemonInstall();
-      setDaemon(result);
-      toast('success', gw.daemonInstallOk || 'Service installed');
-    } catch (err: any) {
-      toast('error', err?.message || gw.daemonInstallFailed || 'Install failed');
-    } finally {
-      setActionLoading(null);
-    }
-  }, [gw, toast]);
-
-  const handleUninstall = useCallback(async () => {
-    setActionLoading('uninstall');
-    try {
-      const result: any = await gatewayApi.daemonUninstall();
-      setDaemon(result);
-      toast('success', gw.daemonUninstallOk || 'Service removed');
-    } catch (err: any) {
-      toast('error', err?.message || gw.daemonUninstallFailed || 'Uninstall failed');
-    } finally {
-      setActionLoading(null);
-    }
-  }, [gw, toast]);
+  const openSettings = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('clawdeck:open-window', { detail: { id: 'settings', tab: 'update' } }));
+  }, []);
 
   return (
     <div className="p-4 space-y-4 text-white/80 overflow-y-auto custom-scrollbar neon-scrollbar h-full">
@@ -283,41 +260,23 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ status, healthCheckEnabled,
               </div>
             </div>
 
-            {/* Action buttons */}
-            {daemon.platform !== 'unsupported' && (
-              <div className="flex items-center gap-2">
-                {!daemon.installed ? (
-                  <button
-                    onClick={handleInstall}
-                    disabled={!!actionLoading}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-mac-green/15 text-mac-green font-bold text-[10px] transition-all hover:bg-mac-green/25 disabled:opacity-40"
-                  >
-                    <span className={`material-symbols-outlined text-[14px] ${actionLoading === 'install' ? 'animate-spin' : ''}`}>
-                      {actionLoading === 'install' ? 'progress_activity' : 'install_desktop'}
-                    </span>
-                    {gw.daemonInstall || 'Install Service'}
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleUninstall}
-                    disabled={!!actionLoading}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-mac-red/15 text-mac-red font-bold text-[10px] transition-all hover:bg-mac-red/25 disabled:opacity-40"
-                  >
-                    <span className={`material-symbols-outlined text-[14px] ${actionLoading === 'uninstall' ? 'animate-spin' : ''}`}>
-                      {actionLoading === 'uninstall' ? 'progress_activity' : 'delete_forever'}
-                    </span>
-                    {gw.daemonUninstall || 'Remove Service'}
-                  </button>
-                )}
-                <button
-                  onClick={fetchDaemonStatus}
-                  disabled={loading}
-                  className="p-1.5 rounded-lg bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all disabled:opacity-40"
-                >
-                  <span className="material-symbols-outlined text-[14px]">refresh</span>
-                </button>
-              </div>
-            )}
+            {/* Manage in Settings */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={openSettings}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/15 text-primary font-bold text-[10px] transition-all hover:bg-primary/25"
+              >
+                <span className="material-symbols-outlined text-[14px]">settings</span>
+                {gw.daemonManageInSettings || 'Manage in Settings'}
+              </button>
+              <button
+                onClick={fetchDaemonStatus}
+                disabled={loading}
+                className="p-1.5 rounded-lg bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all disabled:opacity-40"
+              >
+                <span className="material-symbols-outlined text-[14px]">refresh</span>
+              </button>
+            </div>
           </div>
         ) : (
           <div className="px-3 py-3 rounded-lg bg-white/[0.02] border border-white/[0.06] text-center">

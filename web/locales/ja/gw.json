@@ -178,6 +178,7 @@
   "daemonStatusFailed": "デーモンの状態を取得できませんでした",
   "daemonRemoteHint": "リモートゲートウェイは既にサービスとして実行されています。デーモン管理はローカルゲートウェイでのみ利用可能です。",
   "daemonAlreadyManaged": "既にシステムサービスで管理されています",
+  "daemonManageInSettings": "設定で管理",
   "wsDisconnected": "データチャネル切断",
   "wsDisconnectedHint": "ゲートウェイポートは到達可能ですが、WebSocket データチャネルが確立されていません。ログとダッシュボードデータは利用できません。確認事項：1) トークン/シークレットが正しいか 2) リモートファイアウォールが WebSocket 接続を許可しているか 3) リバースプロキシが WebSocket アップグレードをブロックしていないか",
   "svcWsTitle": "WebSocket 接続",

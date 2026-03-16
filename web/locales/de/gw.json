@@ -178,6 +178,7 @@
   "daemonStatusFailed": "Daemon-Status konnte nicht abgefragt werden",
   "daemonRemoteHint": "Remote-Gateways laufen bereits als Dienste. Daemon-Verwaltung ist nur für lokale Gateways verfügbar.",
   "daemonAlreadyManaged": "Bereits vom Systemdienst verwaltet",
+  "daemonManageInSettings": "In Einstellungen verwalten",
   "wsDisconnected": "Datenkanal getrennt",
   "wsDisconnectedHint": "Der Gateway-Port ist erreichbar, aber der WebSocket-Datenkanal wurde nicht aufgebaut. Logs und Dashboard-Daten sind nicht verfügbar. Bitte prüfen: 1) Token/Secret ist korrekt 2) Remote-Firewall erlaubt WebSocket-Verbindungen 3) Kein Reverse-Proxy blockiert das WebSocket-Upgrade",
   "svcWsTitle": "WebSocket-Verbindung",

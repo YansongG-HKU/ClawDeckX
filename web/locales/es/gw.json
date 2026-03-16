@@ -178,6 +178,7 @@
   "daemonStatusFailed": "Error al consultar el estado del daemon",
   "daemonRemoteHint": "Los gateways remotos ya se ejecutan como servicios. La gestión de daemons solo está disponible para gateways locales.",
   "daemonAlreadyManaged": "Ya gestionado por el servicio del sistema",
+  "daemonManageInSettings": "Gestionar en Configuración",
   "wsDisconnected": "Canal de datos desconectado",
   "wsDisconnectedHint": "El puerto del gateway es accesible pero el canal de datos WebSocket no se ha establecido. Los registros y datos del panel no estarán disponibles. Verifique: 1) El token/secreto es correcto 2) El firewall remoto permite conexiones WebSocket 3) Ningún proxy inverso está bloqueando la actualización WebSocket",
   "svcWsTitle": "Conexión WebSocket",

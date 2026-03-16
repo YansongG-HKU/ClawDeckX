@@ -178,6 +178,7 @@
   "daemonStatusFailed": "Impossible de récupérer le statut du daemon",
   "daemonRemoteHint": "Les gateways distants fonctionnent déjà en tant que services. La gestion du daemon n’est disponible que pour les gateways locaux.",
   "daemonAlreadyManaged": "Déjà géré par le service système",
+  "daemonManageInSettings": "Gérer dans les paramètres",
   "wsDisconnected": "Canal de données déconnecté",
   "wsDisconnectedHint": "Le port de la passerelle est accessible mais le canal de données WebSocket n'est pas établi. Les journaux et données du tableau de bord seront indisponibles. Vérifiez : 1) Le token/secret est correct 2) Le pare-feu distant autorise les connexions WebSocket 3) Aucun proxy inverse ne bloque la mise à niveau WebSocket",
   "svcWsTitle": "Connexion WebSocket",

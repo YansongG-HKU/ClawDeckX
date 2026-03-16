@@ -179,6 +179,7 @@
   "daemonStatusFailed": "Failed to query daemon status",
   "daemonRemoteHint": "Remote gateways are already running as services. Daemon management is only available for local gateways.",
   "daemonAlreadyManaged": "Already managed by system service",
+  "daemonManageInSettings": "Manage in Settings",
   "wsDisconnected": "Data channel disconnected",
   "wsDisconnectedHint": "Gateway port is reachable but the WebSocket data channel is not established. Logs and dashboard data will be unavailable. Please check: 1) Token/secret is correct 2) Remote firewall allows WebSocket connections 3) No reverse proxy is blocking WebSocket upgrade",
   "svcWsTitle": "WebSocket Connection",

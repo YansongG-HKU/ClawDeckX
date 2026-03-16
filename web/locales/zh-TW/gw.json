@@ -178,6 +178,7 @@
   "daemonStatusFailed": "無法查詢背景服務狀態",
   "daemonRemoteHint": "遠端閘道器已作為服務執行。背景服務管理僅適用於本機閘道器。",
   "daemonAlreadyManaged": "已由系統服務管理",
+  "daemonManageInSettings": "在設定中管理",
   "wsDisconnected": "資料通道未連線",
   "wsDisconnectedHint": "閘道埠可達但 WebSocket 資料通道未建立，日誌和儀表板資料將不可用。請檢查：1) 金鑰是否正確 2) 遠端伺服器防火牆是否允許 WebSocket 連線 3) 是否有反向代理阻斷了 WebSocket 升級",
   "svcWsTitle": "WebSocket 連線",
