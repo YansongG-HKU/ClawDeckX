@@ -216,6 +216,8 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
   // Dedup guard: track recently added message fingerprints to prevent React batching duplicates
   const recentAddedRef = useRef<Set<string>>(new Set());
   const historyRequestSeqRef = useRef(0);
+  const sessionsRequestSeqRef = useRef(0);
+  const sendingRef = useRef(false);
 
   // --- New state for optimizations ---
   // Sidebar search
@@ -750,6 +752,7 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
   // Load sessions list (via REST proxy)
   const loadSessions = useCallback(async () => {
     if (!gwReady) return;
+    const requestSeq = ++sessionsRequestSeqRef.current;
     setSessionsLoading(true);
     try {
       const res = await gwApi.proxy('sessions.list', {
@@ -758,6 +761,9 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
         includeDerivedTitles: true,
         includeLastMessage: true,
       }) as any;
+      if (sessionsRequestSeqRef.current !== requestSeq) {
+        return;
+      }
       // Gateway returns { sessions: [...] }
       const list = Array.isArray(res?.sessions) ? res.sessions : [];
       const mapped = list.map((s: any) => ({
@@ -784,7 +790,11 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
       // Persist to sessionStorage for instant display on next window open
       try { sessionStorage.setItem('clawdeck-sessions-cache', JSON.stringify(mapped)); } catch { /* ignore */ }
     } catch { /* ignore */ }
-    finally { setSessionsLoading(false); }
+    finally {
+      if (sessionsRequestSeqRef.current === requestSeq) {
+        setSessionsLoading(false);
+      }
+    }
   }, [gwReady]);
 
   // Track message count via ref to avoid loadHistory dependency on messages array
@@ -1161,10 +1171,11 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
 
   // Send message (via REST proxy; streaming events come via Manager WS)
   const sendMessage = useCallback(async () => {
-    if (!gwReady || sending || isStreaming) return;
+    if (!gwReady || sending || sendingRef.current || isStreaming) return;
     const msg = input.trim();
     const attachments_ = pendingAttachments || [];
     if (!msg && attachments_.length === 0) return;
+    sendingRef.current = true;
 
     // Track input history for ↑ recall
     if (msg) {
@@ -1236,6 +1247,7 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
         if (res?.connected) setGwReady(true);
       }).catch(() => { /* ignore */ });
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   }, [gwReady, input, sending, isStreaming, sessionKey, messages.length, c.error, pendingAttachments]);
