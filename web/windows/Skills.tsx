@@ -364,6 +364,8 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
   const [skillMessages, setSkillMessages] = useState<SkillMessageMap>({});
   const [groupView, setGroupView] = useState(false);
   const { ready: gwReady } = useGatewayStatus();
+  const skRef = useRef(sk);
+  skRef.current = sk;
   const [canSendToAgent, setCanSendToAgent] = useState(false);
 
   // Sort
@@ -441,11 +443,12 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
       }
     } catch (e: any) {
       if (reqId !== skillsReqSeqRef.current) return;
-      setError(e?.message || sk.loadFailed);
+      setError(e?.message || skRef.current.loadFailed);
     } finally {
       if (reqId === skillsReqSeqRef.current) setLoading(false);
     }
-  }, [sk.loadFailed]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setSearchQuery(searchInput.trim()), 120);
@@ -617,41 +620,41 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
 
   // 复制技能安装信息到剪贴板
   const handleCopyInstall = useCallback((skill: SkillStatus) => {
-    const prompt = buildInstallPrompt(skill, sk);
+    const prompt = buildInstallPrompt(skill, skRef.current);
     copyToClipboard(prompt).then(() => {
-      toast('success', sk.copiedHint);
-    }).catch(() => { toast('error', sk.copyFailed || 'Copy failed'); });
-  }, [sk, toast]);
+      toast('success', skRef.current.copiedHint);
+    }).catch(() => { toast('error', skRef.current.copyFailed || 'Copy failed'); });
+  }, [toast]);
 
   // 一键发送技能安装信息给代理
   const handleSendInstall = useCallback(async (skill: SkillStatus) => {
-    const prompt = buildInstallPrompt(skill, sk);
+    const prompt = buildInstallPrompt(skill, skRef.current);
     try {
       await gwApi.proxy('agent', { message: prompt });
-      toast('success', sk.sentToAgentHint);
+      toast('success', skRef.current.sentToAgentHint);
     } catch (err: any) {
-      toast('error', `${sk.sendFailed}: ${err?.message || ''}`);
+      toast('error', `${skRef.current.sendFailed}: ${err?.message || ''}`);
     }
-  }, [sk, toast]);
+  }, [toast]);
 
   // 复制市场技能安装信息到剪贴板
   const handleCopyMarketInstall = useCallback((item: any) => {
-    const prompt = buildMarketInstallPrompt(item, sk);
+    const prompt = buildMarketInstallPrompt(item, skRef.current);
     copyToClipboard(prompt).then(() => {
-      toast('success', sk.copiedHint);
-    }).catch(() => { toast('error', sk.copyFailed || 'Copy failed'); });
-  }, [sk, toast]);
+      toast('success', skRef.current.copiedHint);
+    }).catch(() => { toast('error', skRef.current.copyFailed || 'Copy failed'); });
+  }, [toast]);
 
   // 一键发送市场技能安装信息给代理
   const handleSendMarketInstall = useCallback(async (item: any) => {
-    const prompt = buildMarketInstallPrompt(item, sk);
+    const prompt = buildMarketInstallPrompt(item, skRef.current);
     try {
       await gwApi.proxy('agent', { message: prompt });
-      toast('success', sk.sentToAgentHint);
+      toast('success', skRef.current.sentToAgentHint);
     } catch (err: any) {
-      toast('error', `${sk.sendFailed}: ${err?.message || ''}`);
+      toast('error', `${skRef.current.sendFailed}: ${err?.message || ''}`);
     }
-  }, [sk, toast]);
+  }, [toast]);
 
   // 过滤技能
   const filteredSkills = useMemo(() => {

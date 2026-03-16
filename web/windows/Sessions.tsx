@@ -998,13 +998,14 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
           setStream(null);
           setRunPhase('error');
           pendingRunRef.current = null;
-          setError(c.error);
+          setError(cRef.current.error);
         }
         return prev;
       });
     }, 1500);
     return () => clearInterval(timer);
-  }, [gwReady, runId, loadHistory, c.error]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runId]);
 
   // Safety net: if stream is empty string for too long without receiving events, reset to idle.
   // This prevents the "Generating..." indicator from getting stuck when final event is missed.
@@ -1199,8 +1200,8 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
     e.preventDefault();
     const results = await Promise.all(pastedFiles.map(readFileAsDataUrl));
     setPendingAttachments(prev => [...(prev || []), ...results].slice(0, 5));
-    if (!modelSupportsImages && results.some(r => r.isImage)) toast('warning', c.modelNoVision || 'Current model does not support image input');
-  }, [readFileAsDataUrl, modelSupportsImages, toast, c.modelNoVision]);
+    if (!modelSupportsImages && results.some(r => r.isImage)) toast('warning', cRef.current.modelNoVision || 'Current model does not support image input');
+  }, [readFileAsDataUrl, modelSupportsImages, toast]);
 
   // Handle file input change
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1211,8 +1212,8 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
     const results = await Promise.all(validFiles.map(readFileAsDataUrl));
     setPendingAttachments(prev => [...(prev || []), ...results].slice(0, 5));
     if (fileInputRef.current) fileInputRef.current.value = '';
-    if (!modelSupportsImages && results.some(r => r.isImage)) toast('warning', c.modelNoVision || 'Current model does not support image input');
-  }, [readFileAsDataUrl, modelSupportsImages, toast, c.modelNoVision]);
+    if (!modelSupportsImages && results.some(r => r.isImage)) toast('warning', cRef.current.modelNoVision || 'Current model does not support image input');
+  }, [readFileAsDataUrl, modelSupportsImages, toast]);
 
   // Handle drag & drop files into the input area
   const handleDrop = useCallback(async (e: React.DragEvent) => {
@@ -1226,8 +1227,8 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
     if (validFiles.length === 0) return;
     const results = await Promise.all(validFiles.map(readFileAsDataUrl));
     setPendingAttachments(prev => [...(prev || []), ...results].slice(0, 5));
-    if (!modelSupportsImages && results.some(r => r.isImage)) toast('warning', c.modelNoVision || 'Current model does not support image input');
-  }, [readFileAsDataUrl, modelSupportsImages, toast, c.modelNoVision]);
+    if (!modelSupportsImages && results.some(r => r.isImage)) toast('warning', cRef.current.modelNoVision || 'Current model does not support image input');
+  }, [readFileAsDataUrl, modelSupportsImages, toast]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -1341,7 +1342,8 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
     setRunPhase('idle');
     setError(null);
     pendingRunRef.current = null;
-  }, [gwReady, sessionKey, runId, clearStream]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionKey, runId, clearStream]);
 
   // Copy message
   const handleCopy = useCallback((idx: number, text: string) => {
@@ -1375,10 +1377,11 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
       }));
       setTimeout(() => { setInjectOpen(false); setInjectResult(null); }, 1200);
     } catch (err: any) {
-      setInjectResult({ ok: false, text: `${c.injectFailed}: ${err?.message || ''}` });
+      setInjectResult({ ok: false, text: `${cRef.current.injectFailed}: ${err?.message || ''}` });
     }
     setInjecting(false);
-  }, [gwReady, sessionKey, injectMsg, injectLabel, injecting]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionKey, injectMsg, injectLabel, injecting]);
 
   // Resolve session key (via REST proxy)
   const handleResolve = useCallback(async () => {
@@ -1391,7 +1394,8 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
       if (res?.key && res.key !== sessionKey) setSessionKey(res.key);
     } catch { /* ignore */ }
     setResolving(false);
-  }, [gwReady, sessionKey, resolving]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionKey, resolving]);
 
   // Compact session (via REST proxy)
   const handleCompact = useCallback(async () => {
@@ -1403,10 +1407,11 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
       setCompactResult({ ok: true, text: c.compactOk });
       setTimeout(() => setCompactResult(null), 3000);
     } catch (err: any) {
-      setCompactResult({ ok: false, text: `${c.compactFailed}: ${err?.message || ''}` });
+      setCompactResult({ ok: false, text: `${cRef.current.compactFailed}: ${err?.message || ''}` });
     }
     setCompacting(false);
-  }, [gwReady, sessionKey, compacting, c]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionKey, compacting]);
 
   // Session repair: scan all sessions for issues
   const handleRepairScan = useCallback(async () => {
@@ -1536,7 +1541,8 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
     } finally {
       setRenaming(false);
     }
-  }, [gwReady, renaming, renameKey, renameLabel]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [renaming, renameKey, renameLabel]);
 
   // Delete session
   const handleDeleteSession = useCallback(async (key: string) => {
@@ -1562,7 +1568,8 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
     } finally {
       setDeleting(false);
     }
-  }, [gwReady, deleting, sessionKey]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deleting, sessionKey]);
 
   // Slash command selection
   const selectSlashCommand = useCallback((cmd: string) => {
@@ -1704,7 +1711,7 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
         if (cancelled) return;
         const providers = cfg?.models?.providers || cfg?.parsed?.models?.providers || cfg?.config?.models?.providers || {};
         const opts: { value: string; label: string }[] = [
-          { value: '', label: c.inherit || 'Inherit' },
+          { value: '', label: cRef.current.inherit || 'Inherit' },
         ];
         const seen = new Set<string>();
         for (const [pName, pCfg] of Object.entries(providers) as [string, any][]) {
@@ -1723,7 +1730,7 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
       } catch { /* ignore */ }
     })();
     return () => { cancelled = true; };
-  }, [settingsOpen, gwReady, c.inherit]);
+  }, [settingsOpen, gwReady]);
 
   // Patch session override (real-time)
   const patchSession = useCallback(async (field: string, patch: Record<string, unknown>) => {

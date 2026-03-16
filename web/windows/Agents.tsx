@@ -64,6 +64,10 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
 
   // Gateway connectivity (shared singleton hook)
   const { ready: gwReady } = useGatewayStatus();
+  const gwReadyRef = useRef(gwReady);
+  gwReadyRef.current = gwReady;
+  const aRef = useRef(a);
+  aRef.current = a;
   const [wsConnecting, setWsConnecting] = useState(false);
   const runIdRef = useRef<string | null>(null);
   const runSessionRef = useRef<string | null>(null);
@@ -201,13 +205,15 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
         if (r.status === 'fulfilled') newIdentity[r.value.agentId] = r.value.id;
       }
       setIdentity(prev => ({ ...prev, ...newIdentity }));
-    } catch (err: any) { toast('error', err?.message || a.fetchFailed); }
+    } catch (err: any) { toast('error', err?.message || aRef.current.fetchFailed); }
     setLoading(false);
-  }, [a.fetchFailed]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadConfig = useCallback(() => {
-    gwApi.configGet().then(setConfig).catch((err: any) => { toast('error', err?.message || a.configFetchFailed); });
-  }, [a.configFetchFailed]);
+    gwApi.configGet().then(setConfig).catch((err: any) => { toast('error', err?.message || aRef.current.configFetchFailed); });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => { loadAgents(); loadConfig(); }, []);
 
@@ -374,10 +380,11 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
       setCrudMode(null);
       loadAgents();
     } catch (err: any) {
-      setCrudError(a.createFailed + ': ' + (err?.message || ''));
+      setCrudError(aRef.current.createFailed + ': ' + (err?.message || ''));
     }
     setCrudBusy(false);
-  }, [gwReady, crudName, crudWorkspace, crudEmoji, crudBusy, loadAgents, a.createFailed]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [crudName, crudWorkspace, crudEmoji, crudBusy, loadAgents]);
 
   const handleUpdate = useCallback(async () => {
     if (!gwReady || crudBusy || !selectedId) return;
@@ -393,10 +400,11 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
       setCrudMode(null);
       loadAgents();
     } catch (err: any) {
-      setCrudError(a.updateFailed + ': ' + (err?.message || ''));
+      setCrudError(aRef.current.updateFailed + ': ' + (err?.message || ''));
     }
     setCrudBusy(false);
-  }, [gwReady, selectedId, crudName, crudWorkspace, crudModel, crudEmoji, crudBusy, loadAgents, a.updateFailed]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, crudName, crudWorkspace, crudModel, crudEmoji, crudBusy, loadAgents]);
 
   const handleDelete = useCallback(async () => {
     if (!gwReady || crudBusy || !selectedId) return;
@@ -407,10 +415,11 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
       setSelectedId(null);
       loadAgents();
     } catch (err: any) {
-      setCrudError(a.deleteFailed + ': ' + (err?.message || ''));
+      setCrudError(aRef.current.deleteFailed + ': ' + (err?.message || ''));
     }
     setCrudBusy(false);
-  }, [gwReady, selectedId, deleteFiles, crudBusy, loadAgents, a.deleteFailed]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, deleteFiles, crudBusy, loadAgents]);
 
   const resolveLabel = (ag: any) => {
     const id = identity[ag.id];
@@ -464,18 +473,20 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
       runIdRef.current = res?.runId || idempotencyKey;
     } catch (err: any) {
       setRunStream(null);
-      setRunError(err?.message || a.runFailed);
+      setRunError(err?.message || aRef.current.runFailed);
     } finally {
       setRunSending(false);
     }
-  }, [gwReady, runInput, runSending, selectedId, a.runFailed]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runInput, runSending, selectedId]);
 
   const handleRunAbort = useCallback(async () => {
     if (!gwReady) return;
     try {
       await gwApi.proxy('chat.abort', { sessionKey: runSessionRef.current, runId: runIdRef.current || undefined });
     } catch { /* ignore */ }
-  }, [gwReady]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleRunKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
