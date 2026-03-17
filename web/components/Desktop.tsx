@@ -195,7 +195,8 @@ const Desktop: React.FC<DesktopProps> = ({
   const popupRef = useRef<HTMLDivElement>(null);
   const dockRef = useRef<HTMLDivElement>(null);
   const { confirm } = useConfirm();
-  const isFavoriteWallpaper = Boolean(wallpaper && isWallpaperFavorite(wallpaper));
+  const currentWallpaperUrl = (bgImage || wallpaper?.cachedUrl || '').trim();
+  const isFavoriteWallpaper = Boolean(wallpaper && isWallpaperFavorite(wallpaper, currentWallpaperUrl));
 
   const handleWallpaperRefresh = useCallback(async () => {
     if (!wallpaper?.imageEnabled || wallpaperBusy) return;
@@ -235,17 +236,18 @@ const Desktop: React.FC<DesktopProps> = ({
   }, [wallpaper]);
 
   const handleWallpaperFavoriteToggle = useCallback(() => {
-    if (!wallpaper?.cachedUrl) return;
+    if (!wallpaper || !currentWallpaperUrl) return;
     updatePreferences({
-      wallpaper: toggleWallpaperFavorite(wallpaper),
+      wallpaper: toggleWallpaperFavorite(wallpaper, currentWallpaperUrl),
     });
-  }, [wallpaper]);
+  }, [wallpaper, currentWallpaperUrl]);
 
   const handleWallpaperHistoryStep = useCallback((direction: -1 | 1) => {
     if (!wallpaper) return;
     const nextUrl = getWallpaperHistoryUrl(wallpaper, direction);
     if (!nextUrl) return;
     setBgImage(nextUrl);
+    try { localStorage.setItem('clawdeck-wallpaper-cache', nextUrl); } catch {}
     updatePreferences({
       wallpaper: stepWallpaperHistory(wallpaper, direction),
     });
@@ -494,7 +496,7 @@ const Desktop: React.FC<DesktopProps> = ({
               <span className="material-symbols-outlined text-[18px]">{wallpaper.lockEnabled ? 'lock' : 'lock_open'}</span>
             </button>
             <button
-              onClick={() => onOpenWindow('settings')}
+              onClick={() => window.dispatchEvent(new CustomEvent('clawdeck:open-window', { detail: { id: 'settings', tab: 'preferences' } }))}
               className="flex h-9 w-9 items-center justify-center rounded-xl text-white/90 hover:bg-white/10"
               title={(t as any).pref?.title || 'Settings'}
             >
