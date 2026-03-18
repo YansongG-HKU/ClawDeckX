@@ -60,35 +60,13 @@ ensure_default_skillhub() {
         return 0
     fi
 
-    if ! command -v curl &>/dev/null || ! command -v tar &>/dev/null || ! command -v bash &>/dev/null; then
-        echo "[docker-entrypoint] Missing curl/tar/bash, skipping SkillHub CLI auto-install" >&2
+    if ! command -v curl &>/dev/null || ! command -v bash &>/dev/null; then
+        echo "[docker-entrypoint] Missing curl/bash, skipping SkillHub CLI auto-install" >&2
         return 1
     fi
-
-    local tmp_dir installer
-    tmp_dir="$(mktemp -d)"
-    trap 'rm -rf "$tmp_dir"' RETURN
 
     echo "[docker-entrypoint] Installing SkillHub CLI..."
-    if ! curl -fsSL "https://skillhub-1251783334.cos.ap-guangzhou.myqcloud.com/install/latest.tar.gz" -o "$tmp_dir/latest.tar.gz" >/tmp/skillhub-install.log 2>&1; then
-        echo "[docker-entrypoint] WARNING: Failed to download SkillHub CLI installer" >&2
-        tail -20 /tmp/skillhub-install.log 2>/dev/null >&2 || true
-        return 1
-    fi
-
-    if ! tar -xzf "$tmp_dir/latest.tar.gz" -C "$tmp_dir" >>/tmp/skillhub-install.log 2>&1; then
-        echo "[docker-entrypoint] WARNING: Failed to extract SkillHub CLI installer" >&2
-        tail -20 /tmp/skillhub-install.log 2>/dev/null >&2 || true
-        return 1
-    fi
-
-    installer="$tmp_dir/cli/install.sh"
-    if [ ! -f "$installer" ]; then
-        echo "[docker-entrypoint] WARNING: SkillHub installer not found at $installer" >&2
-        return 1
-    fi
-
-    if bash "$installer" >>/tmp/skillhub-install.log 2>&1; then
+    if bash -lc 'curl -fsSL https://skillhub-1388575217.cos.ap-guangzhou.myqcloud.com/install/install.sh | bash -s -- --cli-only' >/tmp/skillhub-install.log 2>&1; then
         echo "[docker-entrypoint] SkillHub CLI installed"
         return 0
     fi
