@@ -234,6 +234,8 @@ jobs:
           echo "==> Verifying OpenClaw is bundled..."
           docker run --rm --platform linux/amd64 --entrypoint /bin/sh "$IMAGE" -lc '
             set -eux
+            ls -l /opt/openclaw/openclaw.mjs
+            ls -l /usr/local/bin/openclaw
             command -v openclaw
             openclaw --version
           '
@@ -275,6 +277,8 @@ jobs:
           echo "==> Verifying OpenClaw is bundled..."
           docker run --rm --platform linux/arm64 --entrypoint /bin/sh "$IMAGE" -lc '
             set -eux
+            ls -l /opt/openclaw/openclaw.mjs
+            ls -l /usr/local/bin/openclaw
             command -v openclaw
             openclaw --version
           '

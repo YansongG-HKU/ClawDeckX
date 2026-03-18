@@ -21,16 +21,7 @@
 
 ### 🐛 Bug Fixes / 修复
 
-- resolve openclaw from npm root
-- pin openclaw wrapper to resolved target
-- rely on global openclaw install
-- copy bundled openclaw from npm root
-- bundle openclaw in fixed prefix
-- expose bundled openclaw via wrapper
-- simplify uv install in runtime image
-- harden bundled openclaw smoke tests
-- use uv standalone installer instead of pip
-- add gpg for nodesource setup
+- stabilize bundled openclaw runtime
 - improve plugin and wallpaper handling
 - use runtime plugin ids in plugin center
 - correct wallpaper controls behavior
@@ -74,6 +65,7 @@
 
 ### ♻️ Refactoring / 重构
 
+- use fixed bundled openclaw path
 - extract shared utilities for time, polling, errors, storage, and skeletons
 - unify gateway status polling with shared hook
 - replace service install buttons with Settings link
