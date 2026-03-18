@@ -21,6 +21,7 @@
 
 ### 🐛 Bug Fixes / 修复
 
+- wait for docker health
 - bootstrap openclaw config
 - enable tini subreaper mode
 - stabilize bundled openclaw runtime

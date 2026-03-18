@@ -230,6 +230,18 @@ jobs:
               docker rm -f "$CID" >/dev/null 2>&1 || true
             fi
           }
+          wait_for_health() {
+            local url="$1"
+            local attempts="$2"
+            local delay="$3"
+            for i in $(seq 1 "$attempts"); do
+              if curl -fsS "$url" >/dev/null; then
+                return 0
+              fi
+              sleep "$delay"
+            done
+            return 1
+          }
           trap cleanup EXIT
           echo "==> Verifying OpenClaw is bundled..."
           docker run --rm --platform linux/amd64 --entrypoint /bin/sh "$IMAGE" -lc '
@@ -252,7 +264,11 @@ jobs:
           docker run --rm --platform linux/amd64 --entrypoint /app/clawdeckx "$IMAGE" --version || true
           echo "==> Starting container for health check..."
           CID=$(docker run -d --platform linux/amd64 -p 28791:18791 "$IMAGE")
-          sleep 10
+          if ! wait_for_health "http://localhost:28791/api/v1/health" 30 2; then
+            echo "==> Container logs:" >&2
+            docker logs "$CID" >&2 || true
+            exit 1
+          fi
           echo "==> Checking /api/v1/health..."
           curl -sf http://localhost:28791/api/v1/health | head -c 500
           echo ""
@@ -272,6 +288,18 @@ jobs:
             if [ -n "$CID" ]; then
               docker rm -f "$CID" >/dev/null 2>&1 || true
             fi
+          }
+          wait_for_health() {
+            local url="$1"
+            local attempts="$2"
+            local delay="$3"
+            for i in $(seq 1 "$attempts"); do
+              if curl -fsS "$url" >/dev/null; then
+                return 0
+              fi
+              sleep "$delay"
+            done
+            return 1
           }
           trap cleanup EXIT
           echo "==> Verifying OpenClaw is bundled..."
@@ -293,7 +321,11 @@ jobs:
           docker run --rm --platform linux/arm64 --entrypoint /usr/bin/make "$IMAGE" --version
           echo "==> Starting container for health check..."
           CID=$(docker run -d --platform linux/arm64 -p 28792:18791 "$IMAGE")
-          sleep 15
+          if ! wait_for_health "http://localhost:28792/api/v1/health" 40 2; then
+            echo "==> Container logs:" >&2
+            docker logs "$CID" >&2 || true
+            exit 1
+          fi
           echo "==> Checking /api/v1/health..."
           curl -sf http://localhost:28792/api/v1/health | head -c 500
           echo ""
