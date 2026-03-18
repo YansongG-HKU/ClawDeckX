@@ -39,30 +39,20 @@ ensure_default_openclaw_config() {
         return 0
     fi
 
-    echo "[docker-entrypoint] OpenClaw config not found, generating initial config..."
+    echo "[docker-entrypoint] OpenClaw config not found, writing minimal config..."
     mkdir -p "$OPENCLAW_STATE_DIR"
-    if openclaw onboard \
-        --non-interactive \
-        --accept-risk \
-        --mode local \
-        --gateway-port "$GATEWAY_PORT" \
-        --gateway-bind loopback \
-        --anthropic-api-key sk-ant-placeholder-replace-me \
-        --skip-channels \
-        --skip-skills \
-        --skip-health >> "$GATEWAY_LOG" 2>&1; then
-        echo "[docker-entrypoint] Initial OpenClaw config generated at $OPENCLAW_CONFIG"
-        return 0
-    fi
-
-    if [ -f "$OPENCLAW_CONFIG" ]; then
-        echo "[docker-entrypoint] OpenClaw config was generated despite non-zero onboard exit code"
-        return 0
-    fi
-
-    echo "[docker-entrypoint] ERROR: Failed to generate initial OpenClaw config" >&2
-    tail -10 "$GATEWAY_LOG" 2>/dev/null >&2 || true
-    return 1
+    cat > "$OPENCLAW_CONFIG" <<OCEOF
+{
+  "gateway": {
+    "mode": "local",
+    "port": ${GATEWAY_PORT},
+    "bind": "loopback"
+  }
+}
+OCEOF
+    chmod 600 "$OPENCLAW_CONFIG"
+    echo "[docker-entrypoint] Minimal OpenClaw config written to $OPENCLAW_CONFIG"
+    return 0
 }
 
 # Start OpenClaw Gateway in background if installed
