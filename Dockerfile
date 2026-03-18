@@ -93,7 +93,7 @@ COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN mkdir -p /data/clawdeckx /data/openclaw/npm /data/openclaw/state /data/openclaw/logs /data/openclaw/bootstrap && \
     chmod +x ./clawdeckx /app/docker-entrypoint.sh
 VOLUME ["/data"]
-EXPOSE 18791 18789
+EXPOSE 18788 18789
 ENV OCD_DB_SQLITE_PATH=/data/clawdeckx/ClawDeckX.db \
     OCD_LOG_FILE=/data/clawdeckx/ClawDeckX.log \
     OPENCLAW_HOME=/data/openclaw/home \
@@ -105,10 +105,10 @@ ENV OCD_DB_SQLITE_PATH=/data/clawdeckx/ClawDeckX.db \
     OCD_SETUP_DOCTOR_LOG=/data/openclaw/logs/doctor.log \
     PATH=/data/openclaw/npm/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
     OCD_BIND=0.0.0.0 \
-    OCD_PORT=18791 \
+    OCD_PORT=18788 \
     TZ=UTC
 STOPSIGNAL SIGTERM
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-    CMD curl -sf http://localhost:${OCD_PORT:-18791}/api/v1/health || exit 1
+    CMD curl -sf http://localhost:${OCD_PORT:-18788}/api/v1/health || exit 1
 ENTRYPOINT ["/usr/bin/tini", "-s", "--"]
 CMD ["/app/docker-entrypoint.sh"]

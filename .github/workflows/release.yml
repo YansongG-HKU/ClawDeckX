@@ -263,17 +263,17 @@ jobs:
           echo "==> Verifying ClawDeckX binary..."
           docker run --rm --platform linux/amd64 --entrypoint /app/clawdeckx "$IMAGE" --version || true
           echo "==> Starting container for health check..."
-          CID=$(docker run -d --platform linux/amd64 -p 28791:18791 "$IMAGE")
-          if ! wait_for_health "http://localhost:28791/api/v1/health" 30 2; then
+          CID=$(docker run -d --platform linux/amd64 -p 28788:18788 "$IMAGE")
+          if ! wait_for_health "http://localhost:28788/api/v1/health" 30 2; then
             echo "==> Container logs:" >&2
             docker logs "$CID" >&2 || true
             exit 1
           fi
           echo "==> Checking /api/v1/health..."
-          curl -sf http://localhost:28791/api/v1/health | head -c 500
+          curl -sf http://localhost:28788/api/v1/health | head -c 500
           echo ""
           echo "==> Checking /api/v1/health?detailed=true..."
-          curl -sf "http://localhost:28791/api/v1/health?detailed=true" | head -c 1000
+          curl -sf "http://localhost:28788/api/v1/health?detailed=true" | head -c 1000
           echo ""
           echo "==> Smoke test passed"
 
@@ -320,17 +320,17 @@ jobs:
           docker run --rm --platform linux/arm64 --entrypoint /usr/bin/wget "$IMAGE" --version
           docker run --rm --platform linux/arm64 --entrypoint /usr/bin/make "$IMAGE" --version
           echo "==> Starting container for health check..."
-          CID=$(docker run -d --platform linux/arm64 -p 28792:18791 "$IMAGE")
-          if ! wait_for_health "http://localhost:28792/api/v1/health" 40 2; then
+          CID=$(docker run -d --platform linux/arm64 -p 28789:18788 "$IMAGE")
+          if ! wait_for_health "http://localhost:28789/api/v1/health" 40 2; then
             echo "==> Container logs:" >&2
             docker logs "$CID" >&2 || true
             exit 1
           fi
           echo "==> Checking /api/v1/health..."
-          curl -sf http://localhost:28792/api/v1/health | head -c 500
+          curl -sf http://localhost:28789/api/v1/health | head -c 500
           echo ""
           echo "==> Checking /api/v1/health?detailed=true..."
-          curl -sf "http://localhost:28792/api/v1/health?detailed=true" | head -c 1000
+          curl -sf "http://localhost:28789/api/v1/health?detailed=true" | head -c 1000
           echo ""
           echo "==> Smoke test passed"
 

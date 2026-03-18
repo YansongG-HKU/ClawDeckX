@@ -21,6 +21,7 @@
 
 ### 🐛 Bug Fixes / 修复
 
+- move app port to 18788
 - accept generated config
 - wait for docker health
 - bootstrap openclaw config
