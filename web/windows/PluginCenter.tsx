@@ -15,6 +15,7 @@ const PLUGIN_CATALOG: CatalogEntry[] = [
   { id: 'wecom-openclaw-plugin', spec: '@wecom/wecom-openclaw-plugin', name: 'WeCom', nameZh: '企业微信', description: 'WeCom (WeChat Work) messaging channel plugin', descriptionZh: '企业微信消息渠道插件', icon: '💼', category: 'channel', relatedChannels: ['wecom'] },
   { id: 'wecom-app', spec: '@openclaw-china/wecom-app', name: 'WeCom App (KF)', nameZh: '企业微信客服', description: 'WeCom customer service app plugin', descriptionZh: '企业微信客服应用插件', icon: '🎧', category: 'channel', relatedChannels: ['wecom_kf'] },
   { id: 'qqbot', spec: '@sliverp/qqbot@latest', name: 'QQ Bot', nameZh: 'QQ 机器人', description: 'QQ Bot messaging channel plugin (official)', descriptionZh: 'QQ 机器人消息渠道插件（官方）', icon: '🐧', category: 'channel', relatedChannels: ['qq'] },
+  { id: 'yuanbao', spec: 'openclaw-plugin-yuanbao@latest', name: 'Yuanbao Party', nameZh: '元宝派', description: 'Tencent Yuanbao Party messaging channel plugin', descriptionZh: '腾讯元宝派消息渠道插件', icon: '🪙', category: 'channel', relatedChannels: ['yuanbao'] },
   { id: 'msteams', spec: '@openclaw/msteams', name: 'Microsoft Teams', nameZh: 'Microsoft Teams', description: 'Microsoft Teams messaging channel plugin', descriptionZh: 'Microsoft Teams 消息渠道插件', icon: '🟣', category: 'channel', relatedChannels: ['msteams'] },
   { id: 'zalo', spec: '@openclaw/zalo', name: 'Zalo', nameZh: 'Zalo', description: 'Zalo messaging channel plugin (Vietnam)', descriptionZh: 'Zalo 消息渠道插件（越南）', icon: '💬', category: 'channel', relatedChannels: ['zalo'] },
   { id: 'matrix', spec: '@openclaw/matrix', name: 'Matrix', nameZh: 'Matrix', description: 'Matrix decentralized messaging channel plugin', descriptionZh: 'Matrix 去中心化消息渠道插件', icon: '🟩', category: 'channel', relatedChannels: ['matrix'] },
@@ -30,6 +31,7 @@ interface MergedPlugin {
   category: string; relatedChannels?: string[];
   installed: boolean; enabled: boolean;
   status?: string; version?: string; error?: string;
+  latestVersion?: string; updateAvailable?: boolean;
   installSource?: string; installPath?: string; installedAt?: string;
   toolNames?: string[]; hookNames?: string[]; channelIds?: string[];
   providerIds?: string[]; gatewayMethods?: string[]; cliCommands?: string[];
@@ -38,6 +40,23 @@ interface MergedPlugin {
 }
 
 const PLUGIN_CACHE_KEY = 'clawdeckx_plugin_cache';
+
+const normalizePluginSpecIdentity = (spec?: string): string => {
+  if (!spec) return '';
+  if (spec.startsWith('@')) {
+    const versionAt = spec.lastIndexOf('@');
+    return versionAt > 0 ? spec.slice(0, versionAt) : spec;
+  }
+  const versionAt = spec.indexOf('@');
+  return versionAt > 0 ? spec.slice(0, versionAt) : spec;
+};
+
+const runtimeMatchesCatalog = (cat: CatalogEntry, rt: PluginStatusPlugin): boolean => {
+  if (rt.id === cat.id) return true;
+  const catSpec = normalizePluginSpecIdentity(cat.spec);
+  const rtSpec = normalizePluginSpecIdentity(rt.spec);
+  return !!catSpec && catSpec === rtSpec;
+};
 
 // Extract meaningful failure message from verbose CLI output
 const extractFailureMessage = (output: string): string => {
@@ -137,16 +156,17 @@ const PluginCenter: React.FC<PluginCenterProps> = ({ language }) => {
 
   // Merge catalog + runtime status
   const plugins: MergedPlugin[] = useMemo(() => {
-    const rtMap: Record<string, PluginStatusPlugin> = {};
-    for (const p of statusData?.plugins || []) rtMap[p.id] = p;
+    const runtimePlugins = statusData?.plugins || [];
+    const matchedRuntimeIds = new Set<string>();
     const result: MergedPlugin[] = PLUGIN_CATALOG.map(cat => {
-      const rt = rtMap[cat.id];
+      const rt = runtimePlugins.find(p => runtimeMatchesCatalog(cat, p));
+      if (rt?.id) matchedRuntimeIds.add(rt.id);
       return {
-        id: cat.id, spec: rt?.spec || cat.spec,
+        id: rt?.id || cat.id, spec: rt?.spec || cat.spec,
         name: isZh ? cat.nameZh : cat.name, description: isZh ? cat.descriptionZh : cat.description,
         icon: cat.icon, category: cat.category, relatedChannels: cat.relatedChannels,
         installed: rt?.installed ?? (rt ? true : false), enabled: rt?.enabled ?? true,
-        status: rt?.status, version: rt?.version, error: rt?.error,
+        status: rt?.status, version: rt?.version, latestVersion: rt?.latestVersion, updateAvailable: rt?.updateAvailable, error: rt?.error,
         installSource: rt?.installSource, installPath: rt?.installPath, installedAt: rt?.installedAt,
         toolNames: rt?.toolNames, hookNames: rt?.hookNames, channelIds: rt?.channelIds,
         providerIds: rt?.providerIds, gatewayMethods: rt?.gatewayMethods, cliCommands: rt?.cliCommands,
@@ -154,12 +174,12 @@ const PluginCenter: React.FC<PluginCenterProps> = ({ language }) => {
         origin: rt?.origin, source: rt?.source, kind: rt?.kind,
       };
     });
-    for (const [id, rt] of Object.entries(rtMap)) {
-      if (!CATALOG_MAP[id]) {
+    for (const rt of runtimePlugins) {
+      if (!matchedRuntimeIds.has(rt.id) && !CATALOG_MAP[rt.id]) {
         result.push({
-          id, spec: rt.spec || id, name: rt.name || id, description: rt.description || rt.spec || '',
+          id: rt.id, spec: rt.spec || rt.id, name: rt.name || rt.id, description: rt.description || rt.spec || '',
           icon: '🔌', category: 'utility', installed: rt.installed ?? true, enabled: rt.enabled ?? true,
-          status: rt.status, version: rt.version, error: rt.error,
+          status: rt.status, version: rt.version, latestVersion: rt.latestVersion, updateAvailable: rt.updateAvailable, error: rt.error,
           installSource: rt.installSource, installPath: rt.installPath, installedAt: rt.installedAt,
           toolNames: rt.toolNames, hookNames: rt.hookNames, channelIds: rt.channelIds,
           providerIds: rt.providerIds, gatewayMethods: rt.gatewayMethods, cliCommands: rt.cliCommands,
@@ -273,7 +293,7 @@ const PluginCenter: React.FC<PluginCenterProps> = ({ language }) => {
     { id: 'error', label: sk.pluginFilterError || 'Errors', count: errorCount },
     { id: 'not_installed', label: sk.pluginNotInstalledFilter || 'Not Installed' },
   ];
-  const npmInstalledCount = plugins.filter(p => p.installed && p.installSource === 'npm').length;
+  const npmInstalledCount = plugins.filter(p => p.installed && p.installSource === 'npm' && p.updateAvailable === true).length;
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -488,7 +508,7 @@ const PluginCenter: React.FC<PluginCenterProps> = ({ language }) => {
                         </button>
                       )}
                       {/* Update — local only, npm plugins */}
-                      {plugin.installed && canInstall && plugin.installSource === 'npm' && (
+                      {plugin.installed && canInstall && plugin.installSource === 'npm' && plugin.updateAvailable === true && (
                         <button onClick={() => handleUpdate(plugin.id)} disabled={isBusy}
                           className="h-7 px-2.5 bg-primary/10 text-primary text-[10px] font-bold rounded-lg hover:bg-primary hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1">
                           <span className="material-symbols-outlined text-[12px]">system_update</span>
