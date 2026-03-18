@@ -144,7 +144,7 @@
   "feishuPrep": [
     "Install Feishu plugin: openclaw plugins install @openclaw/feishu",
     "Sign in to Feishu Open Platform open.feishu.cn → Create enterprise app",
-    "Copy App ID and App Secret from Credentials page",
+    "Copy App Key and App Secret from Credentials page",
     "Add Bot capability in App Capabilities, set bot name",
     "Add required permissions: im:message, im:message.p2p_msg:readonly, im:message.group_at_msg:readonly, im:message:send_as_bot, im:resource (use \"Copy Permission JSON\" below for batch import)",
     "In Events & Callbacks, select \"Receive events via long connection\" (recommended, no public IP needed), add events: im.message.receive_v1, im.message.message_read_v1, im.chat.member.bot.added_v1, im.chat.member.bot.deleted_v1",
@@ -191,16 +191,27 @@
     "Install QQ plugin: openclaw plugins install @sliverp/qqbot@latest",
     "Visit QQ Open Platform q.qq.com → Register developer account and complete review",
     "Create a Bot application (not mini-program or game)",
-    "Get AppID and AppSecret from app details page",
+    "Get AppKey and AppSecret from app details page",
     "Enable permissions and add test members (optionally add bot to test group)",
     "(Optional) For Markdown rendering, apply for Markdown template permission separately (review takes time)"
   ],
   "qqPitfall": "⚠️ Common pitfalls: 1) Must enable permissions and add test members, otherwise no messages received; 2) @mention required in group chats; 3) Markdown requires separate permission — set markdownSupport: false if not enabled; 4) QQ Bot is still in beta, some features may be limited",
   "qqHelpUrl": "https://q.qq.com",
+  "yuanbao": "Yuanbao Party",
+  "yuanbaoDesc": "Tencent Yuanbao Party channel, supports multi-Bot interaction",
+  "yuanbaoPrep": [
+    "Install Yuanbao plugin on the deployed OpenClaw device: openclaw plugins install openclaw-plugin-yuanbao@latest",
+    "Open Yuanbao App  Party  My Bot  Link existing OpenClaw  Select 'Method 2: Channel Config'",
+    "Copy App ID and AppSecret from the linking page (copy exactly, don't miss any characters)",
+    "Fill in App ID and AppSecret below, or run: openclaw channels add --channel yuanbao --token \"<AppKey>:<AppSecret>\"",    "Restart OpenClaw gateway: openclaw gateway restart",
+    "Return to Yuanbao App and tap 'Done' to complete linking"
+  ],
+  "yuanbaoPitfall": "⚠️ Common pitfalls: 1) App ID and AppSecret must be copied exactly  don't miss any characters; 2) Gateway must be restarted after config changes; 3) Yuanbao App must be V2.60.10 or above; 4) Token format is App ID:AppSecret when using CLI",
+  "yuanbaoHelpUrl": "https://yuanbao.tencent.com",
   "wechatPrep": [
     "Personal WeChat requires a third-party bridge (e.g. wechatbot-webhook)",
     "Official account requires a verified service account on mp.weixin.qq.com",
-    "Get AppID and AppSecret",
+    "Get AppKey and AppSecret",
     "Configure server URL, Token, and EncodingAESKey",
     "Note: Personal account stability depends on third-party tools; WeCom is recommended instead"
   ],
@@ -240,13 +251,13 @@
   "googlechatPitfall": "⚠️ Note: 1) Only Google Workspace accounts supported, not personal Gmail; 2) Requires Workspace admin approval; 3) Service Account setup is complex — refer to official docs",
   "msteamsHelpUrl": "https://portal.azure.com",
   "msteamsPrep": [
-    "Create App Registration in Azure Portal, get App ID",
+    "Create App Registration in Azure Portal, get App Key",
     "Create Client Secret as App Password",
     "Register Bot in Bot Framework",
     "Enable Sideloading in Teams admin center (for testing)",
     "Plugin required: openclaw plugins install <msteams-plugin-url>"
   ],
-  "msteamsPitfall": "⚠️ Note: 1) Azure registration has many steps — don't confuse App ID and Client Secret; 2) Testing requires Teams admin to enable Sideloading; 3) OpenClaw MS Teams plugin required",
+  "msteamsPitfall": "⚠️ Note: 1) Azure registration has many steps — don't confuse App Key and Client Secret; 2) Testing requires Teams admin to enable Sideloading; 3) OpenClaw MS Teams plugin required",
   "matrixHelpUrl": "https://matrix.org",
   "matrixPrep": [
     "Register or deploy a Matrix Homeserver (e.g. matrix.org or self-hosted Synapse)",

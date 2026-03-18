@@ -8,9 +8,10 @@ import {
   getWallpaperHistoryUrl,
   isWallpaperCacheStale,
   isWallpaperFavorite,
+  loadPreferences,
   pushWallpaperHistoryEntry,
   resolveWallpaperData,
-  setWallpaperPrefetchedUrls,
+  setWallpaperPrefetchedEntries,
   shiftPrefetchedWallpaper,
   stepWallpaperHistory,
   toggleWallpaperFavorite,
@@ -21,6 +22,7 @@ import Badge from './Badge';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useIconGrid } from '../hooks/useIconGrid';
 import { useConfirm } from './ConfirmDialog';
+import { useToast } from './Toast';
 
 interface DesktopProps {
   onOpenWindow: (id: WindowID) => void;
@@ -147,6 +149,8 @@ const Desktop: React.FC<DesktopProps> = ({
   const [bgImage, setBgImage] = useState<string>('');
   const [wallpaperBusy, setWallpaperBusy] = useState(false);
   const [wallpaperRefreshing, setWallpaperRefreshing] = useState(false);
+  const wallpaperRef = useRef(wallpaper);
+  wallpaperRef.current = wallpaper;
   const gradientBackground = theme === 'dark'
     ? "linear-gradient(135deg, #0f1923 0%, #1a3a5f 50%, #2e4b6b 100%)"
     : "linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%)";
@@ -161,7 +165,7 @@ const Desktop: React.FC<DesktopProps> = ({
     const refreshWallpaper = (resolved: { url: string; provider: WallpaperProvider }) => {
       fetchAndCacheWallpaper(resolved.url).then(dataUrl => {
         setBgImage(dataUrl);
-        const nextWallpaper = applyResolvedWallpaper(wallpaper, dataUrl, resolved.provider);
+        const nextWallpaper = applyResolvedWallpaper(wallpaper, dataUrl, resolved.provider, resolved.url);
         updatePreferences({
           wallpaper: nextWallpaper,
         });
@@ -176,14 +180,14 @@ const Desktop: React.FC<DesktopProps> = ({
         resolveWallpaperData(wallpaper).then(resolved => {
           if (!resolved) return;
           setBgImage(resolved.dataUrl);
-          updatePreferences({ wallpaper: applyResolvedWallpaper(wallpaper, resolved.dataUrl, resolved.provider) });
+          updatePreferences({ wallpaper: applyResolvedWallpaper(wallpaper, resolved.dataUrl, resolved.provider, resolved.sourceUrl) });
         });
       }
     } else {
       resolveWallpaperData(wallpaper).then(resolved => {
         if (!resolved) return;
         setBgImage(resolved.dataUrl);
-        updatePreferences({ wallpaper: applyResolvedWallpaper(wallpaper, resolved.dataUrl, resolved.provider) });
+        updatePreferences({ wallpaper: applyResolvedWallpaper(wallpaper, resolved.dataUrl, resolved.provider, resolved.sourceUrl) });
       });
     }
   }, [wallpaper?.imageEnabled, wallpaper?.source, wallpaper?.customUrl, wallpaper?.cachedAt, wallpaper?.query, wallpaper?.minResolution, wallpaper?.ratios, wallpaper?.apiKey, wallpaper?.purity, wallpaper?.categories]);
@@ -195,35 +199,48 @@ const Desktop: React.FC<DesktopProps> = ({
   const popupRef = useRef<HTMLDivElement>(null);
   const dockRef = useRef<HTMLDivElement>(null);
   const { confirm } = useConfirm();
+  const { toast } = useToast();
+  const t = useMemo(() => getTranslation(language), [language]);
   const currentWallpaperUrl = (bgImage || wallpaper?.cachedUrl || '').trim();
   const isFavoriteWallpaper = Boolean(wallpaper && isWallpaperFavorite(wallpaper, currentWallpaperUrl));
 
   const handleWallpaperRefresh = useCallback(async () => {
-    if (!wallpaper?.imageEnabled || wallpaperBusy) return;
+    const wp = wallpaperRef.current;
+    if (!wp?.imageEnabled || wallpaperBusy) return;
     setWallpaperBusy(true);
     setWallpaperRefreshing(true);
     try {
-      const shifted = shiftPrefetchedWallpaper(wallpaper);
+      const shifted = shiftPrefetchedWallpaper(wp);
       if (shifted.url) {
-        const nextWallpaper = pushWallpaperHistoryEntry(shifted.wallpaper, shifted.url);
+        const nextWallpaper = pushWallpaperHistoryEntry({
+          ...shifted.wallpaper,
+          currentSourceUrl: shifted.sourceUrl || shifted.url,
+        }, shifted.url);
         setBgImage(shifted.url);
         updatePreferences({ wallpaper: nextWallpaper });
         return;
       }
 
-      const resolved = await resolveWallpaperData(wallpaper);
+      const resolved = await resolveWallpaperData(wp);
       if (!resolved) return;
       setBgImage(resolved.dataUrl);
-      const nextWallpaper = applyResolvedWallpaper(wallpaper, resolved.dataUrl, resolved.provider);
+      const nextWallpaper = applyResolvedWallpaper(wp, resolved.dataUrl, resolved.provider, resolved.sourceUrl);
       updatePreferences({
         wallpaper: nextWallpaper,
       });
+    } catch (err: any) {
+      const message = String(err?.message || '').toLowerCase();
+      const isRateLimited = message.includes('429') || message.includes('rate limit') || message.includes('too many requests');
+      const fallback = isRateLimited
+        ? ((t as any).pref?.wallpaperFetchFail || 'Wallpaper refresh is temporarily limited. Please wait a moment and try again.')
+        : ((t as any).pref?.wallpaperFetchFail || 'Failed to load wallpaper. Please try again later.');
+      toast('warning', fallback);
     } finally {
       setWallpaperBusy(false);
       // Keep spin animation a bit longer for visual feedback
       setTimeout(() => setWallpaperRefreshing(false), 600);
     }
-  }, [wallpaper, wallpaperBusy]);
+  }, [wallpaperBusy, t, toast]);
 
   const handleWallpaperLockToggle = useCallback(() => {
     if (!wallpaper) return;
@@ -243,15 +260,18 @@ const Desktop: React.FC<DesktopProps> = ({
   }, [wallpaper, currentWallpaperUrl]);
 
   const handleWallpaperHistoryStep = useCallback((direction: -1 | 1) => {
-    if (!wallpaper) return;
-    const nextUrl = getWallpaperHistoryUrl(wallpaper, direction);
+    const wp = wallpaperRef.current;
+    if (!wp) return;
+    // Read the latest persisted state so consecutive clicks always advance
+    const latest = loadPreferences().wallpaper;
+    const effective: WallpaperConfig = { ...wp, history: latest.history, sourceHistory: latest.sourceHistory, historyIndex: latest.historyIndex };
+    const nextUrl = getWallpaperHistoryUrl(effective, direction);
     if (!nextUrl) return;
     setBgImage(nextUrl);
     try { localStorage.setItem('clawdeck-wallpaper-cache', nextUrl); } catch {}
-    updatePreferences({
-      wallpaper: stepWallpaperHistory(wallpaper, direction),
-    });
-  }, [wallpaper]);
+    const stepped = stepWallpaperHistory(effective, direction);
+    updatePreferences({ wallpaper: stepped });
+  }, []);
 
   useEffect(() => {
     if (!wallpaper?.imageEnabled || wallpaper.lockEnabled || wallpaper.source === 'custom') return;
@@ -261,10 +281,11 @@ const Desktop: React.FC<DesktopProps> = ({
     resolveWallpaperData(wallpaper).then(async resolved => {
       if (!resolved || cancelled) return;
       const nextUrl = resolved.dataUrl;
+      const nextSourceUrl = resolved.sourceUrl;
       if (cancelled) return;
       if (!nextUrl || nextUrl === wallpaper.cachedUrl || wallpaper.history.includes(nextUrl)) return;
       updatePreferences({
-        wallpaper: setWallpaperPrefetchedUrls(wallpaper, [nextUrl]),
+        wallpaper: setWallpaperPrefetchedEntries(wallpaper, [{ dataUrl: nextUrl, sourceUrl: nextSourceUrl }]),
       });
     }).catch(() => {});
 
@@ -291,8 +312,6 @@ const Desktop: React.FC<DesktopProps> = ({
   useEffect(() => {
     if (!dockAutoHide) setDockPeeking(false);
   }, [dockAutoHide]);
-
-  const t = useMemo(() => getTranslation(language), [language]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setInterval> | null = setInterval(() => setTime(new Date()), 1000);

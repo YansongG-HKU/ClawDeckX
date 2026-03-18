@@ -144,7 +144,7 @@
   "feishuPrep": [
     "安装飞书插件：openclaw plugins install @openclaw/feishu",
     "登录飞书开放平台 open.feishu.cn → 创建企业自建应用",
-    "在「凭证与基础信息」页复制 App ID 和 App Secret",
+    "在「凭证与基础信息」页复制 App Key 和 App Secret",
     "在「应用能力」中添加「机器人」能力，设置机器人名称",
     "在「权限管理」页添加必需权限：im:message、im:message.p2p_msg:readonly、im:message.group_at_msg:readonly、im:message:send_as_bot、im:resource（可点击下方「复制权限 JSON」批量导入）",
     "在「事件与回调」中选择「使用长连接接收事件」（推荐，无需公网 IP），添加事件：im.message.receive_v1、im.message.message_read_v1、im.chat.member.bot.added_v1、im.chat.member.bot.deleted_v1",
@@ -192,16 +192,27 @@
     "安装 QQ 插件：openclaw plugins install @sliverp/qqbot@latest",
     "访问 QQ 开放平台 q.qq.com → 注册开发者账号并完成审核",
     "创建「机器人」应用（注意不是小程序或游戏）",
-    "在应用详情页获取 AppID 和 AppSecret",
+    "在应用详情页获取 AppKey 和 AppSecret",
     "开通权限并添加测试成员（可将机器人加入测试群）",
     "（可选）如需 Markdown 渲染，需单独申请 Markdown 模板权限（有一定审核时间）"
   ],
   "qqPitfall": "⚠️ 常见踩坑：1) 必须开通权限并添加测试成员，否则收不到消息；2) 群聊中需要 @机器人 才会响应；3) Markdown 需单独申请权限，未开通时可设置 markdownSupport: false；4) QQ Bot 目前仍在内测，部分功能可能受限",
   "qqHelpUrl": "https://q.qq.com",
+  "yuanbao": "元宝派",
+  "yuanbaoDesc": "腾讯元宝派通道，支持派内多 Bot 互动",
+  "yuanbaoPrep": [
+    "在已部署 OpenClaw 的设备上安装元宝派插件：openclaw plugins install openclaw-plugin-yuanbao@latest",
+    "打开元宝 App  派  我的 Bot  关联已有 OpenClaw  选择「方式2：通道配置」",
+    "从关联页面复制 App ID 和 AppSecret（务必完整复制，不要漏字符）",
+    "在下方填写 App ID 和 AppSecret，或运行：openclaw channels add --channel yuanbao --token \"<AppKey>:<AppSecret>\"",    "重启 OpenClaw 网关：openclaw gateway restart",
+    "回到元宝 App，点击「我已操作」完成关联"
+  ],
+  "yuanbaoPitfall": "⚠️ 常见踩坑：1) AppKey 和 AppSecret 必须完整复制，不要漏字符；2) 配置修改后必须重启网关；3) 元宝 App 需更新至 V2.60.10 及以上版本；4) 使用 CLI 时 token 格式为 AppKey:AppSecret",
+  "yuanbaoHelpUrl": "https://yuanbao.tencent.com",
   "wechatPrep": [
     "微信个人号接入需要第三方桥接工具（如 wechatbot-webhook）",
     "公众号接入需要在微信公众平台 mp.weixin.qq.com 注册服务号",
-    "获取 AppID 和 AppSecret",
+    "获取 AppKey 和 AppSecret",
     "配置服务器 URL、Token 和 EncodingAESKey",
     "注意：个人号接入稳定性依赖第三方工具，建议优先考虑企业微信"
   ],
@@ -241,13 +252,13 @@
   "googlechatPitfall": "⚠️ 注意：1) 仅支持 Google Workspace 账号，个人 Gmail 无法使用；2) 需要 Workspace 管理员批准安装；3) Service Account 配置较复杂，建议参考官方文档",
   "msteamsHelpUrl": "https://portal.azure.com",
   "msteamsPrep": [
-    "在 Azure Portal 创建 App Registration，获取 App ID",
+    "在 Azure Portal 创建 App Registration，获取 App Key",
     "创建 Client Secret 作为 App Password",
     "在 Bot Framework 中注册 Bot",
     "在 Teams 管理后台开启 Sideloading（测试用）",
     "需要先安装 MS Teams 插件：openclaw plugins install <msteams-plugin-url>"
   ],
-  "msteamsPitfall": "⚠️ 注意：1) Azure 注册步骤较多，App ID 和 Client Secret 不要混淆；2) 测试时需要 Teams 管理员开启 Sideloading 权限；3) 需要安装 OpenClaw MS Teams 插件",
+  "msteamsPitfall": "⚠️ 注意：1) Azure 注册步骤较多，App Key 和 Client Secret 不要混淆；2) 测试时需要 Teams 管理员开启 Sideloading 权限；3) 需要安装 OpenClaw MS Teams 插件",
   "matrixHelpUrl": "https://matrix.org",
   "matrixPrep": [
     "注册或部署 Matrix Homeserver（如 matrix.org 或自建 Synapse）",

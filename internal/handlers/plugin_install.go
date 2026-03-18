@@ -2,8 +2,10 @@
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"os/exec"
 	"regexp"
 	"runtime"
@@ -56,6 +58,85 @@ func extractPluginIdFromSpec(spec string) string {
 	}
 	// No slash, return as-is (might be a simple package name)
 	return spec
+}
+
+func normalizeNpmPackageSpec(spec string) string {
+	spec = strings.TrimSpace(spec)
+	if spec == "" {
+		return ""
+	}
+	if strings.HasPrefix(spec, "@") {
+		if idx := strings.LastIndex(spec, "@"); idx > 0 {
+			return spec[:idx]
+		}
+		return spec
+	}
+	if idx := strings.Index(spec, "@"); idx > 0 {
+		return spec[:idx]
+	}
+	return spec
+}
+
+func fetchNpmLatestVersion(ctx context.Context, spec string) (string, error) {
+	pkg := normalizeNpmPackageSpec(spec)
+	if pkg == "" {
+		return "", nil
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://registry.npmjs.org/"+url.PathEscape(pkg)+"/latest", nil)
+	if err != nil {
+		return "", err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", nil
+	}
+	var npmResp struct {
+		Version string `json:"version"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&npmResp); err != nil {
+		return "", err
+	}
+	return strings.TrimPrefix(strings.TrimSpace(npmResp.Version), "v"), nil
+}
+
+func enrichPluginUpdateInfo(ctx context.Context, plugins []interface{}) {
+	latestCache := map[string]string{}
+	for _, raw := range plugins {
+		plugin, ok := raw.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		installSource, _ := plugin["installSource"].(string)
+		if installSource != "npm" {
+			continue
+		}
+		spec, _ := plugin["spec"].(string)
+		pkg := normalizeNpmPackageSpec(spec)
+		if pkg == "" {
+			continue
+		}
+		latestVersion, ok := latestCache[pkg]
+		if !ok {
+			latestVersion, _ = fetchNpmLatestVersion(ctx, spec)
+			latestCache[pkg] = latestVersion
+		}
+		if latestVersion == "" {
+			plugin["updateAvailable"] = false
+			continue
+		}
+		plugin["latestVersion"] = latestVersion
+		currentVersion, _ := plugin["version"].(string)
+		currentVersion = extractSemver(currentVersion)
+		if currentVersion == "" {
+			plugin["updateAvailable"] = false
+			continue
+		}
+		plugin["updateAvailable"] = compareSemver(latestVersion, currentVersion) > 0
+	}
 }
 
 // CanInstall returns whether plugin installation is available (local gateway only).
@@ -404,6 +485,12 @@ func (h *PluginInstallHandler) Status(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if rawPlugins, ok := statusMap["plugins"].([]interface{}); ok {
+		ctx, cancel := context.WithTimeout(r.Context(), 8*time.Second)
+		defer cancel()
+		enrichPluginUpdateInfo(ctx, rawPlugins)
+	}
+
 	// Pass through the RPC response, adding gateway info
 	statusMap["can_install"] = !isRemote
 	statusMap["is_remote"] = isRemote
@@ -534,6 +621,14 @@ func (h *PluginInstallHandler) statusFromConfig(w http.ResponseWriter, r *http.R
 			slots = slotsObj
 		}
 	}
+
+	pluginInterfaces := make([]interface{}, 0, len(plugins))
+	for _, plugin := range plugins {
+		pluginInterfaces = append(pluginInterfaces, plugin)
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 8*time.Second)
+	defer cancel()
+	enrichPluginUpdateInfo(ctx, pluginInterfaces)
 
 	web.OK(w, r, map[string]interface{}{
 		"plugins":     plugins,

@@ -600,6 +600,8 @@
   "chDescWecomKf": "WeCom 자체 구축 앱, 능동 메시징",
   "chDescWechat": "WeChat 개인/공식 계정 채널",
   "chDescQq": "QQ 봇 (공식 Bot API)",
+  "chYuanbao": "Yuanbao Party",
+  "chDescYuanbao": "Tencent Yuanbao Party Bot 채널",
   "chDescDingtalk": "DingTalk 봇/기업 앱",
   "chDescDoubao": "ByteDance Doubao AI 플랫폼",
   "chDescZalo": "베트남 중심 메시징 플랫폼 (Bot API 지원)",
@@ -1353,5 +1355,8 @@
   "authModeSetPassword": "비밀번호 인증 사용",
   "tipWecomBotId": "Bot ID (시스템 자동 생성)",
   "tipWecomBotSecret": "Bot Secret (시스템 자동 생성)",
-  "tipWecomConn": "연결 모드 (장기 연결 권장)"
+  "tipWecomConn": "연결 모드 (장기 연결 권장)",
+  "tipYuanbaoAppSecret": "Yuanbao Party AppSecret (Yuanbao 앱 연결 페이지에서 확인)",
+  "tipYuanbaoAppKey": "Yuanbao Party App ID (Yuanbao 앱 연결 페이지에서 확인)",
+  "appKey": "App Key"
 }

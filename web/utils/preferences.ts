@@ -4,8 +4,8 @@ import { wallpaperApi } from '../services/api';
 import type { WindowID } from '../types';
 
 export type WindowControlsPosition = 'left' | 'right';
-export type WallpaperSource = 'random' | 'wallhaven' | 'picsum' | 'unsplash' | 'custom';
-export type WallpaperProvider = 'wallhaven' | 'picsum' | 'unsplash' | 'custom';
+export type WallpaperSource = 'random' | 'wallhaven' | 'bing' | 'unsplash' | 'custom';
+export type WallpaperProvider = 'wallhaven' | 'bing' | 'unsplash' | 'custom';
 
 export type WallpaperCategory = 'general' | 'anime' | 'people';
 
@@ -21,6 +21,7 @@ export interface WallpaperConfig {
   source: WallpaperSource;
   customUrl: string;
   cachedUrl: string;
+  currentSourceUrl: string;
   cachedAt: number;
   fitMode: 'cover' | 'contain' | 'fill';
   brightness: number;
@@ -34,9 +35,11 @@ export interface WallpaperConfig {
   purity: 'sfw' | 'sketchy';
   lockEnabled: boolean;
   history: string[];
+  sourceHistory: string[];
   historyIndex: number;
   favorites: string[];
   prefetchedUrls: string[];
+  prefetchedSourceUrls: string[];
   resolvedSource?: WallpaperProvider;
 }
 
@@ -56,6 +59,7 @@ const DEFAULT_WALLPAPER: WallpaperConfig = {
   source: 'random',
   customUrl: '',
   cachedUrl: '',
+  currentSourceUrl: '',
   cachedAt: 0,
   fitMode: 'cover',
   brightness: 100,
@@ -73,9 +77,11 @@ const DEFAULT_WALLPAPER: WallpaperConfig = {
   purity: 'sfw',
   lockEnabled: false,
   history: [],
+  sourceHistory: [],
   historyIndex: -1,
   favorites: [],
   prefetchedUrls: [],
+  prefetchedSourceUrls: [],
   resolvedSource: 'wallhaven',
 };
 
@@ -99,6 +105,18 @@ export function loadPreferences(): Preferences {
   } | undefined;
 
   const legacySource = legacyWallpaper?.source;
+  const normalizedHistory = Array.isArray(rawWallpaper?.history)
+    ? rawWallpaper.history.map(item => String(item || '').trim()).filter(Boolean)
+    : [];
+  const normalizedSourceHistory = Array.isArray((rawWallpaper as Partial<WallpaperConfig> | undefined)?.sourceHistory)
+    ? ((rawWallpaper as Partial<WallpaperConfig>).sourceHistory || []).map(item => String(item || '').trim())
+    : [];
+  const normalizedPrefetched = Array.isArray(rawWallpaper?.prefetchedUrls)
+    ? rawWallpaper.prefetchedUrls.map(item => String(item || '').trim()).filter(Boolean)
+    : [];
+  const normalizedPrefetchedSources = Array.isArray((rawWallpaper as Partial<WallpaperConfig> | undefined)?.prefetchedSourceUrls)
+    ? ((rawWallpaper as Partial<WallpaperConfig>).prefetchedSourceUrls || []).map(item => String(item || '').trim())
+    : [];
   const migratedWallpaper: WallpaperConfig = {
     ...DEFAULT_WALLPAPER,
     ...(rawWallpaper || {}),
@@ -112,17 +130,31 @@ export function loadPreferences(): Preferences {
     imageEnabled: typeof rawWallpaper?.imageEnabled === 'boolean'
       ? rawWallpaper.imageEnabled
       : Boolean(legacyWallpaper?.enabled && legacySource && legacySource !== 'gradient'),
+    cachedUrl: String(rawWallpaper?.cachedUrl || '').trim(),
+    currentSourceUrl: String((rawWallpaper as Partial<WallpaperConfig> | undefined)?.currentSourceUrl || rawWallpaper?.cachedUrl || '').trim(),
+    history: normalizedHistory,
+    sourceHistory: normalizedHistory.map((item, index) => normalizedSourceHistory[index] || item),
+    prefetchedUrls: normalizedPrefetched,
+    prefetchedSourceUrls: normalizedPrefetched.map((item, index) => normalizedPrefetchedSources[index] || item),
     source:
       legacySource === 'custom'
         ? 'custom'
-        : legacySource === 'wallhaven' || legacySource === 'picsum' || legacySource === 'unsplash' || legacySource === 'random'
+        : legacySource === 'wallhaven' || legacySource === 'bing' || legacySource === 'unsplash' || legacySource === 'random'
           ? legacySource
+          : legacySource === 'picsum'
+            ? 'bing'
           : 'random',
     resolvedSource:
-      rawWallpaper?.resolvedSource === 'wallhaven' || rawWallpaper?.resolvedSource === 'unsplash' || rawWallpaper?.resolvedSource === 'custom'
+      rawWallpaper?.resolvedSource === 'wallhaven' || rawWallpaper?.resolvedSource === 'bing' || rawWallpaper?.resolvedSource === 'unsplash' || rawWallpaper?.resolvedSource === 'custom'
         ? rawWallpaper.resolvedSource
+        : rawWallpaper?.resolvedSource === 'picsum'
+          ? 'bing'
         : 'wallhaven',
   };
+
+  if (migratedWallpaper.history.length > 0 && migratedWallpaper.historyIndex < 0) {
+    migratedWallpaper.historyIndex = migratedWallpaper.history.length - 1;
+  }
 
   return {
     windowControlsPosition: raw.windowControlsPosition || DEFAULT_PREFS.windowControlsPosition,
@@ -177,43 +209,65 @@ function dedupeUrls(urls: string[], max = 20): string[] {
 export function pushWallpaperHistoryEntry(wallpaper: WallpaperConfig, url: string): WallpaperConfig {
   const trimmed = url.trim();
   if (!trimmed) return wallpaper;
+  const sourceUrl = isRemoteWallpaperUrl(wallpaper.currentSourceUrl) ? wallpaper.currentSourceUrl.trim() : trimmed;
   const beforeCurrent = wallpaper.historyIndex >= 0
     ? wallpaper.history.slice(0, wallpaper.historyIndex + 1)
     : wallpaper.history;
-  const nextHistory = dedupeUrls([...beforeCurrent, trimmed], 30);
+  const beforeCurrentSources = wallpaper.historyIndex >= 0
+    ? wallpaper.sourceHistory.slice(0, wallpaper.historyIndex + 1)
+    : wallpaper.sourceHistory;
+  const pairs = beforeCurrent.map((item, index) => ({
+    displayUrl: item,
+    sourceUrl: beforeCurrentSources[index] || item,
+  })).filter(item => item.displayUrl.trim());
+  const dedupeKey = sourceUrl || trimmed;
+  const nextPairs = [...pairs.filter(item => (item.sourceUrl || item.displayUrl) !== dedupeKey), {
+    displayUrl: trimmed,
+    sourceUrl,
+  }].slice(-30);
+  const nextHistory = nextPairs.map(item => item.displayUrl);
+  const nextSourceHistory = nextPairs.map(item => item.sourceUrl);
   return {
     ...wallpaper,
     history: nextHistory,
+    sourceHistory: nextSourceHistory,
     historyIndex: Math.max(0, nextHistory.length - 1),
     cachedUrl: trimmed,
+    currentSourceUrl: sourceUrl,
     cachedAt: Date.now(),
   };
 }
 
 function getCurrentWallpaperHistoryIndex(wallpaper: WallpaperConfig): number {
   if (!wallpaper.history.length) return -1;
-  const currentUrl = wallpaper.cachedUrl.trim();
-  const matchedIndex = currentUrl ? wallpaper.history.indexOf(currentUrl) : -1;
-  if (matchedIndex >= 0) return matchedIndex;
+  // Trust historyIndex first — it is always set correctly by stepWallpaperHistory
+  // and pushWallpaperHistoryEntry. Falling back to indexOf on cachedUrl is unreliable
+  // because history stores data-URLs that may differ after canvas re-encoding.
   if (wallpaper.historyIndex >= 0 && wallpaper.historyIndex < wallpaper.history.length) return wallpaper.historyIndex;
   return wallpaper.history.length - 1;
 }
 
 export function getWallpaperHistoryUrl(wallpaper: WallpaperConfig, direction: -1 | 1): string | null {
-  if (!wallpaper.history.length) return null;
-  const nextIndex = getCurrentWallpaperHistoryIndex(wallpaper) + direction;
-  if (nextIndex < 0 || nextIndex >= wallpaper.history.length) return null;
+  const len = wallpaper.history.length;
+  if (len <= 1) return null;
+  const currentIndex = getCurrentWallpaperHistoryIndex(wallpaper);
+  if (currentIndex < 0) return wallpaper.history[0] || null;
+  const nextIndex = (currentIndex + direction + len) % len;
   return wallpaper.history[nextIndex] || null;
 }
 
 export function stepWallpaperHistory(wallpaper: WallpaperConfig, direction: -1 | 1): WallpaperConfig {
-  if (!wallpaper.history.length) return wallpaper;
-  const nextIndex = getCurrentWallpaperHistoryIndex(wallpaper) + direction;
-  if (nextIndex < 0 || nextIndex >= wallpaper.history.length) return wallpaper;
+  const len = wallpaper.history.length;
+  if (len <= 1) return wallpaper;
+  const currentIndex = getCurrentWallpaperHistoryIndex(wallpaper);
+  const nextIndex = currentIndex < 0
+    ? 0
+    : (currentIndex + direction + len) % len;
   return {
     ...wallpaper,
     historyIndex: nextIndex,
     cachedUrl: wallpaper.history[nextIndex] || wallpaper.cachedUrl,
+    currentSourceUrl: wallpaper.sourceHistory[nextIndex] || wallpaper.history[nextIndex] || wallpaper.currentSourceUrl,
     cachedAt: Date.now(),
   };
 }
@@ -231,20 +285,44 @@ export function toggleWallpaperFavorite(wallpaper: WallpaperConfig, url?: string
 }
 
 export function setWallpaperPrefetchedUrls(wallpaper: WallpaperConfig, urls: string[]): WallpaperConfig {
+  const displayUrls = dedupeUrls(urls, 8);
   return {
     ...wallpaper,
-    prefetchedUrls: dedupeUrls(urls, 8),
+    prefetchedUrls: displayUrls,
+    prefetchedSourceUrls: displayUrls,
   };
 }
 
-export function shiftPrefetchedWallpaper(wallpaper: WallpaperConfig): { wallpaper: WallpaperConfig; url: string | null } {
+export function setWallpaperPrefetchedEntries(wallpaper: WallpaperConfig, entries: Array<{ dataUrl: string; sourceUrl: string }>): WallpaperConfig {
+  const unique: Array<{ dataUrl: string; sourceUrl: string }> = [];
+  const seen = new Set<string>();
+  for (const entry of entries) {
+    const dataUrl = entry.dataUrl.trim();
+    const sourceUrl = entry.sourceUrl.trim() || dataUrl;
+    const key = sourceUrl || dataUrl;
+    if (!dataUrl || seen.has(key)) continue;
+    seen.add(key);
+    unique.push({ dataUrl, sourceUrl });
+    if (unique.length >= 8) break;
+  }
+  return {
+    ...wallpaper,
+    prefetchedUrls: unique.map(entry => entry.dataUrl),
+    prefetchedSourceUrls: unique.map(entry => entry.sourceUrl),
+  };
+}
+
+export function shiftPrefetchedWallpaper(wallpaper: WallpaperConfig): { wallpaper: WallpaperConfig; url: string | null; sourceUrl: string | null } {
   const [nextUrl, ...rest] = wallpaper.prefetchedUrls;
+  const [nextSourceUrl, ...restSources] = wallpaper.prefetchedSourceUrls;
   return {
     wallpaper: {
       ...wallpaper,
       prefetchedUrls: rest,
+      prefetchedSourceUrls: restSources,
     },
     url: nextUrl || null,
+    sourceUrl: nextSourceUrl || nextUrl || null,
   };
 }
 
@@ -265,6 +343,19 @@ function encodeWallhavenCategories(categories: WallpaperCategoryState | undefine
 
 function encodeWallhavenPurity(purity: WallpaperConfig['purity'] | undefined): string {
   return purity === 'sketchy' ? '110' : '100';
+}
+
+function isRemoteWallpaperUrl(url: string | undefined): boolean {
+  const value = (url || '').trim();
+  return value.startsWith('https://') || value.startsWith('http://');
+}
+
+function getRecentWallpaperExcludes(wallpaper: WallpaperConfig): string[] {
+  const recentHistory = wallpaper.sourceHistory.slice(-8).reverse();
+  return dedupeUrls([
+    wallpaper.currentSourceUrl,
+    ...recentHistory,
+  ].filter(isRemoteWallpaperUrl), 8);
 }
 
 export async function fetchWallpaperUrl(
@@ -298,33 +389,39 @@ export async function fetchWallpaperUrl(
     }
   }
 
-  const provider: WallpaperProvider =
-    wallpaper.source === 'unsplash'
-      ? 'unsplash'
-      : 'picsum';
-
-  if (provider === 'picsum') {
-    return {
-      url: `https://picsum.photos/1920/1080?t=${Date.now()}`,
-      provider,
-    };
+  if (wallpaper.source === 'bing' || wallpaper.source === 'random') {
+    const bing = await wallpaperApi.bingDaily({
+      exclude: getRecentWallpaperExcludes(wallpaper),
+    });
+    if (bing.image_url) {
+      return {
+        url: bing.image_url,
+        provider: 'bing',
+      };
+    }
+    if (wallpaper.source === 'bing') return null;
   }
 
+  const unsplash = await wallpaperApi.unsplashRandom({
+    q: wallpaper.query.trim() || DEFAULT_WALLPAPER.query,
+  });
+  if (!unsplash.image_url || getRecentWallpaperExcludes(wallpaper).includes(unsplash.image_url)) return null;
   return {
-    url: `https://source.unsplash.com/random/1920x1080/?wallpaper,landscape&t=${Date.now()}`,
-    provider,
+    url: unsplash.image_url,
+    provider: 'unsplash',
   };
 }
 
 export async function resolveWallpaperData(
   wallpaper: WallpaperConfig,
-): Promise<{ dataUrl: string; provider: WallpaperProvider } | null> {
+): Promise<{ dataUrl: string; provider: WallpaperProvider; sourceUrl: string } | null> {
   const resolved = await fetchWallpaperUrl(wallpaper);
   if (!resolved) return null;
   const dataUrl = await fetchAndCacheWallpaper(resolved.url);
   return {
     dataUrl,
     provider: resolved.provider,
+    sourceUrl: resolved.url,
   };
 }
 
@@ -332,9 +429,11 @@ export function applyResolvedWallpaper(
   wallpaper: WallpaperConfig,
   dataUrl: string,
   provider?: WallpaperProvider,
+  sourceUrl?: string,
 ): WallpaperConfig {
   return pushWallpaperHistoryEntry({
     ...wallpaper,
+    currentSourceUrl: sourceUrl || wallpaper.currentSourceUrl,
     resolvedSource: provider || wallpaper.resolvedSource,
   }, dataUrl);
 }
@@ -347,7 +446,7 @@ export function applyResolvedWallpaper(
 function proxyWallhavenUrl(url: string): string {
   try {
     const u = new URL(url, window.location.href);
-    if (u.host === 'w.wallhaven.cc' || u.host === 'th.wallhaven.cc') {
+    if (u.host === 'w.wallhaven.cc' || u.host === 'th.wallhaven.cc' || u.host === 'images.unsplash.com') {
       return `/api/v1/wallpaper/proxy?url=${encodeURIComponent(url)}`;
     }
   } catch { /* use original */ }
@@ -367,8 +466,7 @@ export async function fetchAndCacheWallpaper(url: string): Promise<string> {
     } catch {
       host = '';
     }
-    // For proxied URLs (same-origin) and picsum we need crossOrigin to read canvas
-    if (effectiveUrl.startsWith('/') || host === 'picsum.photos') {
+    if (effectiveUrl.startsWith('/') || host === 'cn.bing.com' || host === 'bing.com' || host === 'images.unsplash.com') {
       img.crossOrigin = 'anonymous';
     }
     img.onload = () => {

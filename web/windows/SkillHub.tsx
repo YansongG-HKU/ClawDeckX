@@ -264,6 +264,7 @@ const SkillHub: React.FC<SkillHubProps> = ({ language }) => {
   const [featuredList, setFeaturedList] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [category, setCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'downloads' | 'stars'>('newest');
@@ -335,6 +336,7 @@ const SkillHub: React.FC<SkillHubProps> = ({ language }) => {
     try {
       if (page === 1 && !append) setLoading(true);
       else setLoadingMore(true);
+      if (page === 1 && !append) setLoadError(false);
 
       const res = await skillHubApi.listSkills(page, 60, sortBy, category, showFeatured);
       applyPageResponse(res, append);
@@ -348,6 +350,7 @@ const SkillHub: React.FC<SkillHubProps> = ({ language }) => {
         await fetchDataFallback();
       } else {
         setLoading(false);
+        setLoadError(true);
         toast('error', `${skRef.current.loadFailed || 'Load failed'}: ${err?.message || ''}`);
       }
     }
@@ -357,6 +360,7 @@ const SkillHub: React.FC<SkillHubProps> = ({ language }) => {
   const fetchSearch = useCallback(async (q: string) => {
     try {
       setLoading(true);
+      setLoadError(false);
       const res = await skillHubApi.searchSkills(q, 60);
       setSkills(res.skills);
       setTotalSkills(res.total);
@@ -364,6 +368,7 @@ const SkillHub: React.FC<SkillHubProps> = ({ language }) => {
       setLoading(false);
     } catch {
       setLoading(false);
+      setLoadError(true);
     }
   }, []);
 
@@ -375,16 +380,19 @@ const SkillHub: React.FC<SkillHubProps> = ({ language }) => {
       if (cached) {
         setData(cached.data);
         setLastUpdated(cached.timestamp);
+        setLoadError(false);
         setLoading(false);
         return;
       }
       setLoading(true);
+      setLoadError(false);
       const result = await skillHubApi.getData();
       setData(result);
       saveCache(result, '');
       setLoading(false);
     } catch (err: any) {
       setLoading(false);
+      setLoadError(true);
       toast('error', `${skRef.current.loadFailed || 'Load failed'}: ${err?.message || ''}`);
     }
   }, [loadCache, saveCache, toast]);
@@ -679,7 +687,7 @@ const categories = useMemo(() => {
           )}
 
           {/* Error - no data at all and not loading */}
-          {!loading && !data && skills.length === 0 && (
+          {!loading && loadError && !data && skills.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 text-slate-400">
               <span className="material-symbols-outlined text-4xl mb-3 text-red-500">error</span>
               <span className="text-xs mb-3">{sk.loadFailed || 'Failed to load data'}</span>
@@ -690,7 +698,7 @@ const categories = useMemo(() => {
           )}
 
           {/* Empty */}
-          {!loading && renderedSkills.length === 0 && (data || skills.length === 0) && (
+          {!loading && !loadError && renderedSkills.length === 0 && (data || skills.length === 0) && (
             <EmptyState icon="search_off" title={sk.noResults || 'No skills found'} />
           )}
 

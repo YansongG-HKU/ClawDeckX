@@ -1040,6 +1040,17 @@ func (h *WizardHandler) TestChannel(w http.ResponseWriter, r *http.Request) {
 		}
 		web.OK(w, r, result)
 		return
+	case "yuanbao":
+		result, err := h.testYuanbaoChannel(req)
+		if err != nil {
+			web.OK(w, r, map[string]interface{}{
+				"status":  "fail",
+				"message": err.Error(),
+			})
+			return
+		}
+		web.OK(w, r, result)
+		return
 	}
 
 	// For other channels, try CLI if available
@@ -1174,6 +1185,13 @@ func (h *WizardHandler) validateChannelTokens(channel string, tokens map[string]
 		}
 		if tokens["appSecret"] == "" {
 			return fmt.Errorf("QQ App Secret is required")
+		}
+	case "yuanbao":
+		if tokens["appKey"] == "" {
+			return fmt.Errorf("Yuanbao App Key is required")
+		}
+		if tokens["appSecret"] == "" {
+			return fmt.Errorf("Yuanbao App Secret is required")
 		}
 	case "doubao":
 		if tokens["appId"] == "" {
@@ -1319,6 +1337,68 @@ func (h *WizardHandler) testChannelViaCLI(req TestChannelRequest) (map[string]in
 	}, nil
 }
 
+func (h *WizardHandler) testYuanbaoChannel(req TestChannelRequest) (map[string]interface{}, error) {
+	validationConfig := h.buildYuanbaoValidationConfig(req)
+	if openclaw.IsOpenClawInstalled() {
+		validateRes, err := openclaw.ConfigValidate(validationConfig)
+		if err != nil {
+			return nil, fmt.Errorf("yuanbao config validation failed: %v", err)
+		}
+		if validateRes != nil && !validateRes.OK {
+			msg := validateRes.Summary
+			if len(validateRes.Issues) > 0 {
+				msg = validateRes.Issues[0].Message
+			}
+			return nil, fmt.Errorf("yuanbao config validation failed: %s", msg)
+		}
+
+		probeRes, err := h.testChannelViaCLI(req)
+		if err != nil {
+			return nil, fmt.Errorf("yuanbao probe failed: %v", err)
+		}
+		return map[string]interface{}{
+			"status":  "ok",
+			"message": "yuanbao config validation passed and channel probe completed",
+			"output":  probeRes["output"],
+		}, nil
+	}
+
+	return map[string]interface{}{
+		"status":  "ok",
+		"message": "yuanbao token format valid (OpenClaw CLI not available for deeper validation)",
+	}, nil
+}
+
+func (h *WizardHandler) buildYuanbaoValidationConfig(req TestChannelRequest) map[string]interface{} {
+	config := map[string]interface{}{}
+
+	if h.gwClient != nil {
+		if raw, err := h.gwClient.Request("config.get", map[string]interface{}{"redact": false}); err == nil {
+			var doc map[string]interface{}
+			if err := json.Unmarshal(raw, &doc); err == nil {
+				if cfg, ok := doc["config"].(map[string]interface{}); ok {
+					config = cfg
+				} else {
+					config = doc
+				}
+			}
+		}
+	}
+
+	channels, _ := config["channels"].(map[string]interface{})
+	if channels == nil {
+		channels = map[string]interface{}{}
+	}
+	channels["yuanbao"] = map[string]interface{}{
+		"enabled":   true,
+		"appKey":    req.Tokens["appKey"],
+		"appSecret": req.Tokens["appSecret"],
+	}
+	config["channels"] = channels
+
+	return config
+}
+
 // SaveChannel saves channel configuration.
 // POST /api/v1/config/channel-wizard
 func (h *WizardHandler) SaveChannel(w http.ResponseWriter, r *http.Request) {
@@ -1414,6 +1494,14 @@ func (h *WizardHandler) buildChannelConfig(req ChannelWizardRequest) map[string]
 		if cliPath, ok := req.Tokens["cliPath"]; ok && cliPath != "" {
 			ch["cliPath"] = cliPath
 		}
+		ch["dmPolicy"] = req.DmPolicy
+		if len(req.AllowFrom) > 0 {
+			ch["allowFrom"] = req.AllowFrom
+		}
+
+	case "yuanbao":
+		ch["appKey"] = req.Tokens["appKey"]
+		ch["appSecret"] = req.Tokens["appSecret"]
 		ch["dmPolicy"] = req.DmPolicy
 		if len(req.AllowFrom) > 0 {
 			ch["allowFrom"] = req.AllowFrom

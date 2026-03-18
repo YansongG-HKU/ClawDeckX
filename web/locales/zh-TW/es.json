@@ -600,6 +600,8 @@
   "chDescWecomKf": "企微自建應用，支援主動傳送",
   "chDescWechat": "微信個人/公眾號訊息通道",
   "chDescQq": "QQ 機器人（官方 Bot API）",
+  "chYuanbao": "元宝派",
+  "chDescYuanbao": "騰訊元宝派 Bot 通道",
   "chDescDingtalk": "釘釘機器人/企業應用",
   "chDescDoubao": "位元組跳動豆包 AI 平臺",
   "chDescZalo": "越南通訊平臺 Bot API",
@@ -1353,5 +1355,8 @@
   "authModeSetPassword": "使用密碼認證",
   "tipWecomBotId": "Bot ID（系統自動產生）",
   "tipWecomBotSecret": "Bot Secret（系統自動產生）",
-  "tipWecomConn": "連線模式（建議長連線）"
+  "tipWecomConn": "連線模式（建議長連線）",
+  "tipYuanbaoAppSecret": "元宝派 AppSecret（從元宝 App 關聯頁面獲取）",
+  "tipYuanbaoAppKey": "元宝派 App ID（從元宝 App 關聯頁面獲取）",
+  "appKey": "App Key"
 }

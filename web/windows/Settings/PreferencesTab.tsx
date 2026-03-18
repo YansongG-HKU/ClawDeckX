@@ -2,6 +2,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import type { Preferences, WindowControlsPosition, WallpaperSource, StartupWindowMode } from '../../utils/preferences';
 import { updatePreferences, resolveWallpaperData, applyResolvedWallpaper, getCachedWallpaper } from '../../utils/preferences';
+import { useToast } from '../../components/Toast';
 
 interface PreferencesTabProps {
   s: Record<string, any>;
@@ -15,8 +16,8 @@ interface PreferencesTabProps {
 const PreferencesTab: React.FC<PreferencesTabProps> = ({ s, pref, prefs, onPrefsChange, inputCls, rowCls }) => {
   const [wallpaperLoading, setWallpaperLoading] = useState(false);
   const [wallpaperPreview, setWallpaperPreview] = useState<string>('');
-  const [wallpaperError, setWallpaperError] = useState('');
   const [wallpaperCollapsed, setWallpaperCollapsed] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     const cached = getCachedWallpaper();
@@ -63,6 +64,7 @@ const PreferencesTab: React.FC<PreferencesTabProps> = ({ s, pref, prefs, onPrefs
       wallpaper: {
         ...prefs.wallpaper,
         cachedUrl: url,
+        currentSourceUrl: url,
         cachedAt: Date.now(),
       },
     });
@@ -73,33 +75,32 @@ const PreferencesTab: React.FC<PreferencesTabProps> = ({ s, pref, prefs, onPrefs
 
   const handleRefreshWallpaper = useCallback(async () => {
     setWallpaperLoading(true);
-    setWallpaperError('');
     try {
       const resolved = await resolveWallpaperData(prefs.wallpaper);
       if (!resolved) { setWallpaperLoading(false); return; }
       setWallpaperPreview(resolved.dataUrl);
-      const next = updatePreferences({ wallpaper: applyResolvedWallpaper(prefs.wallpaper, resolved.dataUrl, resolved.provider) });
+      const next = updatePreferences({ wallpaper: applyResolvedWallpaper(prefs.wallpaper, resolved.dataUrl, resolved.provider, resolved.sourceUrl) });
       onPrefsChange(next);
     } catch {
-      setWallpaperError(pref?.wallpaperFetchFail || 'Failed to load wallpaper');
+      toast('warning', pref?.wallpaperFetchFail || 'Failed to load wallpaper. Please try again later.');
     }
     setWallpaperLoading(false);
-  }, [prefs.wallpaper, onPrefsChange, pref]);
+  }, [prefs.wallpaper, onPrefsChange, pref, toast]);
 
   const labelCls = "text-[12px] font-medium text-slate-500 dark:text-white/40";
   const activeWallpaperSourceLabel =
     prefs.wallpaper.source === 'random'
-      ? (prefs.wallpaper.resolvedSource === 'unsplash'
-        ? (pref?.wallpaperUnsplash || 'Unsplash')
-        : prefs.wallpaper.resolvedSource === 'picsum'
-          ? (pref?.wallpaperPicsum || 'Picsum')
+      ? (prefs.wallpaper.resolvedSource === 'bing'
+        ? (pref?.wallpaperBing || pref?.wallpaperPicsum || 'Bing Daily')
+        : prefs.wallpaper.resolvedSource === 'unsplash'
+          ? (pref?.wallpaperUnsplash || 'Unsplash')
           : (pref?.wallpaperWallhaven || 'Wallhaven'))
       : prefs.wallpaper.source === 'wallhaven'
         ? (pref?.wallpaperWallhaven || 'Wallhaven')
-        : prefs.wallpaper.source === 'picsum'
-        ? (pref?.wallpaperPicsum || 'Picsum')
-        : prefs.wallpaper.source === 'unsplash'
-          ? (pref?.wallpaperUnsplash || 'Unsplash')
+        : prefs.wallpaper.source === 'bing'
+          ? (pref?.wallpaperBing || pref?.wallpaperPicsum || 'Bing Daily')
+          : prefs.wallpaper.source === 'unsplash'
+            ? (pref?.wallpaperUnsplash || 'Unsplash')
           : (pref?.wallpaperCustom || 'Custom URL');
 
   return (
@@ -236,8 +237,8 @@ const PreferencesTab: React.FC<PreferencesTabProps> = ({ s, pref, prefs, onPrefs
                   {([
                     { id: 'random' as const, label: pref?.wallpaperRandom || 'Random', icon: 'shuffle' },
                     { id: 'wallhaven' as const, label: pref?.wallpaperWallhaven || 'Wallhaven', icon: 'wallpaper' },
-                    { id: 'picsum' as const, label: pref?.wallpaperPicsum || 'Picsum', icon: 'photo_library' },
-                    { id: 'unsplash' as const, label: pref?.wallpaperUnsplash || 'Unsplash', icon: 'image' },
+                    { id: 'bing' as const, label: pref?.wallpaperBing || pref?.wallpaperPicsum || 'Bing Daily', icon: 'image' },
+                    { id: 'unsplash' as const, label: pref?.wallpaperUnsplash || 'Unsplash', icon: 'photo_library' },
                     { id: 'custom' as const, label: pref?.wallpaperCustom || 'Custom URL', icon: 'link' },
                   ]).map(src => (
                     <button key={src.id} onClick={() => handleWallpaperSource(src.id)}
@@ -253,11 +254,11 @@ const PreferencesTab: React.FC<PreferencesTabProps> = ({ s, pref, prefs, onPrefs
                 </div>
                 <p className="mt-2 text-[10px] text-slate-400 dark:text-white/25">
                   {prefs.wallpaper.source === 'random'
-                    ? (pref?.wallpaperRandomDesc || 'Prefer Wallhaven each refresh, then fall back to Picsum or Unsplash if needed.')
+                    ? (pref?.wallpaperRandomDesc || 'Prefer Wallhaven each refresh, then fall back to Bing Daily if needed.')
                     : prefs.wallpaper.source === 'wallhaven'
                       ? (pref?.wallpaperWallhavenDesc || 'Use Wallhaven wallpaper search as the primary source.')
-                    : prefs.wallpaper.source === 'picsum'
-                      ? (pref?.wallpaperPicsumDesc || 'Always use Picsum as the wallpaper source.')
+                    : prefs.wallpaper.source === 'bing'
+                      ? (pref?.wallpaperBingDesc || pref?.wallpaperPicsumDesc || 'Always use Bing Daily as the wallpaper source.')
                       : prefs.wallpaper.source === 'unsplash'
                         ? (pref?.wallpaperUnsplashDesc || 'Always use Unsplash as the wallpaper source.')
                         : (pref?.wallpaperCustomDesc || 'Use the image URL you provide below.')}
@@ -469,9 +470,6 @@ const PreferencesTab: React.FC<PreferencesTabProps> = ({ s, pref, prefs, onPrefs
                       {pref?.wallpaperClickRefresh || 'Click Refresh to load wallpaper'}
                     </span>
                   </div>
-                )}
-                {wallpaperError && (
-                  <p className="text-[11px] text-mac-red">{wallpaperError}</p>
                 )}
                 <p className="text-[10px] text-slate-400 dark:text-white/20">
                   {pref?.wallpaperCacheHint || 'Wallpaper is cached locally. It refreshes automatically every 24 hours.'}

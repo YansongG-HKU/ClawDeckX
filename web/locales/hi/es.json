@@ -600,6 +600,8 @@
   "chDescWecomKf": "WeCom सेल्फ-बिल्ट ऐप, प्रोएक्टिव मैसेजिंग",
   "chDescWechat": "WeChat व्यक्तिगत/आधिकारिक खाता चैनल",
   "chDescQq": "QQ Bot (आधिकारिक Bot API)",
+  "chYuanbao": "Yuanbao Party",
+  "chDescYuanbao": "Tencent Yuanbao Party Bot channel",
   "chDescDingtalk": "DingTalk बॉट/एंटरप्राइज ऐप",
   "chDescDoubao": "ByteDance Doubao AI प्लेटफॉर्म",
   "chDescZalo": "Bot API के साथ वियतनाम-केंद्रित मैसेजिंग प्लेटफॉर्म",
@@ -1353,5 +1355,8 @@
   "authModeSetPassword": "Use Password",
   "tipWecomBotId": "WeCom smart bot Bot ID (auto-generated when creating bot)",
   "tipWecomBotSecret": "WeCom smart bot Secret (auto-generated when creating bot)",
-  "tipWecomConn": "Long connection mode requires no public IP (recommended); Webhook mode needs public callback URL"
+  "tipWecomConn": "Long connection mode requires no public IP (recommended); Webhook mode needs public callback URL",
+  "tipYuanbaoAppSecret": "Yuanbao Party AppSecret (from Yuanbao App linking page)",
+  "tipYuanbaoAppKey": "Yuanbao Party App ID (from Yuanbao App linking page)",
+  "appKey": "App Key"
 }

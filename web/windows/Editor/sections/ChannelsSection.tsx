@@ -40,6 +40,7 @@ const CHANNEL_TYPES: ChannelDef[] = [
   { id: 'wecom_kf', icon: 'support_agent', labelKey: 'chWecomKf', category: 'china', descKey: 'chDescWecomKf' },
   { id: 'wechat', icon: 'mark_chat_unread', labelKey: 'chWechat', category: 'china', descKey: 'chDescWechat', disabled: true },
   { id: 'qq', icon: 'smart_toy', labelKey: 'chQq', category: 'china', descKey: 'chDescQq' },
+  { id: 'yuanbao', icon: 'token', labelKey: 'chYuanbao', category: 'china', descKey: 'chDescYuanbao' },
   { id: 'dingtalk', icon: 'notifications', labelKey: 'chDingtalk', category: 'china', descKey: 'chDescDingtalk' },
   { id: 'doubao', icon: 'auto_awesome', labelKey: 'chDoubao', category: 'china', descKey: 'chDescDoubao', disabled: true },
   // Other
@@ -254,6 +255,7 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
       else if (chId === 'dingtalk') { tokenMap.clientId = cfg.clientId || ''; tokenMap.clientSecret = cfg.clientSecret || ''; }
       else if (chId === 'msteams') { tokenMap.appId = cfg.appId || ''; tokenMap.appPassword = cfg.appPassword || ''; }
       else if (chId === 'matrix') { tokenMap.accessToken = cfg.accessToken || ''; tokenMap.homeserver = cfg.homeserver || ''; }
+      else if (chId === 'yuanbao') { tokenMap.appKey = cfg.appKey || ''; tokenMap.appSecret = cfg.appSecret || ''; }
       else if (chId === 'mattermost') { tokenMap.botToken = cfg.botToken || ''; tokenMap.baseUrl = cfg.baseUrl || ''; }
       else {
         // Generic: collect all string fields that look like tokens
@@ -316,6 +318,7 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
       wecom: '@wecom/wecom-openclaw-plugin',
       wecom_kf: '@openclaw-china/wecom-app',
       qq: '@sliverp/qqbot@latest',
+      yuanbao: 'openclaw-plugin-yuanbao@latest',
       msteams: '@openclaw/msteams',
       zalo: '@openclaw/zalo',
       matrix: '@openclaw/matrix',
@@ -447,6 +450,7 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
 
   const handleFinishWizard = useCallback(async (chId: string) => {
     const dmPolicy = getField(['channels', chId, 'dmPolicy']) || 'pairing';
+    const requiresPairing = chId !== 'yuanbao' && dmPolicy === 'pairing';
     setRestarting(true);
     try {
       // First save the configuration
@@ -462,7 +466,7 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
       console.error('Failed to finish wizard:', err);
     }
     setRestarting(false);
-    if (dmPolicy === 'pairing') {
+    if (requiresPairing) {
       setShowPairing(true);
     } else {
       resetWizard();
@@ -505,6 +509,7 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
     const labelHttpUrl = es.httpUrl;
     const labelWebhookPath = es.chWebhookPath;
     const labelAppId = es.appId;
+    const labelAppKey = es.appKey || 'App Key';
     const labelAppSecret = es.appSecret;
     const labelClientId = es.clientId;
     const labelClientSecret = es.clientSecret;
@@ -1260,6 +1265,14 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
           </>
         )}
 
+        {/* 元宝派 */}
+        {ch === 'yuanbao' && (
+          <>
+            <TextField label={labelAppId} value={g(['appKey']) || ''} onChange={v => s(['appKey'], v)} tooltip={es.tipYuanbaoAppKey} />
+            <PasswordField label={labelAppSecret} value={g(['appSecret']) || ''} onChange={v => s(['appSecret'], v)} tooltip={es.tipYuanbaoAppSecret} />
+          </>
+        )}
+
         {/* 钉钉 */}
         {ch === 'dingtalk' && (
           <>
@@ -1603,12 +1616,13 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
                       </a>
                     )}
                     {/* Plugin install hint for channels that need plugins */}
-                    {chId && ['feishu', 'dingtalk', 'qq', 'msteams', 'zalo', 'voicecall', 'matrix', 'wecom', 'wecom_kf'].includes(chId) && (() => {
+                    {chId && ['feishu', 'dingtalk', 'qq', 'yuanbao', 'msteams', 'zalo', 'voicecall', 'matrix', 'wecom', 'wecom_kf'].includes(chId) && (() => {
                       const pluginSpec = chId === 'feishu' ? '@openclaw/feishu' :
                         chId === 'dingtalk' ? '@openclaw-china/dingtalk' :
                           chId === 'wecom' ? '@wecom/wecom-openclaw-plugin' :
                             chId === 'wecom_kf' ? '@openclaw-china/wecom-app' :
                               chId === 'qq' ? '@sliverp/qqbot@latest' :
+                                chId === 'yuanbao' ? 'openclaw-plugin-yuanbao@latest' :
                                 chId === 'msteams' ? '@openclaw/msteams' :
                                   chId === 'zalo' ? '@openclaw/zalo' :
                                     chId === 'matrix' ? '@openclaw/matrix' :

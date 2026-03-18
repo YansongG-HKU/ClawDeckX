@@ -19,6 +19,30 @@ type WallpaperHandler struct {
 	rng    *rand.Rand
 }
 
+type bingImageArchiveResponse struct {
+	Images []struct {
+		URLBase       string `json:"urlbase"`
+		URL           string `json:"url"`
+		Title         string `json:"title"`
+		Copyright     string `json:"copyright"`
+		StartDate     string `json:"startdate"`
+		FullStartDate string `json:"fullstartdate"`
+	} `json:"images"`
+}
+
+type unsplashRandomResponse struct {
+	URLs struct {
+		Regular string `json:"regular"`
+		Full    string `json:"full"`
+		Raw     string `json:"raw"`
+	} `json:"urls"`
+	Description    string `json:"description"`
+	AltDescription string `json:"alt_description"`
+	User           struct {
+		Name string `json:"name"`
+	} `json:"user"`
+}
+
 type wallhavenSearchResponse struct {
 	Data []struct {
 		ID         string `json:"id"`
@@ -133,10 +157,161 @@ func (h *WallpaperHandler) WallhavenRandom(w http.ResponseWriter, r *http.Reques
 	})
 }
 
+func (h *WallpaperHandler) BingDaily(w http.ResponseWriter, r *http.Request) {
+	apiURL := "https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8&mkt=zh-CN"
+	resp, err := h.client.Get(apiURL)
+	if err != nil {
+		web.Fail(w, r, "WALLPAPER_UPSTREAM_FAILED", err.Error(), http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		web.Fail(w, r, "WALLPAPER_UPSTREAM_FAILED", fmt.Sprintf("bing returned status %d", resp.StatusCode), http.StatusBadGateway)
+		return
+	}
+
+	var payload bingImageArchiveResponse
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		web.Fail(w, r, "WALLPAPER_INVALID_RESPONSE", err.Error(), http.StatusBadGateway)
+		return
+	}
+	if len(payload.Images) == 0 {
+		web.Fail(w, r, "WALLPAPER_NOT_FOUND", "no bing wallpaper found", http.StatusNotFound)
+		return
+	}
+
+	excluded := map[string]bool{}
+	for _, raw := range r.URL.Query()["exclude"] {
+		value := strings.TrimSpace(raw)
+		if value != "" {
+			excluded[value] = true
+		}
+	}
+
+	candidates := make([]struct {
+		URLBase       string `json:"urlbase"`
+		URL           string `json:"url"`
+		Title         string `json:"title"`
+		Copyright     string `json:"copyright"`
+		StartDate     string `json:"startdate"`
+		FullStartDate string `json:"fullstartdate"`
+	}, 0, len(payload.Images))
+	for _, item := range payload.Images {
+		imageURL := strings.TrimSpace(item.URL)
+		if imageURL == "" {
+			imageURL = strings.TrimSpace(item.URLBase)
+			if imageURL != "" {
+				imageURL += "_UHD.jpg"
+			}
+		}
+		if imageURL == "" {
+			continue
+		}
+		if strings.HasPrefix(imageURL, "/") {
+			imageURL = "https://cn.bing.com" + imageURL
+		}
+		if excluded[imageURL] {
+			continue
+		}
+		candidates = append(candidates, item)
+	}
+	if len(candidates) == 0 {
+		candidates = payload.Images
+	}
+
+	image := candidates[h.rng.Intn(len(candidates))]
+	imageURL := strings.TrimSpace(image.URL)
+	if imageURL == "" {
+		imageURL = strings.TrimSpace(image.URLBase)
+		if imageURL != "" {
+			imageURL += "_UHD.jpg"
+		}
+	}
+	if imageURL == "" {
+		web.Fail(w, r, "WALLPAPER_NOT_FOUND", "bing wallpaper url is empty", http.StatusNotFound)
+		return
+	}
+	if strings.HasPrefix(imageURL, "/") {
+		imageURL = "https://cn.bing.com" + imageURL
+	}
+
+	web.OK(w, r, map[string]any{
+		"provider":        "bing",
+		"image_url":       imageURL,
+		"title":           image.Title,
+		"copyright":       image.Copyright,
+		"start_date":      image.StartDate,
+		"full_start_date": image.FullStartDate,
+	})
+}
+
+func (h *WallpaperHandler) UnsplashRandom(w http.ResponseWriter, r *http.Request) {
+	query := strings.TrimSpace(r.URL.Query().Get("q"))
+	if query == "" {
+		query = "wallpaper landscape"
+	}
+
+	apiURL := fmt.Sprintf("https://unsplash.com/napi/photos/random?orientation=landscape&query=%s", url.QueryEscape(query))
+	req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, apiURL, nil)
+	if err != nil {
+		web.Fail(w, r, "WALLPAPER_UPSTREAM_FAILED", err.Error(), http.StatusInternalServerError)
+		return
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Referer", "https://unsplash.com/")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+
+	resp, err := h.client.Do(req)
+	if err != nil {
+		web.Fail(w, r, "WALLPAPER_UPSTREAM_FAILED", err.Error(), http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		web.Fail(w, r, "WALLPAPER_UPSTREAM_FAILED", fmt.Sprintf("unsplash returned status %d", resp.StatusCode), http.StatusBadGateway)
+		return
+	}
+
+	var payload unsplashRandomResponse
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		web.Fail(w, r, "WALLPAPER_INVALID_RESPONSE", err.Error(), http.StatusBadGateway)
+		return
+	}
+
+	imageURL := strings.TrimSpace(payload.URLs.Regular)
+	if imageURL == "" {
+		imageURL = strings.TrimSpace(payload.URLs.Full)
+	}
+	if imageURL == "" {
+		imageURL = strings.TrimSpace(payload.URLs.Raw)
+	}
+	if imageURL == "" {
+		web.Fail(w, r, "WALLPAPER_NOT_FOUND", "no unsplash wallpaper found", http.StatusNotFound)
+		return
+	}
+
+	title := strings.TrimSpace(payload.Description)
+	if title == "" {
+		title = strings.TrimSpace(payload.AltDescription)
+	}
+
+	web.OK(w, r, map[string]any{
+		"provider":     "unsplash",
+		"image_url":    imageURL,
+		"title":        title,
+		"photographer": payload.User.Name,
+	})
+}
+
 // allowedProxyHosts is the set of upstream hosts we allow proxying images from.
 var allowedProxyHosts = map[string]bool{
-	"w.wallhaven.cc":  true,
-	"th.wallhaven.cc": true,
+	"w.wallhaven.cc":      true,
+	"th.wallhaven.cc":     true,
+	"cn.bing.com":         true,
+	"bing.com":            true,
+	"images.unsplash.com": true,
 }
 
 // ImageProxy fetches a remote wallpaper image server-side, adding the correct

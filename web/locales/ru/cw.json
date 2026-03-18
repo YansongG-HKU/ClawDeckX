@@ -144,7 +144,7 @@
   "feishuPrep": [
     "Установите плагин Feishu: openclaw plugins install @openclaw/feishu",
     "Войдите на Feishu Open Platform open.feishu.cn → Создайте корпоративное приложение",
-    "Скопируйте App ID и App Secret со страницы учётных данных",
+    "Скопируйте App Key и App Secret со страницы учётных данных",
     "Добавьте возможность Бот в Возможностях приложения, задайте имя бота",
     "Добавьте необходимые права: im:message, im:message.p2p_msg:readonly, im:message.group_at_msg:readonly, im:message:send_as_bot, im:resource (используйте \"Copy Permission JSON\" ниже для пакетного импорта)",
     "В События и обратные вызовы выберите \"Receive events via long connection\" (рекомендуется, не требует публичного IP), добавьте события: im.message.receive_v1, im.message.message_read_v1, im.chat.member.bot.added_v1, im.chat.member.bot.deleted_v1",
@@ -191,16 +191,27 @@
     "Установите плагин QQ: openclaw plugins install @sliverp/qqbot@latest",
     "Перейдите на QQ Open Platform q.qq.com → Зарегистрируйте аккаунт разработчика и пройдите проверку",
     "Создайте приложение Bot (не мини-программу и не игру)",
-    "Получите AppID и AppSecret на странице деталей приложения",
+    "Получите AppKey и AppSecret на странице деталей приложения",
     "Включите права и добавьте тестовых участников (опционально добавьте бота в тестовую группу)",
     "(Опционально) Для рендеринга Markdown подайте заявку на права шаблонов Markdown отдельно (проверка занимает время)"
   ],
   "qqPitfall": "⚠️ Частые ошибки: 1) Включите права и добавьте тестовых участников; 2) В группе нужен @Bot; 3) Markdown требует отдельного разрешения; 4) QQ Bot в бета-версии",
   "qqHelpUrl": "https://q.qq.com",
+  "yuanbao": "Yuanbao Party",
+  "yuanbaoDesc": "Tencent Yuanbao Party channel, supports multi-Bot interaction",
+  "yuanbaoPrep": [
+    "Install Yuanbao plugin on the deployed OpenClaw device: openclaw plugins install openclaw-plugin-yuanbao@latest",
+    "Open Yuanbao App  Party  My Bot  Link existing OpenClaw  Select 'Method 2: Channel Config'",
+    "Скопируйте App ID и AppSecret со страницы привязки (скопируйте точно, не пропустите символы)",
+    "Заполните App ID и AppSecret ниже или выполните: openclaw channels add --channel yuanbao --token \"<AppKey>:<AppSecret>\"",    "Restart OpenClaw gateway: openclaw gateway restart",
+    "Return to Yuanbao App and tap 'Done' to complete linking"
+  ],
+  "yuanbaoPitfall": "⚠️ Common pitfalls: 1) App ID and AppSecret must be copied exactly  don't miss any characters; 2) Gateway must be restarted after config changes; 3) Yuanbao App must be V2.60.10 or above; 4) Token format is App ID:AppSecret when using CLI",
+  "yuanbaoHelpUrl": "https://yuanbao.tencent.com",
   "wechatPrep": [
     "Личный WeChat требует стороннего моста (напр. wechatbot-webhook)",
     "Официальный аккаунт требует сертифицированного сервисного аккаунта на mp.weixin.qq.com",
-    "Получите AppID и AppSecret",
+    "Получите AppKey и AppSecret",
     "Настройте URL сервера, Token и EncodingAESKey",
     "Примечание: стабильность личного аккаунта зависит от сторонних инструментов; рекомендуется WeCom"
   ],
@@ -240,7 +251,7 @@
   "googlechatPitfall": "⚠️ Примечание: 1) Только Google Workspace; 2) Требуется одобрение админа; 3) Service Account сложный",
   "msteamsHelpUrl": "https://portal.azure.com",
   "msteamsPrep": [
-    "Создайте регистрацию приложения в Azure Portal, получите App ID",
+    "Создайте регистрацию приложения в Azure Portal, получите App Key",
     "Создайте Client Secret в качестве пароля приложения",
     "Зарегистрируйте бота в Bot Framework",
     "Включите Sideloading в центре администрирования Teams (для тестирования)",

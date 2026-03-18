@@ -605,6 +605,8 @@
   "chDescWecomKf": "企微自建应用，支持主动发送",
   "chDescWechat": "微信个人/公众号消息通道",
   "chDescQq": "QQ 机器人（官方 Bot API）",
+  "chYuanbao": "元宝派",
+  "chDescYuanbao": "腾讯元宝派 Bot 通道",
   "chDescDingtalk": "钉钉机器人/企业应用",
   "chDescDoubao": "字节跳动豆包 AI 平台",
   "chDescZalo": "越南通讯平台 Bot API",
@@ -1353,5 +1355,8 @@
   "tipVoiceAllowFrom": "入站通话号码白名单 (E.164 格式)",
   "tipZaloWebhookUrl": "Zalo Webhook URL",
   "tipZaloWebhookSecret": "Zalo Webhook 签名密钥",
-  "tipZaloWebhookPath": "Zalo Webhook 回调路径"
+  "tipZaloWebhookPath": "Zalo Webhook 回调路径",
+  "tipYuanbaoAppSecret": "元宝派 AppSecret（从元宝 App 关联页面获取）",
+  "tipYuanbaoAppKey": "元宝派 App ID（从元宝 App 关联页面获取）",
+  "appKey": "App Key"
 }

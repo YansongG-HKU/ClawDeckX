@@ -693,6 +693,8 @@ export interface PluginStatusPlugin {
   id: string;
   name?: string;
   version?: string;
+  latestVersion?: string;
+  updateAvailable?: boolean;
   description?: string;
   kind?: string;
   source?: string;
@@ -758,6 +760,22 @@ export interface WallpaperRandomResponse {
   total?: number;
 }
 
+export interface BingWallpaperResponse {
+  provider: 'bing';
+  image_url: string;
+  title?: string;
+  copyright?: string;
+  start_date?: string;
+  full_start_date?: string;
+}
+
+export interface UnsplashWallpaperResponse {
+  provider: 'unsplash';
+  image_url: string;
+  title?: string;
+  photographer?: string;
+}
+
 export const wallpaperApi = {
   wallhavenRandom: (params?: { q?: string; atleast?: string; ratios?: string; categories?: string; purity?: string; page?: number; seed?: string; apiKey?: string }) => {
     const qs = new URLSearchParams();
@@ -771,6 +789,20 @@ export const wallpaperApi = {
     if (params?.apiKey) qs.set('apikey', params.apiKey);
     const query = qs.toString();
     return get<WallpaperRandomResponse>(`/api/v1/wallpaper/wallhaven/random${query ? `?${query}` : ''}`);
+  },
+  bingDaily: (params?: { exclude?: string[] }) => {
+    const qs = new URLSearchParams();
+    params?.exclude?.forEach(value => {
+      if (value) qs.append('exclude', value);
+    });
+    const query = qs.toString();
+    return get<BingWallpaperResponse>(`/api/v1/wallpaper/bing/daily${query ? `?${query}` : ''}`);
+  },
+  unsplashRandom: (params?: { q?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.q) qs.set('q', params.q);
+    const query = qs.toString();
+    return get<UnsplashWallpaperResponse>(`/api/v1/wallpaper/unsplash/random${query ? `?${query}` : ''}`);
   },
 };
 

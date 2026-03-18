@@ -583,6 +583,8 @@ func RunServe(args []string) int {
 
 	wallpaperHandler := handlers.NewWallpaperHandler()
 	router.GET("/api/v1/wallpaper/wallhaven/random", wallpaperHandler.WallhavenRandom)
+	router.GET("/api/v1/wallpaper/bing/daily", wallpaperHandler.BingDaily)
+	router.GET("/api/v1/wallpaper/unsplash/random", wallpaperHandler.UnsplashRandom)
 	router.GET("/api/v1/wallpaper/proxy", wallpaperHandler.ImageProxy)
 
 	pluginInstallHandler := handlers.NewPluginInstallHandler(gwClient)

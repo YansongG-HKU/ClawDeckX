@@ -191,16 +191,27 @@
     "QQ-Plugin installieren: openclaw plugins install @sliverp/qqbot@latest",
     "QQ Open Platform q.qq.com besuchen → Entwicklerkonto registrieren und Prüfung abschließen",
     "Eine Bot-Anwendung erstellen (kein Mini-Programm oder Spiel)",
-    "AppID und AppSecret von der App-Detailseite holen",
+    "AppKey und AppSecret von der App-Detailseite holen",
     "Berechtigungen aktivieren und Testmitglieder hinzufügen (optional Bot zur Testgruppe hinzufügen)",
     "(Optional) Für Markdown-Rendering: Markdown-Vorlagenberechtigung separat beantragen (Prüfung dauert)"
   ],
   "qqPitfall": "⚠️ Häufige Fehler: 1) Berechtigungen aktivieren und Testmitglieder hinzufügen; 2) In Gruppen @Bot nötig; 3) Markdown braucht extra Berechtigung; 4) QQ Bot ist Beta",
   "qqHelpUrl": "https://q.qq.com",
+  "yuanbao": "Yuanbao Party",
+  "yuanbaoDesc": "Tencent Yuanbao Party channel, supports multi-Bot interaction",
+  "yuanbaoPrep": [
+    "Install Yuanbao plugin on the deployed OpenClaw device: openclaw plugins install openclaw-plugin-yuanbao@latest",
+    "Open Yuanbao App  Party  My Bot  Link existing OpenClaw  Select 'Method 2: Channel Config'",
+    "Kopieren Sie App ID und AppSecret von der Verknüpfungsseite (genau kopieren, keine Zeichen verpassen)",
+    "Füllen Sie unten App ID und AppSecret aus, oder führen Sie aus: openclaw channels add --channel yuanbao --token \"<AppKey>:<AppSecret>\"",    "Restart OpenClaw gateway: openclaw gateway restart",
+    "Return to Yuanbao App and tap 'Done' to complete linking"
+  ],
+  "yuanbaoPitfall": "⚠️ Common pitfalls: 1) App ID and AppSecret must be copied exactly  don't miss any characters; 2) Gateway must be restarted after config changes; 3) Yuanbao App must be V2.60.10 or above; 4) Token format is App ID:AppSecret when using CLI",
+  "yuanbaoHelpUrl": "https://yuanbao.tencent.com",
   "wechatPrep": [
     "Persönliches WeChat erfordert eine Drittanbieter-Brücke (z. B. wechatbot-webhook)",
     "Offizielles Konto erfordert ein verifiziertes Service-Konto auf mp.weixin.qq.com",
-    "AppID und AppSecret holen",
+    "AppKey und AppSecret holen",
     "Server-URL, Token und EncodingAESKey konfigurieren",
     "Hinweis: Stabilität des persönlichen Kontos hängt von Drittanbieter-Tools ab; WeCom wird stattdessen empfohlen"
   ],

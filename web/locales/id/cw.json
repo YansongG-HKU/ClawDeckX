@@ -144,7 +144,7 @@
   "feishuPrep": [
     "Instal plugin Feishu: openclaw plugins install @openclaw/feishu",
     "Masuk ke Feishu Open Platform open.feishu.cn → Buat aplikasi enterprise",
-    "Salin App ID dan App Secret dari halaman Kredensial",
+    "Salin App Key dan App Secret dari halaman Kredensial",
     "Tambahkan kemampuan Bot di App Capabilities, atur nama bot",
     "Tambahkan izin yang diperlukan: im:message, im:message.p2p_msg:readonly, im:message.group_at_msg:readonly, im:message:send_as_bot, im:resource (gunakan \"Salin Permission JSON\" di bawah untuk impor batch)",
     "Di Events & Callbacks, pilih \"Terima event melalui koneksi panjang\" (direkomendasikan, tidak perlu IP publik), tambahkan event: im.message.receive_v1, im.message.message_read_v1, im.chat.member.bot.added_v1, im.chat.member.bot.deleted_v1",
@@ -191,16 +191,27 @@
     "Instal plugin QQ: openclaw plugins install @sliverp/qqbot@latest",
     "Kunjungi QQ Open Platform q.qq.com → Daftar akun pengembang dan selesaikan review",
     "Buat aplikasi Bot (bukan mini-program atau game)",
-    "Dapatkan AppID dan AppSecret dari halaman detail app",
+    "Dapatkan AppKey dan AppSecret dari halaman detail app",
     "Aktifkan izin dan tambahkan anggota tes (opsional tambahkan bot ke grup tes)",
     "(Opsional) Untuk render Markdown, ajukan izin template Markdown secara terpisah (review memerlukan waktu)"
   ],
   "qqPitfall": "⚠️ Kesalahan umum: 1) Harus aktifkan izin dan tambahkan anggota tes, jika tidak tidak ada pesan diterima; 2) @mention wajib di chat grup; 3) Markdown memerlukan izin terpisah — atur markdownSupport: false jika tidak diaktifkan; 4) QQ Bot masih dalam beta, beberapa fitur mungkin terbatas",
   "qqHelpUrl": "https://q.qq.com",
+  "yuanbao": "Yuanbao Party",
+  "yuanbaoDesc": "Tencent Yuanbao Party channel, supports multi-Bot interaction",
+  "yuanbaoPrep": [
+    "Install Yuanbao plugin on the deployed OpenClaw device: openclaw plugins install openclaw-plugin-yuanbao@latest",
+    "Open Yuanbao App  Party  My Bot  Link existing OpenClaw  Select 'Method 2: Channel Config'",
+    "Salin App ID dan AppSecret dari halaman penautan (salin persis, jangan sampai ada karakter yang terlewat)",
+    "Isi App ID dan AppSecret di bawah, atau jalankan: openclaw channels add --channel yuanbao --token \"<AppKey>:<AppSecret>\"",    "Restart OpenClaw gateway: openclaw gateway restart",
+    "Return to Yuanbao App and tap 'Done' to complete linking"
+  ],
+  "yuanbaoPitfall": "⚠️ Common pitfalls: 1) App ID and AppSecret must be copied exactly  don't miss any characters; 2) Gateway must be restarted after config changes; 3) Yuanbao App must be V2.60.10 or above; 4) Token format is App ID:AppSecret when using CLI",
+  "yuanbaoHelpUrl": "https://yuanbao.tencent.com",
   "wechatPrep": [
     "WeChat personal memerlukan bridge pihak ketiga (mis. wechatbot-webhook)",
     "Official account memerlukan akun layanan terverifikasi di mp.weixin.qq.com",
-    "Dapatkan AppID dan AppSecret",
+    "Dapatkan AppKey dan AppSecret",
     "Konfigurasikan URL server, Token, dan EncodingAESKey",
     "Catatan: Stabilitas akun personal bergantung pada alat pihak ketiga; WeCom direkomendasikan"
   ],
@@ -240,13 +251,13 @@
   "googlechatPitfall": "⚠️ Catatan: 1) Hanya akun Google Workspace yang didukung, bukan Gmail personal; 2) Memerlukan persetujuan admin Workspace; 3) Pengaturan Service Account kompleks — rujuk ke docs resmi",
   "msteamsHelpUrl": "https://portal.azure.com",
   "msteamsPrep": [
-    "Buat App Registration di Azure Portal, dapatkan App ID",
+    "Buat App Registration di Azure Portal, dapatkan App Key",
     "Buat Client Secret sebagai App Password",
     "Daftar Bot di Bot Framework",
     "Aktifkan Sideloading di pusat admin Teams (untuk pengujian)",
     "Plugin diperlukan: openclaw plugins install <msteams-plugin-url>"
   ],
-  "msteamsPitfall": "⚠️ Catatan: 1) Pendaftaran Azure memiliki banyak langkah — jangan bingung antara App ID dan Client Secret; 2) Pengujian memerlukan admin Teams untuk mengaktifkan Sideloading; 3) Plugin OpenClaw MS Teams diperlukan",
+  "msteamsPitfall": "⚠️ Catatan: 1) Pendaftaran Azure memiliki banyak langkah — jangan bingung antara App Key dan Client Secret; 2) Pengujian memerlukan admin Teams untuk mengaktifkan Sideloading; 3) Plugin OpenClaw MS Teams diperlukan",
   "matrixHelpUrl": "https://matrix.org",
   "matrixPrep": [
     "Daftar atau deploy Matrix Homeserver (mis. matrix.org atau self-hosted Synapse)",

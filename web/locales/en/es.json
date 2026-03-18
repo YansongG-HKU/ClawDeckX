@@ -605,6 +605,8 @@
   "chDescWecomKf": "WeCom self-built app, proactive messaging",
   "chDescWechat": "WeChat personal/official account channel",
   "chDescQq": "QQ Bot (Official Bot API)",
+  "chYuanbao": "Yuanbao Party",
+  "chDescYuanbao": "Tencent Yuanbao Party Bot channel",
   "chDescDingtalk": "DingTalk bot/enterprise app",
   "chDescDoubao": "ByteDance Doubao AI platform",
   "chDescZalo": "Vietnam-focused messaging platform with Bot API",
@@ -765,6 +767,7 @@
   "tipQQAppId": "QQ Bot AppID (from QQ Open Platform)",
   "tipQQClientSecret": "QQ Bot AppSecret (from app details page)",
   "tipQQMarkdown": "Enable Markdown rendering (requires separate Markdown template permission)",
+  "tipYuanbaoAppSecret": "Yuanbao Party AppSecret (from Yuanbao App linking page)",
   "tipDTClientId": "DingTalk Client ID (AppKey, from credentials page)",
   "tipDTClientSecret": "DingTalk Client Secret (AppSecret)",
   "tipDTAICard": "Enable AI Card streaming (requires Card.Instance.Write and Card.Streaming.Write permissions)",
@@ -1179,7 +1182,6 @@
   "budgetDailyHint": "Daily spending limit, set to 0 for unlimited",
   "budgetMonthlyHint": "Monthly spending limit, set to 0 for unlimited",
   "budgetThresholdHint": "Show warning when reaching this percentage",
-
   "streaming": "Streaming",
   "replyToMode": "Reply To Mode",
   "groupAllowFrom": "Group Allow From",
@@ -1259,7 +1261,6 @@
   "responseSystemPrompt": "System Prompt",
   "telnyxPublicKey": "Public Key",
   "plivoAuthId": "Auth ID",
-
   "optProgress": "Progress",
   "optFirst": "First Only",
   "optAck": "Ack",
@@ -1279,7 +1280,6 @@
   "optNotify": "Notify",
   "optConversation": "Conversation",
   "optPlivo": "Plivo",
-
   "tipStreaming": "Streaming mode (off/partial/block/progress)",
   "tipReplyToMode": "Reply-to-thread mode (off=disabled, first=first message only, all=all messages)",
   "tipGroupAllowFrom": "Allowlist of group/channel sender IDs",
@@ -1356,5 +1356,7 @@
   "tipVoiceAllowFrom": "Inbound call number allowlist (E.164 format)",
   "tipZaloWebhookUrl": "Zalo webhook URL",
   "tipZaloWebhookSecret": "Zalo webhook signing secret",
-  "tipZaloWebhookPath": "Zalo webhook callback path"
+  "tipZaloWebhookPath": "Zalo webhook callback path",
+  "tipYuanbaoAppKey": "Yuanbao Party App ID (from Yuanbao App linking page)",
+  "appKey": "App Key"
 }

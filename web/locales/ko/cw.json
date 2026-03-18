@@ -144,7 +144,7 @@
   "feishuPrep": [
     "Feishu 플러그인 설치: openclaw plugins install @openclaw/feishu",
     "Feishu 오픈 플랫폼 open.feishu.cn에 로그인 → 기업 앱을 생성하세요",
-    "인증 정보 페이지에서 App ID와 App Secret을 복사하세요",
+    "인증 정보 페이지에서 App Key와 App Secret을 복사하세요",
     "앱 기능에서 Bot 기능을 추가하고 Bot 이름을 설정하세요",
     "필수 권한 추가: im:message, im:message.p2p_msg:readonly, im:message.group_at_msg:readonly, im:message:send_as_bot, im:resource (아래 '권한 JSON 복사'로 일괄 가져오기 가능)",
     "이벤트 및 콜백에서 '장기 연결로 이벤트 수신' 선택 (권장, 공인 IP 불필요), 이벤트 추가: im.message.receive_v1, im.message.message_read_v1, im.chat.member.bot.added_v1, im.chat.member.bot.deleted_v1",
@@ -191,16 +191,28 @@
     "QQ 플러그인 설치: openclaw plugins install @sliverp/qqbot@latest",
     "QQ 오픈 플랫폼 q.qq.com에 접속 → 개발자 계정을 등록하고 심사를 완료하세요",
     "Bot 애플리케이션을 생성하세요 (미니프로그램이나 게임이 아님)",
-    "앱 상세 페이지에서 AppID와 AppSecret을 받으세요",
+    "앱 상세 페이지에서 AppKey와 AppSecret을 받으세요",
     "권한을 활성화하고 테스트 멤버를 추가하세요 (선택적으로 Bot을 테스트 그룹에 추가)",
     "(선택) Markdown 렌더링이 필요하면 Markdown 템플릿 권한을 별도로 신청하세요 (심사에 시간이 소요됩니다)"
   ],
   "qqPitfall": "⚠️ 주의: 1) 권한 활성화 및 테스트 멤버 추가 필수, 아니면 메시지 수신 불가; 2) 그룹 채팅에서 @Bot 필요; 3) Markdown은 별도 권한 신청 필요; 4) QQ Bot은 아직 베타, 일부 기능 제한 가능",
   "qqHelpUrl": "https://q.qq.com",
+  "yuanbao": "Yuanbao Party",
+  "yuanbaoDesc": "Tencent Yuanbao Party 채널, 파티 내 멀티 Bot 상호작용 지원",
+  "yuanbaoPrep": [
+    "OpenClaw가 배포된 장치에서 Yuanbao Party 플러그인 설치: openclaw plugins install openclaw-plugin-yuanbao@latest",
+    "Yuanbao 앱  파티  내 Bot  기존 OpenClaw 연결  '방법 2: 채널 구성' 선택",
+    "연결 페이지에서 App ID와 AppSecret 복사(문자 누락 없이 정확히 복사)",
+    "아래에 App ID와 AppSecret을 입력하거나 다음 실행: openclaw channels add --channel yuanbao --token \"<AppKey>:<AppSecret>\"",
+    "OpenClaw 게이트웨이 재시작: openclaw gateway restart",
+    "Yuanbao 앱으로 돌아가 '我已操作'를 눌러 연결 완료"
+  ],
+  "yuanbaoPitfall": "⚠️ 주의사항: 1) AppKey와 AppSecret을 정확히 복사하세요; 2) 설정 변경 후 게이트웨이 재시작이 필요합니다; 3) Yuanbao 앱은 V2.60.10 이상이어야 합니다; 4) CLI 사용 시 token 형식은 AppKey:AppSecret 입니다",
+  "yuanbaoHelpUrl": "https://yuanbao.tencent.com",
   "wechatPrep": [
     "개인 WeChat은 서드파티 브리지가 필요합니다 (예: wechatbot-webhook)",
     "공식 계정은 mp.weixin.qq.com에서 인증된 서비스 계정이 필요합니다",
-    "AppID와 AppSecret을 받으세요",
+    "AppKey와 AppSecret을 받으세요",
     "서버 URL, Token, EncodingAESKey를 설정하세요",
     "참고: 개인 계정의 안정성은 서드파티 도구에 의존합니다. WeCom 사용을 권장합니다"
   ],
@@ -240,13 +252,13 @@
   "googlechatPitfall": "⚠️ 주의: 1) Google Workspace 계정만 지원, 개인 Gmail 사용 불가; 2) Workspace 관리자 승인 필요; 3) Service Account 설정이 복잡함",
   "msteamsHelpUrl": "https://portal.azure.com",
   "msteamsPrep": [
-    "Azure Portal에서 App Registration을 생성하고 App ID를 받으세요",
+    "Azure Portal에서 App Registration을 생성하고 App Key를 받으세요",
     "Client Secret을 App Password로 생성하세요",
     "Bot Framework에서 Bot을 등록하세요",
     "Teams 관리 센터에서 Sideloading을 활성화하세요 (테스트용)",
     "플러그인 필요: openclaw plugins install <msteams-plugin-url>"
   ],
-  "msteamsPitfall": "⚠️ 주의: 1) Azure 등록 절차가 많음, App ID와 Client Secret 혼동 금지; 2) 테스트 시 Teams 관리자가 Sideloading 권한 활성화 필요; 3) OpenClaw MS Teams 플러그인 설치 필요",
+  "msteamsPitfall": "⚠️ 주의: 1) Azure 등록 절차가 많음, App Key와 Client Secret 혼동 금지; 2) 테스트 시 Teams 관리자가 Sideloading 권한 활성화 필요; 3) OpenClaw MS Teams 플러그인 설치 필요",
   "matrixHelpUrl": "https://matrix.org",
   "matrixPrep": [
     "Matrix Homeserver를 등록하거나 배포하세요 (예: matrix.org 또는 자체 호스팅 Synapse)",
