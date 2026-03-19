@@ -29,7 +29,7 @@ const UpdateTab: React.FC<UpdateTabProps> = ({ s, language, inputCls, rowCls }) 
 
   // ── OpenClaw 更新 ──
   const [ocUpdateChecking, setOcUpdateChecking] = useState(false);
-  const [ocUpdateInfo, setOcUpdateInfo] = useState<{ available: boolean; currentVersion?: string; latestVersion?: string; releaseNotes?: string; publishedAt?: string; error?: string } | null>(null);
+  const [ocUpdateInfo, setOcUpdateInfo] = useState<{ available: boolean; currentVersion?: string; latestVersion?: string; releaseNotes?: string; publishedAt?: string; releaseTag?: string; error?: string } | null>(null);
   const {
     running: ocUpdating,
     logs: ocUpdateLogs,
@@ -66,6 +66,23 @@ const UpdateTab: React.FC<UpdateTabProps> = ({ s, language, inputCls, rowCls }) 
   // ── Docker 运行时覆盖 ──
   const [runtimeStatus, setRuntimeStatus] = useState<RuntimeStatus | null>(null);
   const [runtimeRollingBack, setRuntimeRollingBack] = useState(false);
+  const [runtimeOcUpdating, setRuntimeOcUpdating] = useState(false);
+  const [runtimeOcLogs, setRuntimeOcLogs] = useState<string[]>([]);
+  const [runtimeOcStep, setRuntimeOcStep] = useState('');
+  const [runtimeOcProgress, setRuntimeOcProgress] = useState(0);
+  const isDockerRuntime = !!runtimeStatus?.is_docker;
+  const effectiveOcUpdating = isDockerRuntime ? runtimeOcUpdating : ocUpdating;
+  const effectiveOcLogs = isDockerRuntime ? runtimeOcLogs : ocUpdateLogs;
+  const effectiveOcStep = isDockerRuntime ? runtimeOcStep : ocUpdateStep;
+  const effectiveOcProgress = isDockerRuntime ? runtimeOcProgress : ocUpdateProgress;
+
+  const loadRuntimeStatus = useCallback(async () => {
+    try {
+      const data = await runtimeApi.status();
+      setRuntimeStatus(data);
+    } catch {
+    }
+  }, []);
 
   // Markdown-like rendering for release notes (sanitized)
   const renderMarkdown = useCallback((text: string) => {
@@ -106,7 +123,7 @@ const UpdateTab: React.FC<UpdateTabProps> = ({ s, language, inputCls, rowCls }) 
     setSelfUpdating(true);
     setSelfUpdateProgress({ stage: 'connecting', percent: 0 });
     try {
-      const resp = await fetch('/api/v1/self-update/apply', {
+      const resp = await fetch(isDockerRuntime ? '/api/v1/runtime/clawdeckx/update' : '/api/v1/self-update/apply', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -128,8 +145,18 @@ const UpdateTab: React.FC<UpdateTabProps> = ({ s, language, inputCls, rowCls }) 
                 const p = JSON.parse(line.slice(6));
                 setSelfUpdateProgress(p);
                 if (p.done) {
-                  toast('success', sRef.current.selfUpdateDone);
-                  setTimeout(() => window.location.reload(), 3000);
+                  toast('success', isDockerRuntime ? (sRef.current.runtimeUpdateOk || sRef.current.selfUpdateDone) : sRef.current.selfUpdateDone);
+                  if (isDockerRuntime) {
+                    await loadRuntimeStatus();
+                    selfUpdateApi.info().then(d => setSelfUpdateVersion(d)).catch(() => { });
+                    setSelfUpdateInfo(prev => prev ? {
+                      ...prev,
+                      available: false,
+                      currentVersion: prev.latestVersion || prev.currentVersion,
+                    } : prev);
+                  } else {
+                    setTimeout(() => window.location.reload(), 3000);
+                  }
                 }
                 if (p.error) {
                   toast('error', p.error);
@@ -141,10 +168,10 @@ const UpdateTab: React.FC<UpdateTabProps> = ({ s, language, inputCls, rowCls }) 
       }
     } catch (err: any) {
       setSelfUpdateProgress({ stage: 'error', percent: 0, error: err?.message || sRef.current.unknownError });
-      toast('error', sRef.current.selfUpdateFailed);
+      toast('error', isDockerRuntime ? (sRef.current.runtimeUpdateFailed || sRef.current.selfUpdateFailed) : sRef.current.selfUpdateFailed);
     }
     setSelfUpdating(false);
-  }, [selfUpdateInfo, toast]);
+  }, [selfUpdateInfo, toast, isDockerRuntime, loadRuntimeStatus]);
 
   // Release notes translation — cached in SQLite via backend
   const handleTranslateNotes = useCallback(async (text: string, product?: string, ver?: string) => {
@@ -197,22 +224,69 @@ const UpdateTab: React.FC<UpdateTabProps> = ({ s, language, inputCls, rowCls }) 
     });
     if (!ok) return;
     try {
-      await runOcUpdate();
-      toast('success', sRef.current.openclawUpdateOk);
-      await new Promise(r => setTimeout(r, 1500));
-      const res = await hostInfoApi.checkUpdate();
-      setOcUpdateInfo({ ...res, available: false });
+      if (isDockerRuntime) {
+        setRuntimeOcUpdating(true);
+        setRuntimeOcLogs([]);
+        setRuntimeOcStep('connecting');
+        setRuntimeOcProgress(0);
+        const resp = await fetch('/api/v1/runtime/openclaw/update', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const reader = resp.body?.getReader();
+        const decoder = new TextDecoder();
+        if (reader) {
+          let buf = '';
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += decoder.decode(value, { stream: true });
+            const lines = buf.split('\n');
+            buf = lines.pop() || '';
+            for (const line of lines) {
+              if (!line.startsWith('data: ')) continue;
+              try {
+                const p = JSON.parse(line.slice(6));
+                if (p.stage) setRuntimeOcStep(p.stage);
+                if (typeof p.percent === 'number') setRuntimeOcProgress(p.percent);
+                setRuntimeOcLogs(prev => [...prev, p.error || p.stage || JSON.stringify(p)]);
+                if (p.error) {
+                  toast('error', p.error);
+                }
+                if (p.done) {
+                  toast('success', sRef.current.runtimeUpdateOk || sRef.current.openclawUpdateOk);
+                  await loadRuntimeStatus();
+                  const res = await hostInfoApi.checkUpdate();
+                  setOcUpdateInfo({ ...res, available: false });
+                }
+              } catch { }
+            }
+          }
+        }
+        setRuntimeOcProgress(100);
+      } else {
+        await runOcUpdate();
+        toast('success', sRef.current.openclawUpdateOk);
+        await new Promise(r => setTimeout(r, 1500));
+        const res = await hostInfoApi.checkUpdate();
+        setOcUpdateInfo({ ...res, available: false });
+      }
     } catch {
-      toast('error', sRef.current.openclawUpdateFailed);
+      toast('error', isDockerRuntime ? (sRef.current.runtimeUpdateFailed || sRef.current.openclawUpdateFailed) : sRef.current.openclawUpdateFailed);
+    } finally {
+      if (isDockerRuntime) {
+        setRuntimeOcUpdating(false);
+      }
     }
-  }, [runOcUpdate, toast, confirm, ocUpdateInfo]);
+  }, [runOcUpdate, toast, confirm, ocUpdateInfo, isDockerRuntime, loadRuntimeStatus]);
 
   // OpenClaw 升级日志自动滚动
   useEffect(() => {
     if (ocUpdateLogRef.current) {
       ocUpdateLogRef.current.scrollTop = ocUpdateLogRef.current.scrollHeight;
     }
-  }, [ocUpdateLogs]);
+  }, [effectiveOcLogs]);
 
   // 服务管理
   const loadServiceStatus = useCallback(async () => {
@@ -263,16 +337,6 @@ const UpdateTab: React.FC<UpdateTabProps> = ({ s, language, inputCls, rowCls }) 
       setServiceLoading(false);
     }
   }, [toast, loadServiceStatus]);
-
-  // Docker 运行时覆盖
-  const loadRuntimeStatus = useCallback(async () => {
-    try {
-      const data = await runtimeApi.status();
-      setRuntimeStatus(data);
-    } catch {
-      // not available (non-Docker or runtime manager not initialized)
-    }
-  }, []);
 
   const handleRuntimeRollback = useCallback(async (component: string) => {
     const ok = await confirm(s.runtimeRollbackConfirm || 'Revert to the version bundled in the Docker image? The runtime overlay will be removed.');
@@ -347,8 +411,8 @@ const UpdateTab: React.FC<UpdateTabProps> = ({ s, language, inputCls, rowCls }) 
               {s.checkUpdate || 'Check for Updates'}
             </button>
             {selfUpdateInfo?.available && ocUpdateInfo?.available && (
-              <button onClick={async () => { await handleSelfUpdateApply(); handleOcUpdateRun(); }}
-                disabled={selfUpdating || ocUpdating}
+              <button onClick={async () => { await handleSelfUpdateApply(); await handleOcUpdateRun(); }}
+                disabled={selfUpdating || effectiveOcUpdating}
                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-gradient-to-r from-primary to-emerald-500 text-white text-[12px] font-bold disabled:opacity-40 hover:opacity-90 shadow-sm transition-all">
                 <span className="material-symbols-outlined text-[16px]">system_update_alt</span>
                 {s.updateAll || 'Update All'}
@@ -585,7 +649,7 @@ const UpdateTab: React.FC<UpdateTabProps> = ({ s, language, inputCls, rowCls }) 
                   <button onClick={handleSelfUpdateApply} disabled={!selfUpdateInfo.downloadUrl}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-primary text-white text-[12px] font-bold disabled:opacity-40 hover:opacity-90 shadow-sm transition-all">
                     <span className="material-symbols-outlined text-[16px]">download</span>
-                    {selfUpdateInfo.downloadUrl ? s.selfUpdateDownload : s.selfUpdateNoAsset}
+                    {selfUpdateInfo.downloadUrl ? (isDockerRuntime ? (s.runtimeOverlay || s.selfUpdateDownload) : s.selfUpdateDownload) : s.selfUpdateNoAsset}
                   </button>
                   <SmartLink href="https://github.com/ClawDeckX/ClawDeckX/releases"
                     className="flex items-center justify-center gap-1 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/60 text-[12px] font-bold hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
@@ -635,7 +699,7 @@ const UpdateTab: React.FC<UpdateTabProps> = ({ s, language, inputCls, rowCls }) 
               </SmartLink>
             </div>
             <span className="font-mono text-[12px] font-bold text-slate-600 dark:text-white/60">
-              {ocUpdateInfo?.currentVersion ? `v${ocUpdateInfo.currentVersion}` : '—'}
+              {ocUpdateInfo?.releaseTag || (ocUpdateInfo?.currentVersion ? `v${ocUpdateInfo.currentVersion}` : '—')}
             </span>
           </div>
 
@@ -679,7 +743,7 @@ const UpdateTab: React.FC<UpdateTabProps> = ({ s, language, inputCls, rowCls }) 
                 <div className="flex items-center justify-between px-1">
                   <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 dark:text-white/40">
                     <span className="material-symbols-outlined text-[14px]">description</span>
-                    {s.selfUpdateReleaseNotes} <span className="font-normal ms-1 text-[10px] text-slate-400 dark:text-white/25">v{ocUpdateInfo.currentVersion}</span>
+                    {s.selfUpdateReleaseNotes} <span className="font-normal ms-1 text-[10px] text-slate-400 dark:text-white/25">{ocUpdateInfo.releaseTag || `v${ocUpdateInfo.currentVersion}`}</span>
                     {ocNotesTranslating && <span className="material-symbols-outlined text-[12px] animate-spin text-primary/50 ms-1">progress_activity</span>}
                   </div>
                   <div className="flex items-center gap-1">
@@ -784,10 +848,10 @@ const UpdateTab: React.FC<UpdateTabProps> = ({ s, language, inputCls, rowCls }) 
                 );
               })()}
               <div className="flex gap-2">
-                <button onClick={handleOcUpdateRun} disabled={ocUpdating}
+                <button onClick={handleOcUpdateRun} disabled={effectiveOcUpdating}
                   className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-emerald-500 text-white text-[12px] font-bold disabled:opacity-40 hover:opacity-90 shadow-sm transition-all">
-                  <span className={`material-symbols-outlined text-[16px] ${ocUpdating ? 'animate-spin' : ''}`}>{ocUpdating ? 'progress_activity' : 'download'}</span>
-                  {ocUpdating ? s.openclawUpdateRunning : s.openclawUpdateRun}
+                  <span className={`material-symbols-outlined text-[16px] ${effectiveOcUpdating ? 'animate-spin' : ''}`}>{effectiveOcUpdating ? 'progress_activity' : 'download'}</span>
+                  {effectiveOcUpdating ? s.openclawUpdateRunning : s.openclawUpdateRun}
                 </button>
                 <SmartLink href="https://github.com/openclaw/openclaw/releases"
                   className="flex items-center justify-center gap-1 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/60 text-[12px] font-bold hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
@@ -798,24 +862,24 @@ const UpdateTab: React.FC<UpdateTabProps> = ({ s, language, inputCls, rowCls }) 
             </div>
           )}
           {/* 升级日志面板 */}
-          {(ocUpdating || ocUpdateLogs.length > 0) && (
+          {(effectiveOcUpdating || effectiveOcLogs.length > 0) && (
             <div className="mt-3 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-lg overflow-hidden">
-              {ocUpdating && (
+              {effectiveOcUpdating && (
                 <div className="h-1.5 bg-slate-200 dark:bg-white/10">
-                  <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${ocUpdateProgress}%` }} />
+                  <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${effectiveOcProgress}%` }} />
                 </div>
               )}
-              {ocUpdateStep && (
+              {effectiveOcStep && (
                 <div className="px-3 py-2 border-b border-slate-200 dark:border-white/10 flex items-center gap-1.5">
-                  {ocUpdating && <span className="material-symbols-outlined text-[12px] text-emerald-500 animate-spin">progress_activity</span>}
-                  {!ocUpdating && ocUpdateProgress >= 100 && <span className="material-symbols-outlined text-[12px] text-emerald-500">check_circle</span>}
-                  <span className="text-[10px] text-slate-600 dark:text-white/60 flex-1 truncate">{ocUpdateStep}</span>
-                  {ocUpdating && <span className="text-[9px] text-slate-400 dark:text-white/40">{ocUpdateProgress}%</span>}
+                  {effectiveOcUpdating && <span className="material-symbols-outlined text-[12px] text-emerald-500 animate-spin">progress_activity</span>}
+                  {!effectiveOcUpdating && effectiveOcProgress >= 100 && <span className="material-symbols-outlined text-[12px] text-emerald-500">check_circle</span>}
+                  <span className="text-[10px] text-slate-600 dark:text-white/60 flex-1 truncate">{effectiveOcStep}</span>
+                  {effectiveOcUpdating && <span className="text-[9px] text-slate-400 dark:text-white/40">{effectiveOcProgress}%</span>}
                 </div>
               )}
               <div ref={ocUpdateLogRef} className="max-h-28 overflow-y-auto px-3 py-2 font-mono text-[10px] text-slate-500 dark:text-white/50 space-y-0.5">
-                {ocUpdateLogs.length === 0 && ocUpdating && <div className="text-slate-400 dark:text-white/35">...</div>}
-                {ocUpdateLogs.map((line, i) => <div key={i} className="break-all leading-relaxed">{line}</div>)}
+                {effectiveOcLogs.length === 0 && effectiveOcUpdating && <div className="text-slate-400 dark:text-white/35">...</div>}
+                {effectiveOcLogs.map((line, i) => <div key={i} className="break-all leading-relaxed">{line}</div>)}
               </div>
             </div>
           )}

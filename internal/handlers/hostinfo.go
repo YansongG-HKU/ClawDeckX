@@ -179,6 +179,15 @@ func (h *HostInfoHandler) CheckUpdate(w http.ResponseWriter, r *http.Request) {
 	if notesTag != "" {
 		if notes, pubAt := fetchGitHubReleaseNotes(ctx, "openclaw", "openclaw", notesTag); notes != "" {
 			result["releaseNotes"] = notes
+			result["releaseTag"] = notesTag
+			if pubAt != "" {
+				result["publishedAt"] = pubAt
+			}
+		} else if notes, pubAt, matchedTag := fetchGitHubReleaseNotesByVersion(ctx, "openclaw", "openclaw", strings.TrimPrefix(notesTag, "v")); notes != "" {
+			result["releaseNotes"] = notes
+			if matchedTag != "" {
+				result["releaseTag"] = matchedTag
+			}
 			if pubAt != "" {
 				result["publishedAt"] = pubAt
 			}
@@ -255,6 +264,34 @@ func extractSemver(raw string) string {
 		}
 	}
 	return strings.TrimSpace(raw[:end])
+}
+
+func releaseVersionBase(v string) string {
+	v = extractSemver(v)
+	parts := strings.Split(v, "-")
+	if len(parts) == 2 {
+		if _, err := strconv.Atoi(parts[1]); err == nil {
+			return parts[0]
+		}
+	}
+	return v
+}
+
+func releaseMatchesVersion(tagName, name, version string) bool {
+	version = releaseVersionBase(version)
+	if version == "" {
+		return false
+	}
+	for _, candidate := range []string{tagName, name} {
+		candidateVersion := releaseVersionBase(candidate)
+		if candidateVersion == version {
+			return true
+		}
+		if strings.HasPrefix(candidateVersion, version+"-") {
+			return true
+		}
+	}
+	return false
 }
 
 // Get returns host machine info.
@@ -424,4 +461,40 @@ func fetchGitHubReleaseNotes(ctx context.Context, owner, repo, tag string) (stri
 		return "", ""
 	}
 	return ghRelease.Body, ghRelease.PublishedAt
+}
+
+func fetchGitHubReleaseNotesByVersion(ctx context.Context, owner, repo, version string) (string, string, string) {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases?per_page=20", owner, repo)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return "", "", ""
+	}
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("User-Agent", "ClawDeckX-Updater")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		if resp != nil {
+			resp.Body.Close()
+		}
+		return "", "", ""
+	}
+	defer resp.Body.Close()
+
+	var releases []struct {
+		TagName     string `json:"tag_name"`
+		Name        string `json:"name"`
+		Body        string `json:"body"`
+		PublishedAt string `json:"published_at"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&releases); err != nil {
+		return "", "", ""
+	}
+
+	for _, rel := range releases {
+		if releaseMatchesVersion(rel.TagName, rel.Name, version) {
+			return rel.Body, rel.PublishedAt, rel.TagName
+		}
+	}
+	return "", "", ""
 }
