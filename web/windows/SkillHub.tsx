@@ -53,13 +53,36 @@ const ExpandableDesc: React.FC<{ text: string; moreLabel: string }> = ({ text, m
   );
 };
 
+// Skeleton loading card (consistent with PluginCenter)
+const SkeletonCard: React.FC = () => (
+  <div className="bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-2xl p-4 animate-pulse flex flex-col">
+    <div className="flex items-center gap-3 mb-2">
+      <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-white/10" />
+      <div className="flex-1 min-w-0">
+        <div className="h-4 w-24 bg-slate-200 dark:bg-white/10 rounded mb-1" />
+        <div className="h-3 w-16 bg-slate-100 dark:bg-white/5 rounded" />
+      </div>
+    </div>
+    <div className="h-3 w-full bg-slate-100 dark:bg-white/5 rounded mb-1" />
+    <div className="h-3 w-2/3 bg-slate-100 dark:bg-white/5 rounded mb-3" />
+    <div className="flex gap-1 mb-2">
+      <div className="h-5 w-14 bg-slate-100 dark:bg-white/5 rounded-full" />
+      <div className="h-5 w-12 bg-slate-100 dark:bg-white/5 rounded-full" />
+    </div>
+    <div className="mt-auto pt-2 border-t border-slate-100 dark:border-white/5 flex gap-1">
+      <div className="h-7 flex-1 bg-slate-100 dark:bg-white/5 rounded-lg" />
+      <div className="h-7 w-20 bg-slate-100 dark:bg-white/5 rounded-lg" />
+    </div>
+  </div>
+);
+
 interface TopCacheData {
   skills: SkillHubSkill[];
   timestamp: number;
   version: number;
 }
 
-// 技能详情弹窗组件
+// 技能详情弹窗组件 — unified header/body/footer structure matching PluginCenter
 const SkillDetailModal: React.FC<{
   skill: SkillHubSkill | null;
   onClose: () => void;
@@ -80,68 +103,46 @@ const SkillDetailModal: React.FC<{
   const cliCode = `skillhub install ${skill.slug}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-white dark:bg-[#1a1c22] rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="flex items-start gap-4 p-6 border-b border-slate-200 dark:border-white/10">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/15 to-purple-500/15 flex items-center justify-center shrink-0 border border-slate-200/50 dark:border-white/5">
-            <span className="text-3xl">📦</span>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white dark:bg-[#1a1c22] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+        {/* Modal header — consistent with PluginCenter */}
+        <div className="px-5 py-4 border-b border-slate-200 dark:border-white/5 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/15 to-purple-500/15 flex items-center justify-center shrink-0 border border-slate-200/50 dark:border-white/5">
+            <span className="text-xl">📦</span>
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-1">{skill.name}</h2>
-            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-white/50">
-              <span className="font-mono">v{skill.version}</span>
-              <span>•</span>
-              <span>{sk.lastUpdated || 'Updated'}: {updatedDate}</span>
-            </div>
+            <h3 className="font-bold text-[15px] text-slate-800 dark:text-white truncate">{skill.name}</h3>
+            <span className="text-[10px] font-mono text-slate-400">v{skill.version} · {sk.lastUpdated || 'Updated'}: {updatedDate}</span>
           </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition-colors shrink-0">
-            <span className="material-symbols-outlined text-slate-500">close</span>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-white/60">
+            <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar neon-scrollbar">
-          {/* Description */}
-          <div className="mb-6">
-            <h3 className="text-sm font-bold text-slate-600 dark:text-white/60 uppercase tracking-wider mb-2">{sk.description || 'Description'}</h3>
-            <p className="text-sm text-slate-700 dark:text-white/70 leading-relaxed whitespace-pre-wrap">{desc}</p>
+        {/* Modal body */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 custom-scrollbar neon-scrollbar space-y-4">
+          {/* Basic info grid — consistent with PluginCenter detail */}
+          <div className="grid grid-cols-3 gap-2 text-[11px]">
+            <div><span className="text-slate-400 dark:text-white/30">{sk.stars || 'Stars'}:</span> <span className="font-bold text-amber-500">{skill.stars}</span></div>
+            <div><span className="text-slate-400 dark:text-white/30">{sk.downloads || 'Downloads'}:</span> <span className="font-bold text-blue-500">{skill.downloads >= 1000 ? `${(skill.downloads / 1000).toFixed(1)}k` : skill.downloads}</span></div>
+            <div><span className="text-slate-400 dark:text-white/30">{sk.installs || 'Installs'}:</span> <span className="font-bold text-mac-green">{skill.installs}</span></div>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 border border-slate-200 dark:border-white/10">
-              <div className="flex items-center gap-2 text-amber-500 mb-1">
-                <span className="material-symbols-outlined text-[16px]">star</span>
-                <span className="text-xs font-bold">{sk.stars || 'Stars'}</span>
-              </div>
-              <div className="text-lg font-bold text-slate-800 dark:text-white">{skill.stars}</div>
+          {/* Description */}
+          {desc && (
+            <div>
+              <span className="text-[10px] font-bold text-slate-500 dark:text-white/40">{sk.description || 'Description'}</span>
+              <p className="text-[11px] text-slate-700 dark:text-white/70 leading-relaxed whitespace-pre-wrap mt-1">{desc}</p>
             </div>
-            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 border border-slate-200 dark:border-white/10">
-              <div className="flex items-center gap-2 text-blue-500 mb-1">
-                <span className="material-symbols-outlined text-[16px]">download</span>
-                <span className="text-xs font-bold">{sk.downloads || 'Downloads'}</span>
-              </div>
-              <div className="text-lg font-bold text-slate-800 dark:text-white">
-                {skill.downloads >= 1000 ? `${(skill.downloads / 1000).toFixed(1)}k` : skill.downloads}
-              </div>
-            </div>
-            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 border border-slate-200 dark:border-white/10">
-              <div className="flex items-center gap-2 text-green-500 mb-1">
-                <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                <span className="text-xs font-bold">{sk.installs || 'Installs'}</span>
-              </div>
-              <div className="text-lg font-bold text-slate-800 dark:text-white">{skill.installs}</div>
-            </div>
-          </div>
+          )}
 
           {/* Tags */}
           {skill.tags.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-sm font-bold text-slate-600 dark:text-white/60 uppercase tracking-wider mb-2">{sk.tags || 'Tags'}</h3>
-              <div className="flex flex-wrap gap-2">
+            <div>
+              <span className="text-[10px] font-bold text-slate-500 dark:text-white/40">{sk.tags || 'Tags'}</span>
+              <div className="flex flex-wrap gap-1 mt-1">
                 {skill.tags.map(tag => (
-                  <span key={tag} className="px-3 py-1 rounded-full bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/60 text-xs font-medium border border-slate-200 dark:border-white/10">
+                  <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/50 font-medium">
                     {tag}
                   </span>
                 ))}
@@ -149,49 +150,47 @@ const SkillDetailModal: React.FC<{
             </div>
           )}
 
-          {/* Installation Methods */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold text-slate-600 dark:text-white/60 uppercase tracking-wider">{sk.installMethods || 'Installation Methods'}</h3>
-            
-            {/* Method 1: Prompt */}
-            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-4 border border-slate-200 dark:border-white/10">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm font-bold text-slate-700 dark:text-white/80">{sk.installViaPrompt || 'Install via AI Assistant'}</h4>
-                <button onClick={() => onCopyPrompt(skill)} className="h-7 px-3 bg-primary/15 text-primary hover:bg-primary/25 text-xs font-bold rounded-lg transition-colors flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[12px]">content_copy</span>
-                  {sk.copyPrompt || 'Copy'}
-                </button>
-              </div>
-              <pre className="text-[11px] text-slate-600 dark:text-white/60 bg-white dark:bg-black/20 p-3 rounded-lg overflow-x-auto border border-slate-200 dark:border-white/10 font-mono whitespace-pre-wrap break-words">
-                {promptCode}
-              </pre>
+          {/* Installation: Prompt */}
+          <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 border border-slate-200 dark:border-white/10">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-bold text-slate-500 dark:text-white/40">{sk.installViaPrompt || 'Install via AI Assistant'}</span>
+              <button onClick={() => onCopyPrompt(skill)} className="h-6 px-2 bg-primary/10 text-primary hover:bg-primary/20 text-[10px] font-bold rounded-md transition-colors flex items-center gap-1">
+                <span className="material-symbols-outlined text-[11px]">content_copy</span>
+                {sk.copyPrompt || 'Copy'}
+              </button>
             </div>
-
-            {/* Method 2: CLI */}
-            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-4 border border-slate-200 dark:border-white/10">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm font-bold text-slate-700 dark:text-white/80">{sk.installViaCLI || 'Install via CLI'}</h4>
-                <button onClick={() => onCopyCLI(skill)} className="h-7 px-3 bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/60 hover:bg-slate-200 dark:hover:bg-white/20 text-xs font-bold rounded-lg transition-colors flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[12px]">content_copy</span>
-                  {sk.copyCLI || 'Copy'}
-                </button>
-              </div>
-              <pre className="text-[11px] text-slate-600 dark:text-white/60 bg-white dark:bg-black/20 p-3 rounded-lg overflow-x-auto border border-slate-200 dark:border-white/10 font-mono">
-                {cliCode}
-              </pre>
-            </div>
+            <pre className="text-[10px] text-slate-600 dark:text-white/60 bg-white dark:bg-black/20 p-2 rounded-lg overflow-x-auto border border-slate-200 dark:border-white/10 font-mono whitespace-pre-wrap break-words">{promptCode}</pre>
           </div>
 
-          {/* Homepage Link */}
+          {/* Installation: CLI */}
+          <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 border border-slate-200 dark:border-white/10">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-bold text-slate-500 dark:text-white/40">{sk.installViaCLI || 'Install via CLI'}</span>
+              <button onClick={() => onCopyCLI(skill)} className="h-6 px-2 bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/60 hover:bg-slate-200 dark:hover:bg-white/20 text-[10px] font-bold rounded-md transition-colors flex items-center gap-1">
+                <span className="material-symbols-outlined text-[11px]">content_copy</span>
+                {sk.copyCLI || 'Copy'}
+              </button>
+            </div>
+            <pre className="text-[10px] text-slate-600 dark:text-white/60 bg-white dark:bg-black/20 p-2 rounded-lg overflow-x-auto border border-slate-200 dark:border-white/10 font-mono">{cliCode}</pre>
+          </div>
+
+          {/* Homepage link */}
           {skill.homepage && (
-            <div className="mt-6">
-              <a href={skill.homepage} target="_blank" rel="noopener noreferrer" 
-                className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-medium transition-colors">
-                <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+            <div className="text-[10px]">
+              <a href={skill.homepage} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-primary hover:text-primary/80 font-bold transition-colors">
+                <span className="material-symbols-outlined text-[14px]">open_in_new</span>
                 {sk.viewHomepage || 'View Homepage'}
               </a>
             </div>
           )}
+        </div>
+
+        {/* Modal footer — consistent with PluginCenter */}
+        <div className="px-5 py-3 border-t border-slate-200 dark:border-white/5 flex justify-end">
+          <button onClick={onClose} className="h-8 px-4 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/60 hover:bg-slate-200 dark:hover:bg-white/10 text-[11px] font-bold rounded-lg transition-colors">
+            {sk.close || 'Close'}
+          </button>
         </div>
       </div>
     </div>
@@ -574,12 +573,15 @@ const handleCopyCLI = useCallback((skill: SkillHubSkill) => {
   });
 }, [toast]);
 
-// Right button action: only available when SkillHub CLI is installed
+// Right button action: if CLI installed → show confirm dialog; else → copy CLI command
 const handleRightButton = useCallback((skill: SkillHubSkill) => {
   if (cliStatus === 'installed') {
     setConfirmSkill(skill);
+  } else {
+    toast('warning', skRef.current.skillHubBannerNotInstalled || 'SkillHub CLI not installed');
+    handleCopyCLI(skill);
   }
-}, [cliStatus]);
+}, [cliStatus, handleCopyCLI, toast]);
 
 const isSkillHubCLIInstalled = cliStatus === 'installed';
 
@@ -625,57 +627,55 @@ const categoryOptions = useMemo(() => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-[#0f1115]">
-      {/* Toolbar */}
-      <div className="flex flex-col border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-black/20 shrink-0">
-        <div className="p-3 flex flex-row items-center gap-2">
-          {/* Search */}
-          <div className="relative flex-1 min-w-0">
-            <span className="material-symbols-outlined absolute start-3 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">search</span>
-            <input ref={searchRef} className="w-full h-9 ps-9 pe-4 bg-white dark:bg-[#1a1c22] border border-slate-200 dark:border-white/10 rounded-lg text-xs text-slate-800 dark:text-white placeholder:text-slate-400 focus:ring-1 focus:ring-primary outline-none"
-              placeholder={`${sk.search || 'Search'} (Ctrl+K)`} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-          </div>
-
-          {/* Category filter */}
-          <CustomSelect
-            value={category}
-            onChange={(v) => setCategory(v)}
-            options={categoryOptions}
-            className="h-9 px-2 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-[10px] font-bold text-slate-600 dark:text-white/60 outline-none shrink-0"
-          />
-
-          {/* Featured toggle */}
-          <button onClick={() => setShowFeatured(!showFeatured)}
-            className={`h-9 px-3 flex items-center gap-1.5 border rounded-lg text-[11px] font-bold transition-all shrink-0 ${showFeatured
-              ? 'bg-primary/10 dark:bg-primary/20 border-primary/30 text-primary'
-              : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/60'
-            }`}>
-            <span className="material-symbols-outlined text-[14px]">star</span>
-            {sk.featuredSkills || 'Featured'}
-          </button>
-
-          {/* Sort */}
-          <div className="flex bg-slate-200 dark:bg-black/40 p-0.5 rounded-lg shadow-inner shrink-0">
-            {([
-              ['score', sk.sortScore || '综合'],
-              ['downloads', sk.sortDownloads || '下载'],
-              ['stars', sk.sortStars || '星数'],
-              ['installs', sk.sortInstalls || '安装'],
-              ['name', sk.sortName || '名称'],
-            ] as const).map(([val, label]) => (
-              <button key={val} onClick={() => setSortBy(val as any)}
-                className={`px-2 py-1 rounded text-[10px] font-bold transition-all whitespace-nowrap ${sortBy === val ? 'bg-white dark:bg-primary shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {/* Refresh */}
-          <button onClick={() => showFeatured ? fetchTopSkills(true) : fetchData()} disabled={loading || (showFeatured && topLoading)}
-            className="h-9 w-9 flex items-center justify-center bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 rounded-lg shrink-0 disabled:opacity-50"
-            title={sk.forceRefresh || 'Force Refresh'}>
-            <span className={`material-symbols-outlined text-[16px] text-slate-500 ${(loading || (showFeatured && topLoading)) ? 'animate-spin' : ''}`}>{(loading || (showFeatured && topLoading)) ? 'progress_activity' : 'refresh'}</span>
-          </button>
+      {/* Toolbar — unified layout: Search → Sort pills → Category → Featured → Refresh */}
+      <div className="p-3 flex items-center gap-2 border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-black/20 shrink-0">
+        {/* Search */}
+        <div className="relative flex-1 min-w-0">
+          <span className="material-symbols-outlined absolute start-3 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">search</span>
+          <input ref={searchRef} className="w-full h-9 ps-9 pe-4 bg-white dark:bg-[#1a1c22] border border-slate-200 dark:border-white/10 rounded-lg text-xs text-slate-800 dark:text-white placeholder:text-slate-400 focus:ring-1 focus:ring-primary outline-none"
+            placeholder={`${sk.search || 'Search'}...`} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
         </div>
+
+        {/* Sort pills — same pill-group pattern as PluginCenter filters */}
+        <div className="flex bg-slate-200 dark:bg-black/40 p-0.5 rounded-lg shadow-inner shrink-0">
+          {([
+            ['score', sk.sortScore || '综合'],
+            ['downloads', sk.sortDownloads || '下载'],
+            ['stars', sk.sortStars || '星数'],
+            ['installs', sk.sortInstalls || '安装'],
+            ['name', sk.sortName || '名称'],
+          ] as const).map(([val, label]) => (
+            <button key={val} onClick={() => setSortBy(val as any)}
+              className={`px-2 py-1 rounded text-[10px] font-bold transition-all whitespace-nowrap ${sortBy === val ? 'bg-white dark:bg-primary shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Category filter */}
+        <CustomSelect
+          value={category}
+          onChange={(v) => setCategory(v)}
+          options={categoryOptions}
+          className="h-9 px-2 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-[10px] font-bold text-slate-600 dark:text-white/60 outline-none shrink-0"
+        />
+
+        {/* Featured toggle */}
+        <button onClick={() => setShowFeatured(!showFeatured)}
+          className={`h-9 px-3 flex items-center gap-1.5 border rounded-lg text-[10px] font-bold transition-all shrink-0 ${showFeatured
+            ? 'bg-primary/10 dark:bg-primary/20 border-primary/30 text-primary'
+            : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/60'
+          }`}>
+          <span className="material-symbols-outlined text-[14px]">star</span>
+          {sk.featuredSkills || 'Featured'}
+        </button>
+
+        {/* Refresh — same as PluginCenter */}
+        <button onClick={() => showFeatured ? fetchTopSkills(true) : fetchData()} disabled={loading || (showFeatured && topLoading)}
+          className="h-9 w-9 flex items-center justify-center bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 rounded-lg shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+          title={sk.forceRefresh || 'Refresh'}>
+          <span className={`material-symbols-outlined text-[16px] text-slate-500 ${(loading || (showFeatured && topLoading)) ? 'animate-spin' : ''}`}>{(loading || (showFeatured && topLoading)) ? 'progress_activity' : 'refresh'}</span>
+        </button>
       </div>
 
       {/* Content */}
@@ -684,27 +684,24 @@ const categoryOptions = useMemo(() => {
           {/* CLI Banner */}
           <CLIBanner status={cliStatus} onInstall={handleInstallCLI} onDismiss={handleDismissBanner} error={cliError} sk={sk} />
 
-          {/* Loading */}
+          {/* Skeleton loading — consistent with PluginCenter */}
           {(loading || (showFeatured && topLoading)) && renderedSkills.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-              <span className="material-symbols-outlined text-4xl animate-spin mb-3">progress_activity</span>
-              <span className="text-xs">{sk.loading || 'Loading...'}</span>
-              <span className="text-[10px] mt-2 text-slate-400">{sk.pleaseWait || 'Please wait, this may take a few minutes...'}</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
             </div>
           )}
 
-          {/* Error - no data at all and not loading */}
+          {/* Error — unified EmptyState with retry action */}
           {!loading && !(showFeatured && topLoading) && loadError && renderedSkills.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-              <span className="material-symbols-outlined text-4xl mb-3 text-red-500">error</span>
-              <span className="text-xs mb-3">{sk.loadFailed || 'Failed to load data'}</span>
-              <button onClick={() => showFeatured ? fetchTopSkills(true) : fetchData()} className="h-8 px-4 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90">
-                {sk.retry || 'Retry'}
-              </button>
-            </div>
+            <EmptyState
+              icon="error"
+              title={sk.loadFailed || 'Failed to load data'}
+              description={sk.loadFailedDesc || 'Please check your network connection and try again.'}
+              action={{ label: sk.retry || 'Retry', icon: 'refresh', onClick: () => showFeatured ? fetchTopSkills(true) : fetchData() }}
+            />
           )}
 
-          {/* Empty */}
+          {/* Empty — unified EmptyState */}
           {!loading && !loadError && renderedSkills.length === 0 && (
             <EmptyState icon="search_off" title={sk.noResults || 'No skills found'} />
           )}
@@ -725,7 +722,7 @@ const categoryOptions = useMemo(() => {
                         <div className="flex items-center gap-1.5">
                           <h4 className="font-bold text-[13px] text-slate-800 dark:text-white truncate">{skill.name}</h4>
                           {installedSkillNames.has(skill.slug) && (
-                            <span className="shrink-0 text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold">
+                            <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-mac-green/15 text-mac-green font-bold">
                               {sk.alreadyInstalled || 'Installed'}
                             </span>
                           )}
@@ -776,24 +773,30 @@ const categoryOptions = useMemo(() => {
                       </a>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-1 mt-2 pt-2 border-t border-slate-100 dark:border-white/5">
-                      <button onClick={(e) => { e.stopPropagation(); handleCopyPrompt(skill); }}
-                        className={`h-7 text-[10px] font-bold rounded-lg transition-colors flex items-center justify-center gap-1 ${isSkillHubCLIInstalled ? 'flex-1 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/50 hover:bg-slate-200 dark:hover:bg-white/10' : 'w-full bg-primary/15 text-primary hover:bg-primary/25'}`}>
-                        <span className="material-symbols-outlined text-[12px]">content_copy</span>
-                        <span className="truncate">{sk.copyPrompt || '复制提示词'}</span>
+                    {/* Actions — unified: left=secondary/copy, right=primary/action */}
+                    <div className="flex items-center gap-1 mt-auto pt-2 border-t border-slate-100 dark:border-white/5">
+                      {/* Primary action: Install or Copy CLI */}
+                      <button onClick={(e) => { e.stopPropagation(); handleRightButton(skill); }}
+                        disabled={installingSlug === skill.slug}
+                        className={`h-7 px-3 text-[10px] font-bold rounded-lg transition-all flex items-center gap-1 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed ${installingSlug === skill.slug ? 'bg-primary/20 text-primary cursor-wait' : isSkillHubCLIInstalled ? 'bg-primary/10 text-primary hover:bg-primary hover:text-white' : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/60 hover:bg-slate-200 dark:hover:bg-white/10'}`}
+                        title={isSkillHubCLIInstalled ? `${sk.installSkill || 'Install'} ${skill.slug}` : `${sk.copyCLI || 'Copy'}: skillhub install ${skill.slug}`}>
+                        <span className={`material-symbols-outlined text-[12px] ${installingSlug === skill.slug ? 'animate-spin' : ''}`}>
+                          {installingSlug === skill.slug ? 'progress_activity' : (isSkillHubCLIInstalled ? 'download' : 'terminal')}
+                        </span>
+                        {isSkillHubCLIInstalled ? (sk.installSkill || 'Install') : (sk.copyCLI || 'Copy CLI')}
                       </button>
-                      {isSkillHubCLIInstalled && (
-                        <button onClick={(e) => { e.stopPropagation(); handleRightButton(skill); }}
-                          disabled={installingSlug === skill.slug}
-                          className={`h-7 px-3 text-[10px] font-bold rounded-lg transition-colors flex items-center gap-1 shrink-0 ${installingSlug === skill.slug ? 'bg-primary/20 text-primary cursor-wait' : 'bg-primary text-white hover:bg-primary/90'}`}
-                          title={`${sk.installSkill || 'Install'} ${skill.slug}`}>
-                          <span className={`material-symbols-outlined text-[12px] ${installingSlug === skill.slug ? 'animate-spin' : ''}`}>
-                            {installingSlug === skill.slug ? 'progress_activity' : 'download'}
-                          </span>
-                          <span className="truncate">{sk.installSkill || '安装'}</span>
-                        </button>
-                      )}
+                      {/* Secondary: Copy Prompt */}
+                      <button onClick={(e) => { e.stopPropagation(); handleCopyPrompt(skill); }}
+                        className="h-7 px-2.5 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/60 hover:bg-slate-200 dark:hover:bg-white/10 text-[10px] font-bold rounded-lg transition-colors flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[11px]">content_copy</span>
+                        {sk.copyPrompt || 'Copy Prompt'}
+                      </button>
+                      {/* Detail */}
+                      <button onClick={(e) => { e.stopPropagation(); setDetailSkill(skill); }}
+                        className="h-7 px-2.5 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/60 hover:bg-slate-200 dark:hover:bg-white/10 text-[10px] font-bold rounded-lg transition-colors flex items-center gap-1 ms-auto">
+                        <span className="material-symbols-outlined text-[11px]">info</span>
+                        {sk.pluginDetailTitle || 'Details'}
+                      </button>
                     </div>
                   </div>
                 );
