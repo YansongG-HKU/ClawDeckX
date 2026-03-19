@@ -107,6 +107,7 @@
     "configBackupInvalidJson": "無効な JSON",
     "configBackupCurrent": "現在",
     "configBackupBackup": "バックアップ",
+    "configBackupChangeSummary": "変更の概要",
     "ocBackupMethod": "バックアップ方法",
     "ocBackupMethodClawDeckX": "ClawDeckX 暗号化バックアップ",
     "ocBackupMethodOpenClaw": "OpenClaw ネイティブバックアップ (.tar.gz)",

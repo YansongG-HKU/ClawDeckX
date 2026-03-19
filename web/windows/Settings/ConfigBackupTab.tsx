@@ -18,6 +18,7 @@ const ConfigBackupTab: React.FC<ConfigBackupTabProps> = ({ s }) => {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [diffPath, setDiffPath] = useState<string | null>(null);
   const [diffLines, setDiffLines] = useState<{ type: 'equal' | 'add' | 'remove' | 'separator'; text: string }[]>([]);
+  const [jsonChanges, setJsonChanges] = useState<{ path: string; type: 'changed' | 'added' | 'removed'; oldValue?: string; newValue?: string }[]>([]);
   const [diffLoading, setDiffLoading] = useState(false);
   const [restoring, setRestoring] = useState<string | null>(null);
 
@@ -58,8 +59,10 @@ const ConfigBackupTab: React.FC<ConfigBackupTabProps> = ({ s }) => {
     try {
       const data = await configBackupApi.diff(path);
       setDiffLines(data.diffLines || []);
+      setJsonChanges(data.jsonChanges || []);
     } catch {
       setDiffLines([{ type: 'equal', text: 'Error loading diff' }]);
+      setJsonChanges([]);
     } finally {
       setDiffLoading(false);
     }
@@ -191,6 +194,32 @@ const ConfigBackupTab: React.FC<ConfigBackupTabProps> = ({ s }) => {
                   </div>
                 ) : (
                   <div className="px-3 py-2 max-h-[350px] overflow-y-auto custom-scrollbar neon-scrollbar">
+                    {jsonChanges.length > 0 && (
+                      <div className="mb-3 p-2 rounded-lg bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/5">
+                        <p className="text-[10px] font-semibold text-slate-500 dark:text-white/50 mb-1.5">{s.configBackupChangeSummary || 'Changes Summary'}</p>
+                        <div className="space-y-1">
+                          {jsonChanges.map((ch, ci) => (
+                            <div key={ci} className="flex items-start gap-1.5 text-[9px] font-mono">
+                              <span className={`shrink-0 mt-px px-1 py-0.5 rounded text-[8px] font-bold leading-none ${
+                                ch.type === 'changed' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300' :
+                                ch.type === 'added' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300' :
+                                'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300'
+                              }`}>{ch.type === 'changed' ? '~' : ch.type === 'added' ? '+' : '-'}</span>
+                              <span className="text-primary/80 dark:text-primary/60 shrink-0">{ch.path}</span>
+                              {ch.type === 'changed' && (
+                                <span className="text-slate-400 dark:text-white/30 min-w-0 truncate">
+                                  <span className="text-red-500/70 dark:text-red-400/50 line-through">{ch.oldValue}</span>
+                                  <span className="mx-0.5">→</span>
+                                  <span className="text-emerald-600/70 dark:text-emerald-400/50">{ch.newValue}</span>
+                                </span>
+                              )}
+                              {ch.type === 'added' && <span className="text-emerald-600/70 dark:text-emerald-400/50 min-w-0 truncate">{ch.newValue}</span>}
+                              {ch.type === 'removed' && <span className="text-red-500/70 dark:text-red-400/50 min-w-0 truncate line-through">{ch.oldValue}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <div className="flex items-center gap-3 mb-2 text-[9px]">
                       <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm bg-red-100 dark:bg-red-500/20 border border-red-300 dark:border-red-500/30" />{s.configBackupCurrent || 'Current'}</span>
                       <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-100 dark:bg-emerald-500/20 border border-emerald-300 dark:border-emerald-500/30" />{s.configBackupBackup || 'Backup'}</span>

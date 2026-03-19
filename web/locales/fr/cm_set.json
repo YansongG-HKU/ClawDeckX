@@ -107,6 +107,7 @@
     "configBackupInvalidJson": "JSON invalide",
     "configBackupCurrent": "Actuel",
     "configBackupBackup": "Sauvegarde",
+    "configBackupChangeSummary": "Résumé des modifications",
     "ocBackupMethod": "Méthode de sauvegarde",
     "ocBackupMethodClawDeckX": "Sauvegarde chiffrée ClawDeckX",
     "ocBackupMethodOpenClaw": "Sauvegarde native OpenClaw (.tar.gz)",

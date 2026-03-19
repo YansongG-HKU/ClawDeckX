@@ -107,6 +107,7 @@
     "configBackupInvalidJson": "无效 JSON",
     "configBackupCurrent": "当前",
     "configBackupBackup": "备份",
+    "configBackupChangeSummary": "变更摘要",
     "ocBackupMethod": "备份方式",
     "ocBackupMethodClawDeckX": "ClawDeckX 加密备份",
     "ocBackupMethodOpenClaw": "OpenClaw 原生备份 (.tar.gz)",

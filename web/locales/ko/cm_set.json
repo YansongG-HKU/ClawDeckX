@@ -107,6 +107,7 @@
     "configBackupInvalidJson": "유효하지 않은 JSON",
     "configBackupCurrent": "현재",
     "configBackupBackup": "백업",
+    "configBackupChangeSummary": "변경 요약",
     "ocBackupMethod": "백업 방법",
     "ocBackupMethodClawDeckX": "ClawDeckX 암호화 백업",
     "ocBackupMethodOpenClaw": "OpenClaw 네이티브 백업 (.tar.gz)",

@@ -107,6 +107,7 @@
     "configBackupInvalidJson": "JSON غير صالح",
     "configBackupCurrent": "الحالي",
     "configBackupBackup": "نسخة احتياطية",
+    "configBackupChangeSummary": "ملخص التغييرات",
     "ocBackupMethod": "Backup method",
     "ocBackupMethodClawDeckX": "ClawDeckX encrypted backup",
     "ocBackupMethodOpenClaw": "OpenClaw native backup (.tar.gz)",

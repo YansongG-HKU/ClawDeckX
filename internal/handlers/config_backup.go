@@ -178,10 +178,18 @@ func (h *ConfigBackupHandler) Diff(w http.ResponseWriter, r *http.Request) {
 	// Compute line-level diff
 	diffLines := computeLineDiff(currentPretty, bakPretty)
 
+	// Compute JSON semantic diff (key-path level changes)
+	var jsonChanges []JsonChange
+	var currentMap, bakMap map[string]any
+	if json.Unmarshal(currentData, &currentMap) == nil && json.Unmarshal(bakData, &bakMap) == nil {
+		jsonChanges = computeJsonDiff("", currentMap, bakMap)
+	}
+
 	web.OK(w, r, map[string]any{
-		"current":   currentPretty,
-		"backup":    bakPretty,
-		"diffLines": diffLines,
+		"current":     currentPretty,
+		"backup":      bakPretty,
+		"diffLines":   diffLines,
+		"jsonChanges": jsonChanges,
 	})
 }
 
@@ -284,6 +292,86 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// JsonChange represents a semantic difference at a specific JSON key path.
+type JsonChange struct {
+	Path     string `json:"path"`
+	Type     string `json:"type"` // "changed", "added", "removed"
+	OldValue string `json:"oldValue,omitempty"`
+	NewValue string `json:"newValue,omitempty"`
+}
+
+// computeJsonDiff recursively compares two JSON objects and returns key-path level changes.
+// "current" is the live config, "backup" is the .bak file.
+// "removed" = key exists in current but not backup (would be lost on restore)
+// "added" = key exists in backup but not current (would be gained on restore)
+// "changed" = key exists in both but value differs
+func computeJsonDiff(prefix string, current, backup map[string]any) []JsonChange {
+	var changes []JsonChange
+
+	allKeys := map[string]struct{}{}
+	for k := range current {
+		allKeys[k] = struct{}{}
+	}
+	for k := range backup {
+		allKeys[k] = struct{}{}
+	}
+
+	// Sort keys for deterministic output
+	keys := make([]string, 0, len(allKeys))
+	for k := range allKeys {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		path := k
+		if prefix != "" {
+			path = prefix + "." + k
+		}
+
+		curVal, curOk := current[k]
+		bakVal, bakOk := backup[k]
+
+		if curOk && !bakOk {
+			changes = append(changes, JsonChange{Path: path, Type: "removed", OldValue: jsonCompact(curVal)})
+			continue
+		}
+		if !curOk && bakOk {
+			changes = append(changes, JsonChange{Path: path, Type: "added", NewValue: jsonCompact(bakVal)})
+			continue
+		}
+
+		// Both exist — recurse if both are objects
+		curMap, curIsMap := curVal.(map[string]any)
+		bakMap, bakIsMap := bakVal.(map[string]any)
+		if curIsMap && bakIsMap {
+			changes = append(changes, computeJsonDiff(path, curMap, bakMap)...)
+			continue
+		}
+
+		// Compare as JSON strings
+		curStr := jsonCompact(curVal)
+		bakStr := jsonCompact(bakVal)
+		if curStr != bakStr {
+			changes = append(changes, JsonChange{Path: path, Type: "changed", OldValue: curStr, NewValue: bakStr})
+		}
+	}
+	return changes
+}
+
+// jsonCompact returns a compact JSON representation of a value, truncated for display.
+func jsonCompact(v any) string {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return fmt.Sprintf("%v", v)
+	}
+	s := string(b)
+	if len(s) > 120 {
+		s = s[:117] + "..."
+	}
+	return s
 }
 
 func (h *ConfigBackupHandler) findBackupFiles(configPath string) []ConfigBackupFile {
