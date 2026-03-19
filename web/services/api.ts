@@ -517,6 +517,21 @@ export const snapshotApi = {
   pruneKeepN: (keepN: number) => post<{ deleted: string[]; kept: number }>('/api/v1/snapshots/prune', { keepN }),
 };
 
+// ==================== 配置备份 (.bak) ====================
+export interface ConfigBackupFile {
+  name: string;
+  path: string;
+  size: number;
+  modTime: string;
+  index: number;
+}
+export const configBackupApi = {
+  list: () => get<{ configPath: string; backups: ConfigBackupFile[] }>('/api/v1/config-backups'),
+  preview: (path: string) => post<{ content: string; valid: boolean }>('/api/v1/config-backups/preview', { path }),
+  restore: (path: string) => post<{ restored: boolean }>('/api/v1/config-backups/restore', { path }),
+  diff: (path: string) => post<{ current: string; backup: string }>('/api/v1/config-backups/diff', { path }),
+};
+
 // ==================== 诊断修复 ====================
 export const doctorApi = {
   run: () => get('/api/v1/doctor'),

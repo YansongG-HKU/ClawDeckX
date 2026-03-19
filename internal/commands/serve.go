@@ -470,6 +470,12 @@ func RunServe(args []string) int {
 	router.POST("/api/v1/snapshots/", web.RequireAdmin(snapshotHandler.Action))
 	router.DELETE("/api/v1/snapshots/", web.RequireAdmin(snapshotHandler.Delete))
 
+	configBackupHandler := handlers.NewConfigBackupHandler()
+	router.GET("/api/v1/config-backups", configBackupHandler.List)
+	router.POST("/api/v1/config-backups/preview", configBackupHandler.Preview)
+	router.POST("/api/v1/config-backups/restore", web.RequireAdmin(configBackupHandler.Restore))
+	router.POST("/api/v1/config-backups/diff", configBackupHandler.Diff)
+
 	router.GET("/api/v1/doctor", doctorHandler.Run)
 	router.GET("/api/v1/doctor/summary", doctorHandler.Summary)
 	router.GET("/api/v1/doctor/overview", doctorHandler.Overview)

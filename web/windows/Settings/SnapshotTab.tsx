@@ -4,6 +4,7 @@ import { useToast } from '../../components/Toast';
 import { useConfirm } from '../../components/ConfirmDialog';
 import CustomSelect from '../../components/CustomSelect';
 import NumberStepper from '../../components/NumberStepper';
+import ConfigBackupTab from './ConfigBackupTab';
 
 interface SnapshotSummary {
   id?: string; snapshot_id?: string; note?: string; trigger?: string;
@@ -33,7 +34,7 @@ const SnapshotTab: React.FC<SnapshotTabProps> = ({ s, inputCls, labelCls, rowCls
   const [snapshotLoading, setSnapshotLoading] = useState(false);
   const [snapshotPassword, setSnapshotPassword] = useState('');
   const [snapshotNote, setSnapshotNote] = useState('');
-  const [snapshotModeTab, setSnapshotModeTab] = useState<'manual' | 'scheduled'>('manual');
+  const [snapshotModeTab, setSnapshotModeTab] = useState<'manual' | 'scheduled' | 'config-history'>('manual');
   const [snapshotScheduleEnabled, setSnapshotScheduleEnabled] = useState(false);
   const [snapshotScheduleTime, setSnapshotScheduleTime] = useState('03:00');
   const [snapshotScheduleRetention, setSnapshotScheduleRetention] = useState(7);
@@ -431,6 +432,7 @@ const SnapshotTab: React.FC<SnapshotTabProps> = ({ s, inputCls, labelCls, rowCls
         <div className="flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-white/[0.05] w-fit">
           <button type="button" onClick={() => setSnapshotModeTab('manual')} className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors ${snapshotModeTab === 'manual' ? 'bg-white dark:bg-white/10 text-slate-800 dark:text-white shadow-sm' : 'text-slate-500 dark:text-white/60 hover:text-slate-700 dark:hover:text-white/80'}`}>{s.snapshotManualTab || s.snapshotCreate || 'Manual backup'}</button>
           <button type="button" onClick={() => setSnapshotModeTab('scheduled')} className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors ${snapshotModeTab === 'scheduled' ? 'bg-white dark:bg-white/10 text-slate-800 dark:text-white shadow-sm' : 'text-slate-500 dark:text-white/60 hover:text-slate-700 dark:hover:text-white/80'}`}>{s.snapshotScheduledTab || s.snapshotScheduleTitle || 'Scheduled backup'}</button>
+          <button type="button" onClick={() => setSnapshotModeTab('config-history')} className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors ${snapshotModeTab === 'config-history' ? 'bg-white dark:bg-white/10 text-slate-800 dark:text-white shadow-sm' : 'text-slate-500 dark:text-white/60 hover:text-slate-700 dark:hover:text-white/80'}`}>{s.configBackupTab || 'Config History'}</button>
         </div>
 
         {snapshotModeTab === 'manual' && (<div className={rowCls}><div className="px-4 py-3 space-y-3"><p className="text-[13px] font-semibold text-slate-700 dark:text-white/80">{s.snapshotCreate || s.createBackup}</p><div className="space-y-2"><input type="text" value={snapshotNote} onChange={e => setSnapshotNote(e.target.value)} placeholder={s.snapshotNotePlaceholder || s.snapshotNote || 'Snapshot note (optional)'} className={inputCls} /><input type="password" value={snapshotPassword} onChange={e => setSnapshotPassword(e.target.value)} placeholder={s.snapshotPasswordPlaceholder || s.enterPassword || 'Password'} className={inputCls} />
@@ -453,6 +455,8 @@ const SnapshotTab: React.FC<SnapshotTabProps> = ({ s, inputCls, labelCls, rowCls
           </div>
           {snapshotScheduleStatus && (() => { const isRunning = snapshotScheduleStatus.running; const lastStatus = snapshotScheduleStatus.lastStatus; const statusIcon = isRunning ? 'sync' : lastStatus === 'success' ? 'check_circle' : lastStatus === 'failed' ? 'error' : lastStatus === 'skipped' ? 'skip_next' : 'schedule'; const statusColor = isRunning ? 'text-blue-500' : lastStatus === 'success' ? 'text-emerald-500' : lastStatus === 'failed' ? 'text-red-500' : 'text-slate-400 dark:text-white/30'; const statusText = isRunning ? s.snapshotScheduleStatusRunning : lastStatus === 'success' ? s.snapshotScheduleStatusSuccess : lastStatus === 'failed' ? s.snapshotScheduleStatusFailed : lastStatus === 'skipped' ? s.snapshotScheduleStatusSkipped : s.snapshotScheduleStatusNever; const statusBorder = isRunning ? 'border-blue-200 dark:border-blue-500/20 bg-blue-50/50 dark:bg-blue-500/5' : lastStatus === 'success' ? 'border-emerald-200 dark:border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-500/5' : lastStatus === 'failed' ? 'border-red-200 dark:border-red-500/20 bg-red-50/50 dark:bg-red-500/5' : 'border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03]'; return (<div className={`rounded-xl border p-3 text-[11px] space-y-2 ${statusBorder}`}><div className="flex items-center gap-2"><span className={`material-symbols-outlined text-[16px] ${statusColor} ${isRunning ? 'animate-spin' : ''}`}>{statusIcon}</span><span className={`font-semibold ${statusColor}`}>{s.snapshotScheduleStatus}: {statusText}</span></div><div className="space-y-1 text-slate-500 dark:text-white/40"><div className="flex flex-wrap gap-x-4 gap-y-1">{snapshotScheduleStatus.lastRunAt && (<div className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[12px] opacity-50">schedule</span>{s.snapshotScheduleLastRun}: {new Date(snapshotScheduleStatus.lastRunAt).toLocaleString()}</div>)}{snapshotScheduleStatus.lastSuccessAt && (<div className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[12px] opacity-50">check</span>{s.snapshotScheduleLastSuccess}: {new Date(snapshotScheduleStatus.lastSuccessAt).toLocaleString()}</div>)}</div>{snapshotScheduleStatus.lastSnapshotId && (<div className="flex items-center gap-1.5 min-w-0"><span className="material-symbols-outlined text-[12px] opacity-50 shrink-0">backup</span><span className="shrink-0">{s.snapshotScheduleLastSnapshot}:</span><span className="font-mono text-[10px] truncate">{snapshotScheduleStatus.lastSnapshotId}</span></div>)}</div>{snapshotScheduleStatus.lastError && (<div className="flex items-start gap-1.5 text-red-500 dark:text-red-400"><span className="material-symbols-outlined text-[12px] mt-0.5 shrink-0">warning</span><span>{s.snapshotScheduleLastError}: {snapshotScheduleStatus.lastError}</span></div>)}</div>); })()}
         </div></div>)}
+
+        {snapshotModeTab === 'config-history' && (<div className={rowCls}><div className="px-4 py-3"><ConfigBackupTab s={s} /></div></div>)}
 
         {/* Batch management toolbar */}
         <div className="flex items-center justify-between flex-wrap gap-2">
