@@ -159,10 +159,10 @@ const PairingSection: React.FC<{ channel: string; es: any; cw: any; toast: (type
     <div className="flex flex-col md:grid md:grid-cols-12 md:items-start gap-2 md:gap-3 py-2 md:py-1.5">
       <div className="md:col-span-4 lg:col-span-5 flex flex-col">
         <div className="flex items-center gap-1">
-          <label className="text-[11px] md:text-xs font-semibold text-slate-500 dark:text-slate-400 select-none">
+          <label className="text-[11px] md:text-xs font-semibold theme-text-secondary select-none">
             {cw.pairingCodeLabel || es.pairingCode || 'Pairing Code'}
           </label>
-          <span className="material-symbols-outlined text-[13px] text-slate-400 dark:text-slate-500 cursor-help" title={es.tipPairingCode || 'Enter the pairing code from the channel'}>info</span>
+          <span className="material-symbols-outlined text-[13px] theme-text-muted cursor-help" title={es.tipPairingCode || 'Enter the pairing code from the channel'}>info</span>
         </div>
       </div>
       <div className="md:col-span-8 lg:col-span-7 flex flex-col gap-1.5 min-w-0">
@@ -172,7 +172,7 @@ const PairingSection: React.FC<{ channel: string; es: any; cw: any; toast: (type
             value={pairingCode}
             onChange={(e) => setPairingCode(e.target.value.toUpperCase())}
             placeholder={cw.pairingCodePlaceholder || 'Enter pairing code'}
-            className="h-8 bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-md px-3 text-[12px] md:text-xs font-mono text-slate-800 dark:text-slate-200 outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-600 w-full md:w-64"
+            className="h-8 theme-field rounded-md px-3 text-[12px] md:text-xs font-mono outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-600 w-full md:w-64"
           />
           <button
             onClick={() => handleApprove(pairingCode)}
@@ -183,7 +183,7 @@ const PairingSection: React.FC<{ channel: string; es: any; cw: any; toast: (type
           </button>
         </div>
         {pendingRequests.length > 0 && (
-          <div className="text-[10px] text-slate-600 dark:text-white/60">
+          <div className="text-[10px] theme-text-secondary">
             {cw.pendingRequests || es.pendingRequests || 'Pending requests'}: {pendingRequests.length}
           </div>
         )}
@@ -537,10 +537,10 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
             <div className="flex flex-col md:grid md:grid-cols-12 md:items-start gap-2 md:gap-3 py-2 md:py-1.5">
               <div className="md:col-span-4 lg:col-span-5 flex flex-col">
                 <div className="flex items-center gap-1">
-                  <label className="text-[11px] md:text-xs font-semibold text-slate-500 dark:text-slate-400 select-none">
+                  <label className="text-[11px] md:text-xs font-semibold theme-text-secondary select-none">
                     {es.dmPolicy}
                   </label>
-                  <span className="material-symbols-outlined text-[13px] text-slate-400 dark:text-slate-500 cursor-help" title={tip('dmPolicy')}>info</span>
+                  <span className="material-symbols-outlined text-[13px] theme-text-muted cursor-help" title={tip('dmPolicy')}>info</span>
                 </div>
               </div>
               <div className="md:col-span-8 lg:col-span-7 flex flex-col gap-1.5 min-w-0">
@@ -549,7 +549,7 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
                     value={g(['dmPolicy']) || 'pairing'}
                     onChange={v => s(['dmPolicy'], v)}
                     options={dmPolicy(es)}
-                    className="h-8 bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-md px-3 text-[12px] md:text-xs font-mono text-slate-800 dark:text-slate-200 outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-600 w-full md:w-64"
+                    className="h-8 theme-field rounded-md px-3 text-[12px] md:text-xs font-mono outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-600 w-full md:w-64"
                   />
                   {(g(['dmPolicy']) || 'pairing') === 'pairing' && (
                     <button
@@ -598,7 +598,7 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
               const topics: any[] = Array.isArray(rawTopics) ? rawTopics : [];
               return topics.length > 0 ? (
                 <div className="pt-2 pb-1">
-                  <span className="text-[11px] font-bold text-slate-500 dark:text-white/40">{es.topicBindings || 'Topic Bindings'}</span>
+                  <span className="text-[11px] font-bold theme-text-muted">{es.topicBindings || 'Topic Bindings'}</span>
                   {topics.map((t: any, i: number) => (
                     <div key={i} className="flex gap-2 items-center mt-1">
                       <TextField label={es.topicId || 'Topic ID'} value={t.topicId || ''} onChange={v => { const next = [...topics]; next[i] = { ...next[i], topicId: v }; s(['topics'], next); }} placeholder="123" />
@@ -705,18 +705,18 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
             ]} allowEmpty tooltip={es.tipDiscordStatus} />
             {/* Discord Voice */}
             <div className="pt-2 pb-1">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-white/40">{es.discordVoiceTitle || 'Voice'}</span>
+              <span className="text-[11px] font-bold theme-text-muted">{es.discordVoiceTitle || 'Voice'}</span>
             </div>
             <SwitchField label={es.discordVoiceEnabled || 'Voice Enabled'} value={g(['voice', 'enabled']) !== false} onChange={v => s(['voice', 'enabled'], v)} tooltip={es.tipDiscordVoice} />
             {/* Discord Intents */}
             <div className="pt-2 pb-1">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-white/40">{es.discordIntentsTitle || 'Privileged Intents'}</span>
+              <span className="text-[11px] font-bold theme-text-muted">{es.discordIntentsTitle || 'Privileged Intents'}</span>
             </div>
             <SwitchField label={es.discordIntentPresence || 'Presence Intent'} value={g(['intents', 'presence']) === true} onChange={v => s(['intents', 'presence'], v)} tooltip={es.tipDiscordIntentPresence} />
             <SwitchField label={es.discordIntentMembers || 'Guild Members Intent'} value={g(['intents', 'guildMembers']) === true} onChange={v => s(['intents', 'guildMembers'], v)} tooltip={es.tipDiscordIntentMembers} />
             {/* Discord Actions */}
             <div className="pt-2 pb-1">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-white/40">{es.discordActionsTitle || 'Actions'}</span>
+              <span className="text-[11px] font-bold theme-text-muted">{es.discordActionsTitle || 'Actions'}</span>
             </div>
             <SwitchField label={es.actReactions || 'Reactions'} value={g(['actions', 'reactions']) !== false} onChange={v => s(['actions', 'reactions'], v)} />
             <SwitchField label={es.actMessages || 'Messages'} value={g(['actions', 'messages']) !== false} onChange={v => s(['actions', 'messages'], v)} />
@@ -761,13 +761,13 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
             <TextField label={es.typingReaction || 'Typing Reaction'} value={g(['typingReaction']) || ''} onChange={v => s(['typingReaction'], v)} placeholder="hourglass_flowing_sand" tooltip={es.tipTypingReaction} />
             {/* Slack Slash Command */}
             <div className="pt-2 pb-1">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-white/40">{es.slackSlashTitle || 'Slash Command'}</span>
+              <span className="text-[11px] font-bold theme-text-muted">{es.slackSlashTitle || 'Slash Command'}</span>
             </div>
             <SwitchField label={es.slackSlashEnabled || 'Enabled'} value={g(['slashCommand', 'enabled']) === true} onChange={v => s(['slashCommand', 'enabled'], v)} tooltip={es.tipSlackSlash} />
             <TextField label={es.slackSlashName || 'Command Name'} value={g(['slashCommand', 'name']) || 'openclaw'} onChange={v => s(['slashCommand', 'name'], v)} tooltip={es.tipSlackSlashName} />
             {/* Slack Actions */}
             <div className="pt-2 pb-1">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-white/40">{es.slackActionsTitle || 'Actions'}</span>
+              <span className="text-[11px] font-bold theme-text-muted">{es.slackActionsTitle || 'Actions'}</span>
             </div>
             <SwitchField label={es.actReactions || 'Reactions'} value={g(['actions', 'reactions']) !== false} onChange={v => s(['actions', 'reactions'], v)} />
             <SwitchField label={es.actMessages || 'Messages'} value={g(['actions', 'messages']) !== false} onChange={v => s(['actions', 'messages'], v)} />
@@ -847,10 +847,10 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
             <div className="flex flex-col md:grid md:grid-cols-12 md:items-start gap-2 md:gap-3 py-2 md:py-1.5">
               <div className="md:col-span-4 lg:col-span-5 flex flex-col">
                 <div className="flex items-center gap-1">
-                  <label className="text-[11px] md:text-xs font-semibold text-slate-500 dark:text-slate-400 select-none">
+                  <label className="text-[11px] md:text-xs font-semibold theme-text-secondary select-none">
                     {es.dmPolicy}
                   </label>
-                  <span className="material-symbols-outlined text-[13px] text-slate-400 dark:text-slate-500 cursor-help" title={tip('dmPolicy')}>info</span>
+                  <span className="material-symbols-outlined text-[13px] theme-text-muted cursor-help" title={tip('dmPolicy')}>info</span>
                 </div>
               </div>
               <div className="md:col-span-8 lg:col-span-7 flex flex-col gap-1.5 min-w-0">
@@ -859,7 +859,7 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
                     value={g(['dmPolicy']) || 'pairing'}
                     onChange={v => s(['dmPolicy'], v)}
                     options={dmPolicy(es)}
-                    className="h-8 bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-md px-3 text-[12px] md:text-xs font-mono text-slate-800 dark:text-slate-200 outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-600 w-full md:w-64"
+                    className="h-8 theme-field rounded-md px-3 text-[12px] md:text-xs font-mono outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-600 w-full md:w-64"
                   />
                   {(g(['dmPolicy']) || 'pairing') === 'pairing' && (
                     <button
@@ -899,10 +899,10 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
             <div className="flex flex-col md:grid md:grid-cols-12 md:items-start gap-2 md:gap-3 py-2 md:py-1.5">
               <div className="md:col-span-4 lg:col-span-5 flex flex-col">
                 <div className="flex items-center gap-1">
-                  <label className="text-[11px] md:text-xs font-semibold text-slate-500 dark:text-slate-400 select-none">
+                  <label className="text-[11px] md:text-xs font-semibold theme-text-secondary select-none">
                     {es.dmPolicy}
                   </label>
-                  <span className="material-symbols-outlined text-[13px] text-slate-400 dark:text-slate-500 cursor-help" title={tip('dmPolicy')}>info</span>
+                  <span className="material-symbols-outlined text-[13px] theme-text-muted cursor-help" title={tip('dmPolicy')}>info</span>
                 </div>
               </div>
               <div className="md:col-span-8 lg:col-span-7 flex flex-col gap-1.5 min-w-0">
@@ -911,7 +911,7 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
                     value={g(['dmPolicy']) || 'pairing'}
                     onChange={v => s(['dmPolicy'], v)}
                     options={dmPolicy(es)}
-                    className="h-8 bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-md px-3 text-[12px] md:text-xs font-mono text-slate-800 dark:text-slate-200 outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-600 w-full md:w-64"
+                    className="h-8 theme-field rounded-md px-3 text-[12px] md:text-xs font-mono outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-600 w-full md:w-64"
                   />
                   {(g(['dmPolicy']) || 'pairing') === 'pairing' && (
                     <button
@@ -1033,10 +1033,10 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
             <div className="flex flex-col md:grid md:grid-cols-12 md:items-start gap-2 md:gap-3 py-2 md:py-1.5">
               <div className="md:col-span-4 lg:col-span-5 flex flex-col">
                 <div className="flex items-center gap-1">
-                  <label className="text-[11px] md:text-xs font-semibold text-slate-500 dark:text-slate-400 select-none">
+                  <label className="text-[11px] md:text-xs font-semibold theme-text-secondary select-none">
                     {es.dmPolicy}
                   </label>
-                  <span className="material-symbols-outlined text-[13px] text-slate-400 dark:text-slate-500 cursor-help" title={tip('dmPolicy')}>info</span>
+                  <span className="material-symbols-outlined text-[13px] theme-text-muted cursor-help" title={tip('dmPolicy')}>info</span>
                 </div>
               </div>
               <div className="md:col-span-8 lg:col-span-7 flex flex-col gap-1.5 min-w-0">
@@ -1045,7 +1045,7 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
                     value={g(['dm', 'policy']) || 'pairing'}
                     onChange={v => s(['dm', 'policy'], v)}
                     options={dmPolicy(es)}
-                    className="h-8 bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-md px-3 text-[12px] md:text-xs font-mono text-slate-800 dark:text-slate-200 outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-600 w-full md:w-64"
+                    className="h-8 theme-field rounded-md px-3 text-[12px] md:text-xs font-mono outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-600 w-full md:w-64"
                   />
                   {(g(['dm', 'policy']) || 'pairing') === 'pairing' && (
                     <button
@@ -1167,7 +1167,7 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
             <NumberField label={es.feishuMediaMaxMb || 'Media Max MB'} value={g(['mediaMaxMb'])} onChange={v => s(['mediaMaxMb'], v)} placeholder="30" tooltip={es.tipFeishuMediaMaxMb} />
             {/* Feishu Tools */}
             <div className="pt-2 pb-1">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-white/40">{es.feishuToolsTitle || 'Feishu Tools'}</span>
+              <span className="text-[11px] font-bold theme-text-muted">{es.feishuToolsTitle || 'Feishu Tools'}</span>
             </div>
             <SwitchField label={es.feishuToolDoc || 'Document'} value={g(['tools', 'doc']) !== false} onChange={v => s(['tools', 'doc'], v)} tooltip={es.tipFeishuToolDoc} />
             <SwitchField label={es.feishuToolChat || 'Chat'} value={g(['tools', 'chat']) !== false} onChange={v => s(['tools', 'chat'], v)} tooltip={es.tipFeishuToolChat} />
@@ -1199,10 +1199,10 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
             <div className="flex flex-col md:grid md:grid-cols-12 md:items-start gap-2 md:gap-3 py-2 md:py-1.5">
               <div className="md:col-span-4 lg:col-span-5 flex flex-col">
                 <div className="flex items-center gap-1">
-                  <label className="text-[11px] md:text-xs font-semibold text-slate-500 dark:text-slate-400 select-none">
+                  <label className="text-[11px] md:text-xs font-semibold theme-text-secondary select-none">
                     {es.dmPolicy}
                   </label>
-                  <span className="material-symbols-outlined text-[13px] text-slate-400 dark:text-slate-500 cursor-help" title={tip('dmPolicy')}>info</span>
+                  <span className="material-symbols-outlined text-[13px] theme-text-muted cursor-help" title={tip('dmPolicy')}>info</span>
                 </div>
               </div>
               <div className="md:col-span-8 lg:col-span-7 flex flex-col gap-1.5 min-w-0">
@@ -1211,7 +1211,7 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
                     value={g(['dmPolicy']) || 'pairing'}
                     onChange={v => s(['dmPolicy'], v)}
                     options={dmPolicy(es)}
-                    className="h-8 bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-md px-3 text-[12px] md:text-xs font-mono text-slate-800 dark:text-slate-200 outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-600 w-full md:w-64"
+                    className="h-8 theme-field rounded-md px-3 text-[12px] md:text-xs font-mono outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-600 w-full md:w-64"
                   />
                   {(g(['dmPolicy']) || 'pairing') === 'pairing' && (
                     <button
@@ -1380,14 +1380,14 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
             <TextField label={es.publicUrl || 'Public URL'} value={g(['publicUrl']) || ''} onChange={v => s(['publicUrl'], v)} placeholder="https://..." tooltip={es.tipPublicUrl} />
             {/* Voice Call - Webhook Server */}
             <div className="pt-2 pb-1">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-white/40">{es.voiceServeTitle || 'Webhook Server'}</span>
+              <span className="text-[11px] font-bold theme-text-muted">{es.voiceServeTitle || 'Webhook Server'}</span>
             </div>
             <NumberField label={es.webhookPort || 'Port'} value={g(['serve', 'port'])} onChange={v => s(['serve', 'port'], v)} placeholder="3334" tooltip={es.tipVoiceServePort} />
             <TextField label={es.serveBind || 'Bind'} value={g(['serve', 'bind']) || ''} onChange={v => s(['serve', 'bind'], v)} placeholder="127.0.0.1" tooltip={es.tipVoiceServeBind} />
             <TextField label={es.webhookPath || 'Path'} value={g(['serve', 'path']) || ''} onChange={v => s(['serve', 'path'], v)} placeholder="/voice/webhook" tooltip={es.tipVoiceServePath} />
             {/* Voice Call - Tunnel */}
             <div className="pt-2 pb-1">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-white/40">{es.voiceTunnelTitle || 'Tunnel'}</span>
+              <span className="text-[11px] font-bold theme-text-muted">{es.voiceTunnelTitle || 'Tunnel'}</span>
             </div>
             <SelectField label={es.tunnelProvider || 'Tunnel Provider'} value={g(['tunnel', 'provider']) || 'none'} onChange={v => s(['tunnel', 'provider'], v)} options={[
               { value: 'none', label: es.optNone || 'None' },
@@ -1397,7 +1397,7 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
             ]} tooltip={es.tipTunnelProvider} />
             {/* Voice Call - Outbound */}
             <div className="pt-2 pb-1">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-white/40">{es.voiceOutboundTitle || 'Outbound'}</span>
+              <span className="text-[11px] font-bold theme-text-muted">{es.voiceOutboundTitle || 'Outbound'}</span>
             </div>
             <SelectField label={es.callMode || 'Default Mode'} value={g(['outbound', 'defaultMode']) || 'notify'} onChange={v => s(['outbound', 'defaultMode'], v)} options={[
               { value: 'notify', label: es.optNotify || 'Notify' },
@@ -1405,7 +1405,7 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
             ]} tooltip={es.tipCallMode} />
             {/* Voice Call - Response */}
             <div className="pt-2 pb-1">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-white/40">{es.voiceResponseTitle || 'Response'}</span>
+              <span className="text-[11px] font-bold theme-text-muted">{es.voiceResponseTitle || 'Response'}</span>
             </div>
             <TextField label={es.responseModel || 'Response Model'} value={g(['responseModel']) || ''} onChange={v => s(['responseModel'], v)} placeholder="openai/gpt-4o-mini" tooltip={es.tipResponseModel} />
             <TextField label={es.responseSystemPrompt || 'System Prompt'} value={g(['responseSystemPrompt']) || ''} onChange={v => s(['responseSystemPrompt'], v)} tooltip={es.tipResponseSystemPrompt} />
@@ -1465,7 +1465,7 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
                       {sendBusy ? es.chSending : es.chSendTest}
                     </button>
                     <button onClick={() => setSendChannel(null)} disabled={sendBusy}
-                      className="px-3 py-1 rounded-lg text-[10px] font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5 transition-all">
+                      className="px-3 py-1 rounded-lg text-[10px] font-bold theme-text-secondary hover:bg-slate-100 dark:hover:bg-white/5 transition-all">
                       {es.cancel}
                     </button>
                   </div>

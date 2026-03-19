@@ -596,10 +596,10 @@ const Alerts: React.FC<AlertsProps> = ({ language }) => {
         </div>
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
           {/* WS connection status */}
-          <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5">
+          <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg theme-field">
             <div className={`w-2 h-2 rounded-full shrink-0 ${wsConnected ? 'bg-mac-green animate-glow-pulse-green' : wsConnecting ? 'bg-mac-yellow animate-pulse' : 'bg-slate-300 dark:bg-white/20'
               }`} />
-            <span className="text-[11px] font-medium text-slate-500 dark:text-white/40 hidden sm:inline">
+            <span className="text-[11px] font-medium theme-text-muted hidden sm:inline">
               {wsConnected ? a.wsLive : wsConnecting ? a.wsConnecting : a.wsDisconnected}
             </span>
             {!wsConnected && !wsConnecting && (
@@ -612,7 +612,7 @@ const Alerts: React.FC<AlertsProps> = ({ language }) => {
           <button onClick={() => setShowFlow(!showFlow)}
             className={`h-8 px-3 flex items-center gap-1.5 border rounded-lg text-[11px] font-bold transition-all ${showFlow
                 ? 'bg-primary/10 border-primary/30 text-primary'
-                : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10'
+                : 'theme-field theme-text-secondary hover:bg-slate-200 dark:hover:bg-white/10'
               }`}>
             <span className="material-symbols-outlined text-[14px]">help_outline</span>
             <span className="hidden sm:inline">{showFlow ? a.hideFlow : a.showFlow}</span>
@@ -671,12 +671,12 @@ const Alerts: React.FC<AlertsProps> = ({ language }) => {
       <div className="flex gap-1 mb-4 flex-wrap">
         {(['pending', 'history', 'policy', 'notify', 'allowlist'] as TabId[]).map(tabId => (
           <button key={tabId} onClick={() => setTab(tabId)}
-            className={`h-9 px-3 rounded-lg text-[12px] font-bold transition-all flex items-center gap-1.5 ${tab === tabId ? 'bg-primary text-white' : 'text-slate-500 dark:text-white/40 hover:bg-slate-100 dark:hover:bg-white/5'}`}
+            className={`h-9 px-3 rounded-lg text-[12px] font-bold transition-all flex items-center gap-1.5 ${tab === tabId ? 'bg-primary text-white' : 'theme-text-muted hover:bg-slate-100 dark:hover:bg-white/5'}`}
             title={tabId === 'pending' ? a.pendingHelp : tabId === 'history' ? a.historyHelp : tabId === 'policy' ? a.policyHelp : tabId === 'notify' ? a.notifyHelp : a.allowlistHelp}>
             <span className="material-symbols-outlined text-[14px]">{TAB_CONFIG[tabId].icon}</span>
             <span className="hidden sm:inline">{a[tabId]}</span>
             {tabId === 'pending' && pendingQueue.length > 0 && <span className="px-1.5 py-0.5 rounded-full bg-mac-red text-white text-[11px]">{pendingQueue.length}</span>}
-            {tabId === 'history' && historyEntries.length > 0 && <span className="px-1.5 py-0.5 rounded-full bg-slate-300 dark:bg-white/20 text-slate-600 dark:text-white/60 text-[11px]">{historyEntries.length}</span>}
+            {tabId === 'history' && historyEntries.length > 0 && <span className="px-1.5 py-0.5 rounded-full theme-field theme-text-secondary text-[11px]">{historyEntries.length}</span>}
           </button>
         ))}
       </div>
@@ -696,14 +696,14 @@ const Alerts: React.FC<AlertsProps> = ({ language }) => {
                 <div className="flex items-center gap-1.5 flex-wrap shrink-0">
                   {expiredCount > 0 && (
                     <button onClick={() => setHideExpired(!hideExpired)}
-                      className="h-8 px-2.5 rounded-lg text-[11px] font-bold bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/40 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
+                      className="h-8 px-2.5 rounded-lg text-[11px] font-bold theme-field theme-text-muted hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
                       {hideExpired ? a.showExpired : a.hideExpired} ({expiredCount})
                     </button>
                   )}
                   <button onClick={() => {
                     if (selectedIds.size === filteredPendingQueue.length) setSelectedIds(new Set());
                     else setSelectedIds(new Set(filteredPendingQueue.map(i => i.id)));
-                  }} className="h-8 px-2.5 rounded-lg text-[11px] font-bold bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/40 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
+                  }} className="h-8 px-2.5 rounded-lg text-[11px] font-bold theme-field theme-text-muted hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
                     {selectedIds.size === filteredPendingQueue.length && selectedIds.size > 0 ? a.deselectAll : a.selectAll}
                   </button>
                   <button onClick={() => handleBatchDecision('allow')} disabled={busy}
@@ -717,7 +717,7 @@ const Alerts: React.FC<AlertsProps> = ({ language }) => {
                 </div>
               </div>
             )}
-            <h3 className="text-[12px] font-bold text-slate-600 dark:text-white/60 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <h3 className="text-[12px] font-bold theme-text-secondary uppercase tracking-wider mb-3 flex items-center gap-2">
               <span className="material-symbols-outlined text-[15px] text-mac-yellow">gavel</span>
               {a.pending} ({pendingQueue.length})
             </h3>
@@ -805,7 +805,7 @@ const Alerts: React.FC<AlertsProps> = ({ language }) => {
         {tab === 'history' && (
           <div className="rounded-2xl border border-slate-200/60 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4 sci-card">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-[11px] font-bold text-slate-600 dark:text-white/60 uppercase tracking-wider flex items-center gap-2">
+              <h3 className="text-[11px] font-bold theme-text-secondary uppercase tracking-wider flex items-center gap-2">
                 <span className="material-symbols-outlined text-[14px] text-primary">history</span>
                 {a.history} ({historyEntries.length})
               </h3>
@@ -852,15 +852,15 @@ const Alerts: React.FC<AlertsProps> = ({ language }) => {
             {/* Scope Tabs */}
             <div className="flex gap-1.5 flex-wrap">
               <button onClick={() => setSelectedScope('__defaults__')}
-                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${isDefaults ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/40'}`}>{a.defaults}</button>
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${isDefaults ? 'bg-primary text-white' : 'theme-field theme-text-muted'}`}>{a.defaults}</button>
               {agentIds.map(id => (
                 <button key={id} onClick={() => setSelectedScope(id)}
-                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${selectedScope === id ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/40'}`}>{id}</button>
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${selectedScope === id ? 'bg-primary text-white' : 'theme-field theme-text-muted'}`}>{id}</button>
               ))}
             </div>
 
             <div className="rounded-2xl border border-slate-200/60 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4 sci-card">
-              <h3 className="text-[11px] font-bold text-slate-600 dark:text-white/60 uppercase tracking-wider mb-4">{a.policy} — {isDefaults ? a.defaults : selectedScope}</h3>
+              <h3 className="text-[11px] font-bold theme-text-secondary uppercase tracking-wider mb-4">{a.policy} — {isDefaults ? a.defaults : selectedScope}</h3>
               <div className="space-y-3">
                 {/* Security — #15: uses handleSecurityChange with confirm for 'full' */}
                 <div className="flex items-center justify-between gap-4 p-3 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/5">

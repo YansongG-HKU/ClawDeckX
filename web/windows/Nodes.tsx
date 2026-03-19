@@ -1000,7 +1000,7 @@ const Nodes: React.FC<NodesProps> = ({ language }) => {
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-[#0f1115]">
       {/* 顶部 */}
-      <div className="flex flex-col border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-black/20 shrink-0">
+      <div className="flex flex-col border-b border-slate-200 dark:border-white/5 theme-panel shrink-0">
         <div className="h-12 flex items-center justify-center px-4 border-b border-slate-200/50 dark:border-white/5">
           <div className="flex bg-slate-200 dark:bg-black/40 p-0.5 rounded-xl shadow-inner">
             {tabs.map(tb => (
@@ -1036,13 +1036,13 @@ const Nodes: React.FC<NodesProps> = ({ language }) => {
                     className={`h-8 px-2.5 flex items-center gap-1 border rounded-lg text-[11px] font-bold transition-all ${
                       autoRefresh
                         ? 'bg-mac-green/10 border-mac-green/30 text-mac-green'
-                        : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 dark:text-white/50 hover:bg-slate-200 dark:hover:bg-white/10'
+                        : 'theme-field theme-text-secondary hover:bg-slate-200 dark:hover:bg-white/10'
                     }`} title={autoRefresh ? nd.autoRefreshOn : nd.autoRefreshOff}>
                     <span className="material-symbols-outlined text-[14px]">{autoRefresh ? 'sync' : 'sync_disabled'}</span>
                     <span className="hidden sm:inline">{nd.autoRefresh}</span>
                   </button>
                   {/* View mode toggle */}
-                  <div className="flex bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg overflow-hidden">
+                  <div className="flex theme-field rounded-lg overflow-hidden">
                     <button onClick={() => setViewMode('grid')}
                       className={`h-8 w-8 flex items-center justify-center transition-all ${viewMode === 'grid' ? 'bg-primary/10 text-primary' : 'text-slate-400 dark:text-white/40 hover:text-slate-600 dark:hover:text-white/60'}`}
                       title={nd.viewGrid}>
@@ -1056,7 +1056,7 @@ const Nodes: React.FC<NodesProps> = ({ language }) => {
                   </div>
                   {/* Refresh button */}
                   <button onClick={fetchNodes} disabled={nodesLoading}
-                    className="h-8 px-3 flex items-center gap-1.5 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 rounded-lg text-[11px] font-bold text-slate-600 dark:text-white/70 disabled:opacity-50">
+                    className="h-8 px-3 flex items-center gap-1.5 theme-field hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg text-[11px] font-bold theme-text-secondary disabled:opacity-50">
                     <span className={`material-symbols-outlined text-[14px] ${nodesLoading ? 'animate-spin' : ''}`}>{nodesLoading ? 'progress_activity' : 'refresh'}</span>
                     <span className="hidden sm:inline">{nd.refresh}</span>
                   </button>
@@ -1066,7 +1066,7 @@ const Nodes: React.FC<NodesProps> = ({ language }) => {
               {/* Stats bar */}
               {nodes.length > 0 && (
                 <div className="flex items-center gap-3 flex-wrap">
-                  <span className="text-[11px] font-bold text-slate-600 dark:text-white/60">{(nd.nodeCount || '').replace('{count}', String(nodes.length))}</span>
+                  <span className="text-[11px] font-bold theme-text-secondary">{(nd.nodeCount || '').replace('{count}', String(nodes.length))}</span>
                   <span className="w-1 h-1 rounded-full bg-slate-200 dark:bg-white/10" />
                   <span className="text-[11px] font-bold text-mac-green">{(nd.onlineCount || '').replace('{count}', String(onlineCount))}</span>
                   <span className="w-1 h-1 rounded-full bg-slate-200 dark:bg-white/10" />
@@ -1098,7 +1098,7 @@ const Nodes: React.FC<NodesProps> = ({ language }) => {
                       <span className={`material-symbols-outlined text-[12px] ${al.type === 'offline' ? 'text-mac-red' : 'text-mac-green'}`}>
                         {al.type === 'offline' ? 'cloud_off' : 'cloud_done'}
                       </span>
-                      <span className="flex-1 text-slate-600 dark:text-white/60">
+                      <span className="flex-1 theme-text-secondary">
                         {al.type === 'offline' ? (nd.alertNodeOffline || '').replace('{name}', al.nodeName) : (nd.alertNodeBack || '').replace('{name}', al.nodeName)}
                       </span>
                       <span className="text-[10px] text-slate-400 dark:text-white/30">{fmtTs(al.ts)}</span>
@@ -1125,7 +1125,7 @@ const Nodes: React.FC<NodesProps> = ({ language }) => {
                         </button>
                       )}
                     </div>
-                    <div className="flex bg-slate-100 dark:bg-white/5 rounded-lg p-0.5 shrink-0">
+                    <div className="flex theme-field rounded-lg p-0.5 shrink-0">
                       {(['all', 'online', 'offline'] as NodeFilter[]).map(f => (
                         <button key={f} onClick={() => setNodeFilter(f)}
                           className={`px-3 py-1.5 rounded-md text-[11px] font-bold transition-all ${nodeFilter === f ? 'bg-white dark:bg-primary text-slate-800 dark:text-white shadow-sm' : 'text-slate-500 dark:text-white/50 hover:text-slate-700 dark:hover:text-white/70'}`}>
@@ -1139,23 +1139,23 @@ const Nodes: React.FC<NodesProps> = ({ language }) => {
                     {platformOptions.length > 0 && (
                       <CustomSelect value={filterPlatform} onChange={v => setFilterPlatform(v)}
                         options={[{ value: '', label: nd.filterPlatformAll }, ...platformOptions.map(p => ({ value: p, label: p }))]}
-                        className="h-7 px-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-[10px] font-bold text-slate-600 dark:text-white/60 min-w-[100px]" />
+                        className="h-7 px-2 theme-field rounded-lg text-[10px] font-bold theme-text-secondary min-w-[100px]" />
                     )}
                     {versionOptions.length > 0 && (
                       <CustomSelect value={filterVersion} onChange={v => setFilterVersion(v)}
                         options={[{ value: '', label: nd.filterVersionAll }, ...versionOptions.map(v => ({ value: v, label: 'v' + v }))]}
-                        className="h-7 px-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-[10px] font-bold text-slate-600 dark:text-white/60 min-w-[100px]" />
+                        className="h-7 px-2 theme-field rounded-lg text-[10px] font-bold theme-text-secondary min-w-[100px]" />
                     )}
                     <CustomSelect value={filterHealth} onChange={v => setFilterHealth(v)}
                       options={[{ value: '', label: nd.filterHealthAll }, { value: 'healthy', label: nd.healthy }, { value: 'warning', label: nd.warning }, { value: 'critical', label: nd.critical }]}
-                      className="h-7 px-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-[10px] font-bold text-slate-600 dark:text-white/60 min-w-[100px]" />
+                      className="h-7 px-2 theme-field rounded-lg text-[10px] font-bold theme-text-secondary min-w-[100px]" />
                     <span className="w-px h-5 bg-slate-200 dark:bg-white/10" />
                     <CustomSelect value={sortKey} onChange={v => setSortKey(v as SortKey)}
                       options={[{ value: 'status', label: nd.sortByStatus }, { value: 'name', label: nd.sortByName }, { value: 'lastUsed', label: nd.sortByLastUsed }, { value: 'connectedAt', label: nd.sortByConnectedAt }]}
-                      className="h-7 px-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-[10px] font-bold text-slate-600 dark:text-white/60 min-w-[100px]" />
+                      className="h-7 px-2 theme-field rounded-lg text-[10px] font-bold theme-text-secondary min-w-[100px]" />
                     <CustomSelect value={groupKey} onChange={v => setGroupKey(v as GroupKey)}
                       options={[{ value: 'none', label: nd.groupByNone }, { value: 'platform', label: nd.groupByPlatform }, { value: 'status', label: nd.groupByStatus }, { value: 'version', label: nd.groupByVersion }]}
-                      className="h-7 px-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-[10px] font-bold text-slate-600 dark:text-white/60 min-w-[100px]" />
+                      className="h-7 px-2 theme-field rounded-lg text-[10px] font-bold theme-text-secondary min-w-[100px]" />
                     {hasActiveFilters && (
                       <button onClick={clearFilters} className="h-7 px-2 text-[10px] font-bold text-mac-red hover:bg-mac-red/10 rounded-lg transition-colors flex items-center gap-1">
                         <span className="material-symbols-outlined text-[12px]">filter_alt_off</span>{nd.clearFilters}
@@ -1450,7 +1450,7 @@ const Nodes: React.FC<NodesProps> = ({ language }) => {
                     <span className="hidden sm:inline">{nd.pairFlow}</span>
                   </button>
                   <button onClick={fetchDevices} disabled={devicesLoading}
-                    className="h-8 px-3 flex items-center gap-1.5 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 rounded-lg text-[11px] font-bold text-slate-600 dark:text-white/70 disabled:opacity-50">
+                    className="h-8 px-3 flex items-center gap-1.5 theme-field hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg text-[11px] font-bold theme-text-secondary disabled:opacity-50">
                     <span className={`material-symbols-outlined text-[14px] ${devicesLoading ? 'animate-spin' : ''}`}>{devicesLoading ? 'progress_activity' : 'refresh'}</span>
                     <span className="hidden sm:inline">{nd.refresh}</span>
                   </button>

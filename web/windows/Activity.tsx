@@ -321,14 +321,14 @@ const Activity: React.FC<ActivityProps> = ({ language, onNavigateToSession }) =>
           <div className="relative flex-1">
             <span className="material-symbols-outlined absolute start-2 top-1/2 -translate-y-1/2 text-slate-400 text-[14px]">search</span>
             <input value={searchInput} onChange={e => setSearchInput(e.target.value)} placeholder={a.search}
-              className="w-full h-7 ps-7 pe-2 rounded-lg bg-slate-50 dark:bg-white/[0.03] border border-slate-200/60 dark:border-white/[0.06] text-[10px] text-slate-700 dark:text-white/70 focus:outline-none focus:ring-1 focus:ring-primary/30 sci-input" />
+              className="w-full h-7 ps-7 pe-2 rounded-lg theme-field text-[10px] focus:outline-none focus:ring-1 focus:ring-primary/30 sci-input" />
           </div>
           <CustomSelect value={kindFilter} onChange={v => setKindFilter(v)}
             options={[{ value: '', label: `${a.all} (${sessions.length})` }, ...['direct', 'group', 'global', 'unknown'].filter(k => kindCounts[k]).map(k => ({ value: k, label: `${(a as any)[k] || k} (${kindCounts[k]})` }))]}
-            className="h-7 px-1.5 rounded-lg bg-slate-50 dark:bg-white/[0.03] border border-slate-200/60 dark:border-white/[0.06] text-[10px] text-slate-600 dark:text-white/50" />
+            className="h-7 px-1.5 rounded-lg theme-field text-[10px] theme-text-secondary" />
           <CustomSelect value={sortField} onChange={v => setSortField(v as SortField)}
             options={[{ value: 'updated', label: a.sortUpdated || 'Updated' }, { value: 'tokens', label: a.sortTokens || 'Tokens' }, { value: 'name', label: a.sortName || 'Name' }]}
-            className="h-7 px-1.5 rounded-lg bg-slate-50 dark:bg-white/[0.03] border border-slate-200/60 dark:border-white/[0.06] text-[10px] text-slate-600 dark:text-white/50" />
+            className="h-7 px-1.5 rounded-lg theme-field text-[10px] theme-text-secondary" />
         </div>
 
         {/* Batch actions bar */}
@@ -337,7 +337,7 @@ const Activity: React.FC<ActivityProps> = ({ language, onNavigateToSession }) =>
             <span className="text-[10px] text-slate-400 dark:text-white/30">{batchSelected.size} {a.selected || 'selected'}</span>
             <div className="flex-1" />
             <button onClick={batchReset} disabled={busy || batchSelected.size === 0}
-              className="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-primary disabled:opacity-30">{a.reset}</button>
+              className="text-[10px] px-2 py-0.5 rounded theme-field theme-text-muted hover:text-primary disabled:opacity-30">{a.reset}</button>
             <button onClick={batchDelete} disabled={busy || batchSelected.size === 0}
               className="text-[10px] px-2 py-0.5 rounded bg-mac-red/10 text-mac-red disabled:opacity-30">{a.delete}</button>
           </div>
@@ -366,7 +366,7 @@ const Activity: React.FC<ActivityProps> = ({ language, onNavigateToSession }) =>
             <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 animate-glow-breathe">
               <span className="material-symbols-outlined text-3xl text-primary">monitoring</span>
             </div>
-            <p className="text-sm font-bold text-slate-600 dark:text-white/60 mb-1">{a.noSessions}</p>
+            <p className="text-sm font-bold theme-text-secondary mb-1">{a.noSessions}</p>
             <p className="text-[11px] text-slate-400 dark:text-white/30 mb-6">{a.noSessionsHint}</p>
             <div className="w-full space-y-2.5 text-start">
               {[

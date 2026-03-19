@@ -326,8 +326,8 @@ const Settings: React.FC<SettingsProps> = ({ language, onLogout, pendingTab, onT
     await onLogout();
   }, [confirm, onLogout, s, t]);
 
-  const inputCls = "w-full h-9 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 text-[13px] text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/30 outline-none transition-all";
-  const labelCls = "text-[12px] font-medium text-slate-500 dark:text-white/40";
+  const inputCls = "w-full h-9 theme-field rounded-lg px-3 text-[13px] focus:ring-2 focus:ring-primary/30 outline-none transition-all sci-input";
+  const labelCls = "text-[12px] font-medium theme-text-muted";
   const rowCls = "bg-white dark:bg-white/[0.04] rounded-xl border border-slate-200/70 dark:border-white/[0.06] divide-y divide-slate-100 dark:divide-white/[0.04] overflow-hidden";
 
   return (
@@ -347,7 +347,7 @@ const Settings: React.FC<SettingsProps> = ({ language, onLogout, pendingTab, onT
           </div>
           <div className="min-w-0">
             <p className="text-[13px] font-semibold text-slate-800 dark:text-white truncate">{currentUser?.username || s.adminDefault}</p>
-            <p className="text-[10px] text-slate-400 dark:text-white/40">ClawDeckX</p>
+            <p className="text-[10px] theme-text-muted">ClawDeckX</p>
           </div>
         </div>
 
@@ -357,7 +357,7 @@ const Settings: React.FC<SettingsProps> = ({ language, onLogout, pendingTab, onT
             <button key={item.id} onClick={() => handleTabSelect(item.id)}
               className={`flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] transition-all ${activeTab === item.id
                   ? 'bg-primary/15 dark:bg-primary/20 text-primary font-semibold'
-                  : 'text-slate-600 dark:text-white/60 hover:bg-black/[0.04] dark:hover:bg-white/[0.04]'
+                  : 'theme-text-secondary hover:bg-black/[0.04] dark:hover:bg-white/[0.04]'
                 }`}>
               <div className="relative">
                 <div className={`w-[22px] h-[22px] rounded-md ${item.color} flex items-center justify-center shadow-sm`}>
@@ -445,7 +445,7 @@ const Settings: React.FC<SettingsProps> = ({ language, onLogout, pendingTab, onT
               {/* ── 访问安全 ── */}
               <div className="pt-2">
                 <h2 className="text-[22px] font-bold text-slate-800 dark:text-white">{s.accessSecurity}</h2>
-                <p className="text-[12px] text-slate-400 dark:text-white/40 mt-0.5">{s.accessSecurityDesc}</p>
+                <p className="text-[12px] theme-text-muted mt-0.5">{s.accessSecurityDesc}</p>
               </div>
 
               {/* 重启提示 */}
@@ -470,7 +470,7 @@ const Settings: React.FC<SettingsProps> = ({ language, onLogout, pendingTab, onT
                           className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${
                             bindMode === mode
                               ? 'bg-primary/10 text-primary border-primary/30'
-                              : 'bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-white/40 border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10'
+                              : 'theme-field theme-text-muted hover:bg-slate-100 dark:hover:bg-white/10'
                           }`}>
                           {mode === 'all' ? s.bindAll : mode === 'local' ? s.bindLocal : s.bindCustom}
                         </button>
@@ -498,7 +498,7 @@ const Settings: React.FC<SettingsProps> = ({ language, onLogout, pendingTab, onT
                     <div className="mt-1.5 space-y-1.5">
                       {srvCfg.cors_origins.map((origin, idx) => (
                         <div key={idx} className="flex items-center gap-2">
-                          <span className="flex-1 text-[12px] text-slate-600 dark:text-white/60 font-mono bg-slate-50 dark:bg-white/5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 truncate">{origin}</span>
+                          <span className="flex-1 text-[12px] theme-text-secondary font-mono theme-field px-3 py-1.5 rounded-lg truncate">{origin}</span>
                           <button onClick={() => handleRemoveCorsOrigin(idx)}
                             className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition-colors">
                             <span className="material-symbols-outlined text-[14px]">close</span>
@@ -510,7 +510,7 @@ const Settings: React.FC<SettingsProps> = ({ language, onLogout, pendingTab, onT
                           onKeyDown={e => e.key === 'Enter' && handleAddCorsOrigin()}
                           className={`${inputCls} flex-1`} placeholder="https://example.com" />
                         <button onClick={handleAddCorsOrigin} disabled={!newCorsOrigin.trim()}
-                          className="px-3 h-9 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-[11px] font-bold text-slate-600 dark:text-white/50 disabled:opacity-40 transition-colors">
+                          className="px-3 h-9 rounded-lg theme-field hover:bg-slate-200 dark:hover:bg-white/10 text-[11px] font-bold theme-text-secondary disabled:opacity-40 transition-colors">
                           {s.addOrigin}
                         </button>
                       </div>
@@ -534,7 +534,7 @@ const Settings: React.FC<SettingsProps> = ({ language, onLogout, pendingTab, onT
                   <div className="px-4 py-3 flex items-center justify-between gap-4">
                     <div>
                       <p className="text-[13px] font-semibold text-slate-700 dark:text-white/80">{s.logout || 'Logout'}</p>
-                      <p className="text-[11px] text-slate-500 dark:text-white/40 mt-1">
+                      <p className="text-[11px] theme-text-muted mt-1">
                         {s.logoutDesc || 'End the current session and return to the login screen. You will need to sign in again next time.'}
                       </p>
                     </div>
@@ -555,7 +555,7 @@ const Settings: React.FC<SettingsProps> = ({ language, onLogout, pendingTab, onT
             <div className="space-y-5">
               <div>
                 <h2 className="text-[22px] font-bold text-slate-800 dark:text-white">{s.notify}</h2>
-                <p className="text-[12px] text-slate-400 dark:text-white/40 mt-0.5">{s.notifyDesc}</p>
+                <p className="text-[12px] theme-text-muted mt-0.5">{s.notifyDesc}</p>
               </div>
 
               {/* Active channels badge */}
@@ -646,7 +646,7 @@ const Settings: React.FC<SettingsProps> = ({ language, onLogout, pendingTab, onT
             <div className="space-y-5">
               <div>
                 <h2 className="text-[22px] font-bold text-slate-800 dark:text-white">{s.auditLog}</h2>
-                <p className="text-[12px] text-slate-400 dark:text-white/40 mt-0.5">{s.auditDesc}</p>
+                <p className="text-[12px] theme-text-muted mt-0.5">{s.auditDesc}</p>
               </div>
               <div className={rowCls}>
                 {auditLogs.length === 0 ? (
@@ -707,9 +707,9 @@ const Settings: React.FC<SettingsProps> = ({ language, onLogout, pendingTab, onT
 
               {/* 诗意文案 */}
               <div className="text-center px-6 space-y-1">
-                <p className="text-[14px] text-slate-600 dark:text-white/60 leading-relaxed">{s.donateLine1}</p>
-                <p className="text-[14px] text-slate-600 dark:text-white/60 leading-relaxed">{s.donateLine2}</p>
-                <p className="text-[14px] text-slate-600 dark:text-white/60 leading-relaxed">{s.donateLine3}</p>
+                <p className="text-[14px] theme-text-secondary leading-relaxed">{s.donateLine1}</p>
+                <p className="text-[14px] theme-text-secondary leading-relaxed">{s.donateLine2}</p>
+                <p className="text-[14px] theme-text-secondary leading-relaxed">{s.donateLine3}</p>
                 <p className="text-[14px] font-medium text-pink-500 dark:text-pink-400 leading-relaxed">{s.donateLine4}</p>
               </div>
 
@@ -764,28 +764,28 @@ const Settings: React.FC<SettingsProps> = ({ language, onLogout, pendingTab, onT
               <div className={rowCls}>
                 <div className="px-4 py-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="material-symbols-outlined text-[16px] text-slate-400 dark:text-white/40">volunteer_activism</span>
+                    <span className="material-symbols-outlined text-[16px] theme-text-muted">volunteer_activism</span>
                     <h3 className="text-[13px] font-bold text-slate-700 dark:text-white/70">{s.donateOtherWays}</h3>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <SmartLink href="https://github.com/ClawDeckX/ClawDeckX"
-                      className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-lg theme-field hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
                       <span className="material-symbols-outlined text-[16px] text-amber-500">star</span>
-                      <span className="text-[11px] text-slate-600 dark:text-white/60">{s.donateStarGithub}</span>
+                      <span className="text-[11px] theme-text-secondary">{s.donateStarGithub}</span>
                     </SmartLink>
                     <SmartLink href="https://github.com/ClawDeckX/ClawDeckX/issues"
-                      className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-lg theme-field hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
                       <span className="material-symbols-outlined text-[16px] text-blue-500">bug_report</span>
-                      <span className="text-[11px] text-slate-600 dark:text-white/60">{s.donateFeedback}</span>
+                      <span className="text-[11px] theme-text-secondary">{s.donateFeedback}</span>
                     </SmartLink>
                     <SmartLink href="https://github.com/ClawDeckX/ClawDeckX"
-                      className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-lg theme-field hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
                       <span className="material-symbols-outlined text-[16px] text-emerald-500">edit_document</span>
-                      <span className="text-[11px] text-slate-600 dark:text-white/60">{s.donateDocs}</span>
+                      <span className="text-[11px] theme-text-secondary">{s.donateDocs}</span>
                     </SmartLink>
-                    <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+                    <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg theme-field">
                       <span className="material-symbols-outlined text-[16px] text-pink-500">share</span>
-                      <span className="text-[11px] text-slate-600 dark:text-white/60">{s.donateShare}</span>
+                      <span className="text-[11px] theme-text-secondary">{s.donateShare}</span>
                     </div>
                   </div>
                 </div>
@@ -807,14 +807,14 @@ const Settings: React.FC<SettingsProps> = ({ language, onLogout, pendingTab, onT
                   <span className="text-[40px]" role="img">&#x1F980;</span>
                 </div>
                 <h3 className="text-[20px] font-bold text-slate-800 dark:text-white tracking-wide">ClawDeckX</h3>
-                <p className="text-[12px] text-slate-400 dark:text-white/40 mt-1 font-mono">
+                <p className="text-[12px] theme-text-muted mt-1 font-mono">
                   v{__APP_VERSION__} · build {__BUILD_NUMBER__}
                 </p>
               </div>
 
               {/* Slogan */}
               <div className="text-center px-4">
-                <p className="text-[16px] font-light text-slate-600 dark:text-white/50 tracking-widest">{s.aboutSlogan}</p>
+                <p className="text-[16px] font-light theme-text-secondary tracking-widest">{s.aboutSlogan}</p>
                 {s.aboutSlogan !== 'Complexity within, simplicity without.' && (
                   <p className="text-[11px] text-slate-400 dark:text-white/20 mt-1 italic">Complexity within, simplicity without.</p>
                 )}
@@ -851,7 +851,7 @@ const Settings: React.FC<SettingsProps> = ({ language, onLogout, pendingTab, onT
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {['Go', 'React', 'TailwindCSS', 'SQLite', 'WebSocket', 'SSE'].map(tech => (
-                      <span key={tech} className="px-3 py-1 rounded-full bg-slate-100 dark:bg-white/5 text-[11px] font-mono font-medium text-slate-500 dark:text-white/40 border border-slate-200 dark:border-white/10">{tech}</span>
+                      <span key={tech} className="px-3 py-1 rounded-full theme-field text-[11px] font-mono font-medium theme-text-muted">{tech}</span>
                     ))}
                   </div>
                 </div>

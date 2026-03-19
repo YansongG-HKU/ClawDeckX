@@ -277,17 +277,17 @@ interface AccordionStepProps {
 }
 
 const AccordionStep: React.FC<AccordionStepProps> = ({ stepNum, icon, title, summary, open, done, onToggle, children }) => (
-  <div className={`border rounded-xl transition-colors ${open ? 'overflow-visible border-primary/40 bg-white dark:bg-white/[0.02]' : 'overflow-hidden ' + (done ? 'border-green-300 dark:border-green-500/30 bg-green-50/50 dark:bg-green-500/5' : 'border-slate-200 dark:border-white/[0.06] bg-slate-50 dark:bg-white/[0.01]')}`}>
+  <div className={`border rounded-xl transition-colors ${open ? 'overflow-visible border-primary/40 theme-panel' : 'overflow-hidden ' + (done ? 'border-green-300 dark:border-green-500/30 bg-green-50/50 dark:bg-green-500/5' : 'border-slate-200 dark:border-white/[0.06] theme-panel')}`}>
     <div className={`flex items-center gap-2.5 px-4 py-3 cursor-pointer transition-colors ${open ? '' : 'hover:bg-slate-100 dark:hover:bg-white/[0.03]'}`} onClick={onToggle}>
-      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${done ? 'bg-green-500 text-white' : open ? 'bg-primary text-white' : 'bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-white/40'}`}>
+      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${done ? 'bg-green-500 text-white' : open ? 'bg-primary text-white' : 'theme-field theme-text-muted'}`}>
         {done ? <span className="material-symbols-outlined text-[14px]">check</span> : stepNum}
       </div>
-      <span className={`material-symbols-outlined text-[16px] ${done ? 'text-green-500' : open ? 'text-primary' : 'text-slate-400 dark:text-white/40'}`}>{icon}</span>
+      <span className={`material-symbols-outlined text-[16px] ${done ? 'text-green-500' : open ? 'text-primary' : 'theme-text-muted'}`}>{icon}</span>
       <div className="flex-1 min-w-0">
-        <span className={`text-xs font-bold ${open ? 'text-slate-800 dark:text-white' : 'text-slate-600 dark:text-white/60'}`}>{title}</span>
-        {!open && summary && <p className="text-[10px] text-slate-400 dark:text-white/40 truncate">{summary}</p>}
+        <span className={`text-xs font-bold ${open ? 'text-[var(--color-text)] dark:text-white' : 'theme-text-secondary'}`}>{title}</span>
+        {!open && summary && <p className="text-[10px] theme-text-muted truncate">{summary}</p>}
       </div>
-      <span className={`material-symbols-outlined text-[16px] text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}>expand_more</span>
+      <span className={`material-symbols-outlined text-[16px] theme-text-muted transition-transform ${open ? 'rotate-180' : ''}`}>expand_more</span>
     </div>
     {open && <div className="px-4 pb-4 border-t border-slate-100 dark:border-white/[0.04]">{children}</div>}
   </div>
@@ -335,7 +335,7 @@ const ModelPathSearch: React.FC<ModelPathSearchProps> = ({ value, onChange, opti
   return (
     <div ref={ref} className="relative">
       <div className="relative">
-        <span className="material-symbols-outlined text-[14px] text-slate-400 absolute start-2.5 top-1/2 -translate-y-1/2 pointer-events-none">search</span>
+        <span className="material-symbols-outlined text-[14px] theme-text-muted absolute start-2.5 top-1/2 -translate-y-1/2 pointer-events-none">search</span>
         <input type="text" value={displayValue}
           onChange={e => {
             if (clearOnSelect) setLocalInput(e.target.value);
@@ -353,10 +353,10 @@ const ModelPathSearch: React.FC<ModelPathSearchProps> = ({ value, onChange, opti
             } else if (e.key === 'Escape') { setOpen(false); setHl(-1); }
           }}
           placeholder={placeholder}
-          className="w-full h-8 ps-8 pe-3 bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-md text-xs font-mono text-slate-800 dark:text-slate-200 outline-none focus:border-primary" />
+          className="w-full h-8 ps-8 pe-3 theme-field rounded-md text-xs font-mono outline-none focus:border-primary" />
       </div>
       {open && filtered.length > 0 && (
-        <div className="absolute start-0 end-0 mt-1 max-h-48 overflow-y-auto custom-scrollbar neon-scrollbar rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#2a2a2e] shadow-xl z-50">
+        <div className="absolute start-0 end-0 mt-1 max-h-48 overflow-y-auto custom-scrollbar neon-scrollbar rounded-lg border border-slate-200 dark:border-white/10 theme-panel shadow-xl z-50">
           {filtered.map((o, idx) => (
             <button key={o.path}
               onMouseEnter={() => setHl(idx)}
@@ -364,10 +364,10 @@ const ModelPathSearch: React.FC<ModelPathSearchProps> = ({ value, onChange, opti
               ref={el => { if (idx === hl && el) el.scrollIntoView({ block: 'nearest' }); }}
               className={`w-full text-start px-3 py-2 flex items-center gap-2 transition-colors border-b border-slate-100 dark:border-white/[0.04] last:border-b-0 ${idx === hl ? 'bg-primary/10 dark:bg-primary/20' : 'hover:bg-slate-50 dark:hover:bg-white/[0.04]'}`}>
               <div className="min-w-0 flex-1">
-                <div className="text-[11px] font-mono font-bold text-slate-700 dark:text-white/80 truncate">{o.path}</div>
+                <div className="text-[11px] font-mono font-bold text-[var(--color-text)] dark:text-white/80 truncate">{o.path}</div>
                 {o.name && o.name !== o.model && <div className="text-[11px] text-slate-400 truncate">{o.name}</div>}
               </div>
-              <span className="text-[11px] px-1.5 py-0.5 bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-white/40 rounded shrink-0">{o.provider}</span>
+              <span className="text-[11px] px-1.5 py-0.5 theme-field theme-text-muted rounded shrink-0">{o.provider}</span>
             </button>
           ))}
         </div>
@@ -825,7 +825,7 @@ export const ModelsSection: React.FC<SectionProps> = ({ config, setField, getFie
                 {/* 模型列表 */}
                 <div className="mt-2 pt-2 border-t border-slate-100 dark:border-white/[0.04]">
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10px] font-bold text-slate-500">{es.models} ({models.length})</span>
+                    <span className="text-[10px] font-bold theme-text-secondary">{es.models} ({models.length})</span>
                     <button onClick={() => { setShowAddModel(name); setNewModel({ id: '', name: '', reasoning: false, contextWindow: '', inputCapability: 'text+image', cost: { input: '', output: '', cacheRead: '', cacheWrite: '' } }); setAddModelDiscovered([]); setAddModelDiscovering(false); setAddModelSearchOpen(false); setAddModelHighlight(-1); }} className="text-[11px] font-bold text-primary hover:underline">+ {es.add}</button>
                   </div>
                   {models.map((m: any, mi: number) => {
@@ -833,15 +833,15 @@ export const ModelsSection: React.FC<SectionProps> = ({ config, setField, getFie
                     const isPrimary = primaryModel === path;
                     const isFallback = fallbacks.includes(path);
                     return (
-                      <div key={mi} className={`flex items-center gap-2 px-2 py-1.5 rounded-md mb-1 ${isPrimary ? 'bg-primary/5 border border-primary/20' : 'bg-slate-50 dark:bg-white/[0.02]'}`}>
+                      <div key={mi} className={`flex items-center gap-2 px-2 py-1.5 rounded-md mb-1 ${isPrimary ? 'bg-primary/5 border border-primary/20' : 'theme-panel'}`}>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate">{m.name || m.id}</span>
+                            <span className="text-[11px] font-bold text-[var(--color-text)] dark:text-slate-300 truncate">{m.name || m.id}</span>
                             {m.reasoning && <span className="text-[10px] px-1 py-0.5 bg-purple-500/10 text-purple-500 rounded font-bold">R</span>}
                             {Array.isArray(m.input) && m.input.includes('image') && <span className="text-[10px] px-1 py-0.5 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 rounded font-bold" title={es.capTextImage}>V</span>}
-                            {m.contextWindow && <span className="text-[10px] text-slate-400">{Math.round(m.contextWindow / 1000)}K</span>}
+                            {m.contextWindow && <span className="text-[10px] theme-text-muted">{Math.round(m.contextWindow / 1000)}K</span>}
                           </div>
-                          <span className="text-[11px] text-slate-400 font-mono">{m.id}</span>
+                          <span className="text-[11px] theme-text-secondary font-mono">{m.id}</span>
                         </div>
                         <div className="flex items-center gap-0.5 shrink-0">
                           <button onClick={() => setPrimary(path)} title={es.setPrimary} aria-label={es.setPrimary} className={`w-6 h-6 flex items-center justify-center rounded ${isPrimary ? 'text-primary' : 'text-slate-400 hover:text-primary'}`}>
@@ -881,7 +881,7 @@ export const ModelsSection: React.FC<SectionProps> = ({ config, setField, getFie
       ) : (
         <div className="space-y-2">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="text-xs font-bold text-slate-700 dark:text-white/80 flex items-center gap-1.5">
+            <h3 className="text-xs font-bold text-[var(--color-text)] dark:text-white/80 flex items-center gap-1.5">
               <span className="material-symbols-outlined text-sm text-primary">auto_fix_high</span>
               {es.addProviderWizardTitle}
             </h3>
@@ -904,7 +904,7 @@ export const ModelsSection: React.FC<SectionProps> = ({ config, setField, getFie
                         <button key={p.id} onClick={() => handleSelectProvider(p.id)}
                           className={`p-2.5 rounded-lg border-2 transition-all text-start ${selectedProvider === p.id ? 'border-primary bg-primary/5 dark:bg-primary/10' : 'border-slate-200 dark:border-white/10 hover:border-primary/40'}`}>
                           <div className="min-w-0">
-                            <span className="text-[11px] font-bold text-slate-700 dark:text-white/80 truncate block">{p.name}</span>
+                            <span className="text-[11px] font-bold text-[var(--color-text)] dark:text-white/80 truncate block">{p.name}</span>
                           </div>
                         </button>
                       ))}
@@ -921,23 +921,23 @@ export const ModelsSection: React.FC<SectionProps> = ({ config, setField, getFie
               <div className="space-y-3 pt-3">
                 {preset.id === 'custom' && (
                   <div>
-                    <label className="text-[10px] font-bold text-slate-500 mb-1 block">{es.providerName}</label>
+                    <label className="text-[10px] font-bold theme-text-secondary mb-1 block">{es.providerName}</label>
                     <input type="text" value={wizCustomName}
                       onChange={e => setWizCustomName(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ''))}
                       placeholder={es.providerNamePlaceholder}
-                      className="w-full h-8 bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-md px-3 text-xs font-mono text-slate-800 dark:text-slate-200 outline-none focus:border-primary" />
-                    <span className="text-[11px] text-slate-400 dark:text-white/40 mt-0.5 block">{es.providerNameHint}</span>
+                      className="w-full h-8 theme-field rounded-md px-3 text-xs font-mono outline-none focus:border-primary" />
+                    <span className="text-[11px] theme-text-muted mt-0.5 block">{es.providerNameHint}</span>
                   </div>
                 )}
                 {preset.id !== 'ollama' && (
                   <div>
-                    <label className="text-[10px] font-bold text-slate-500 mb-1 flex items-center gap-2">
+                    <label className="text-[10px] font-bold theme-text-secondary mb-1 flex items-center gap-2">
                       {es.lblApiKey}
-                      {preset.envVar && <span className="text-[11px] px-1.5 py-0.5 bg-slate-100 dark:bg-white/5 rounded font-mono">{preset.envVar}</span>}
+                      {preset.envVar && <span className="text-[11px] px-1.5 py-0.5 theme-field rounded font-mono">{preset.envVar}</span>}
                     </label>
                     <div className="relative mt-1">
                       <input type={wizShowKey ? 'text' : 'password'} value={wizApiKey} onChange={e => setWizApiKey(e.target.value)}
-                        placeholder={es.phApiKeySk} className="w-full h-8 pe-8 bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-md px-3 text-xs font-mono text-slate-800 dark:text-slate-200 outline-none focus:border-primary" />
+                        placeholder={es.phApiKeySk} className="w-full h-8 pe-8 theme-field rounded-md px-3 text-xs font-mono outline-none focus:border-primary" />
                       <button onClick={() => setWizShowKey(!wizShowKey)} title={es.lblApiKey} aria-label={es.lblApiKey} className="absolute end-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                         <span className="material-symbols-outlined text-[14px]">{wizShowKey ? 'visibility_off' : 'visibility'}</span>
                       </button>
@@ -951,19 +951,20 @@ export const ModelsSection: React.FC<SectionProps> = ({ config, setField, getFie
                 )}
                 {(preset.needsBaseUrl || preset.category === 'local' || preset.id === 'custom') && (
                   <div>
-                    <label className="text-[10px] font-bold text-slate-500 mb-1 block">{es.lblBaseUrl}</label>
+                    <label className="text-[10px] font-bold theme-text-secondary mb-1 block">{es.lblBaseUrl}</label>
                     <input type="text" value={wizBaseUrl} onChange={e => setWizBaseUrl(e.target.value)}
                       placeholder={preset.baseUrl || es.phOpenAIBaseUrl}
-                      className="w-full h-8 bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-md px-3 text-xs font-mono text-slate-800 dark:text-slate-200 outline-none focus:border-primary" />
+                      className="w-full h-8 theme-field rounded-md px-3 text-xs font-mono outline-none focus:border-primary" />
                   </div>
                 )}
                 {preset.id === 'custom' && (
                   <div>
-                    <label className="text-[10px] font-bold text-slate-500 mb-1 block">{es.apiType}</label>
+                    <label className="text-[10px] font-bold theme-text-secondary mb-1 block">{es.apiType}</label>
                     <div className="flex gap-1.5 flex-wrap">
                       {API_OPTIONS.slice(0, 3).map(o => (
                         <button key={o.value} onClick={() => setWizApiType(o.value)}
-                          className={`px-2.5 py-1.5 rounded-lg text-[10px] font-medium border-2 transition-all ${wizApiType === o.value ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 dark:border-white/10 text-slate-500'}`}>
+                          className={`px-2.5 py-1.5 rounded-lg text-[10px] font-medium border-2 transition-all ${wizApiType === o.value ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 dark:border-white/10 text-slate-500'}`
+                          }>
                           {o.label}
                         </button>
                       ))}
@@ -992,7 +993,9 @@ export const ModelsSection: React.FC<SectionProps> = ({ config, setField, getFie
                     setWizExpandedCost(id);
                   }
                 }
-                setWizSearchInput(''); setModelSearchOpen(false); setModelHighlight(-1);
+                setWizSearchInput('');
+                setModelSearchOpen(false);
+                setModelHighlight(-1);
               };
               return (
                 <div className="space-y-3 pt-3" style={{ overflow: 'visible' }}>
@@ -1037,7 +1040,7 @@ export const ModelsSection: React.FC<SectionProps> = ({ config, setField, getFie
                       </button>
                     </div>
                     {modelSearchOpen && filtered.length > 0 && (
-                      <div ref={modelListRef} className="mt-1 max-h-52 overflow-y-auto custom-scrollbar neon-scrollbar rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#2a2a2e] shadow-xl" style={{ position: 'relative', zIndex: 50 }}>
+                      <div ref={modelListRef} className="mt-1 max-h-52 overflow-y-auto custom-scrollbar neon-scrollbar rounded-lg border border-slate-200 dark:border-white/10 theme-panel shadow-xl" style={{ position: 'relative', zIndex: 50 }}>
                         {filtered.map((m, idx) => (
                           <button key={m.id}
                             onMouseEnter={() => setModelHighlight(idx)}
@@ -1045,8 +1048,8 @@ export const ModelsSection: React.FC<SectionProps> = ({ config, setField, getFie
                             ref={el => { if (idx === modelHighlight && el) el.scrollIntoView({ block: 'nearest' }); }}
                             className={`w-full text-start px-3 py-2.5 flex items-center justify-between gap-2 transition-colors border-b border-slate-100 dark:border-white/[0.04] last:border-b-0 ${idx === modelHighlight ? 'bg-primary/10 dark:bg-primary/20' : 'hover:bg-slate-50 dark:hover:bg-white/[0.04]'}`}>
                             <div className="min-w-0">
-                              <div className="text-[11px] font-bold text-slate-700 dark:text-white/80 truncate">{m.name}</div>
-                              <div className="text-[11px] font-mono text-slate-400 truncate">{m.id}</div>
+                              <div className="text-[11px] font-bold text-[var(--color-text)] dark:text-white/80 truncate">{m.name}</div>
+                              <div className="text-[11px] font-mono theme-text-secondary truncate">{m.id}</div>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
                               {m.cost && <span className="text-[10px] px-1.5 py-0.5 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded" title={`${es.inputCost}: $${m.cost.input}, ${es.outputCost}: $${m.cost.output}`}>${m.cost.input}/${m.cost.output}</span>}
@@ -1071,11 +1074,11 @@ export const ModelsSection: React.FC<SectionProps> = ({ config, setField, getFie
                           return (
                             <div key={mid} className="px-3 py-2">
                               <div className="flex items-center gap-2">
-                                <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded shrink-0 ${idx === 0 ? 'bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-400' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-white/40'}`}>
+                                <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded shrink-0 ${idx === 0 ? 'bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-400' : 'theme-field theme-text-muted'}`}>
                                   {idx === 0 ? es.primary : `${es.fallbackN} ${idx}`}
                                 </span>
                                 <div className="flex-1 min-w-0">
-                                  <span className="text-[11px] font-mono text-slate-700 dark:text-white/80 truncate block">{mid}</span>
+                                  <span className="text-[11px] font-mono text-[var(--color-text)] dark:text-white/80 truncate block">{mid}</span>
                                   <div className="flex items-center gap-2">
                                     {info && info.name !== mid && <span className="text-[11px] text-slate-400 truncate">{info.name}{info.ctx ? ` · ${info.ctx}` : ''}</span>}
                                     {displayCost && <span className="text-[10px] text-amber-500">💰 ${displayCost.input || '0'}/${displayCost.output || '0'}</span>}
@@ -1227,17 +1230,17 @@ export const ModelsSection: React.FC<SectionProps> = ({ config, setField, getFie
                 )}
                 {/* 配置预览 */}
                 <div className="p-3 rounded-lg bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06]">
-                  <div className="text-[10px] font-bold text-slate-500 mb-1.5">{es.configSummary}</div>
+                  <div className="text-[10px] font-bold theme-text-secondary mb-1.5">{es.configSummary}</div>
                   <div className="grid grid-cols-2 gap-2 text-[10px]">
-                    <div><span className="text-slate-400">{es.provider}:</span> <span className="font-bold text-slate-700 dark:text-white/80">{preset.icon} {selectedPresetDisplayName}</span></div>
-                    <div><span className="text-slate-400">{es.lblApi}:</span> <span className="font-bold text-slate-700 dark:text-white/80">{wizApiType}</span></div>
-                    <div><span className="text-slate-400">{es.lblApiKey}:</span> <span className="font-bold text-slate-700 dark:text-white/80">{wizApiKey ? '✓' : '—'}</span></div>
-                    <div><span className="text-slate-400">{es.models}:</span> <span className="font-bold text-slate-700 dark:text-white/80">{wizModels.length}</span></div>
+                    <div><span className="theme-text-muted">{es.provider}:</span> <span className="font-bold text-[var(--color-text)] dark:text-white/80">{preset.icon} {selectedPresetDisplayName}</span></div>
+                    <div><span className="theme-text-muted">{es.lblApi}:</span> <span className="font-bold text-[var(--color-text)] dark:text-white/80">{wizApiType}</span></div>
+                    <div><span className="theme-text-muted">{es.lblApiKey}:</span> <span className="font-bold text-[var(--color-text)] dark:text-white/80">{wizApiKey ? '✓' : '—'}</span></div>
+                    <div><span className="theme-text-muted">{es.models}:</span> <span className="font-bold text-[var(--color-text)] dark:text-white/80">{wizModels.length}</span></div>
                   </div>
                   {wizModels.length > 0 && (
                     <div className="mt-2 pt-2 border-t border-slate-200 dark:border-white/[0.06] space-y-0.5">
                       {wizModels.map((mid, idx) => (
-                        <div key={mid} className="text-[10px] font-mono text-slate-600 dark:text-white/60">
+                        <div key={mid} className="text-[10px] font-mono theme-text-secondary">
                           <span className={`inline-block w-14 text-[11px] font-bold ${idx === 0 ? 'text-green-600 dark:text-green-400' : 'text-slate-400'}`}>
                             {idx === 0 ? es.primary : `${es.fallbackN} ${idx}`}
                           </span>
@@ -1315,11 +1318,11 @@ export const ModelsSection: React.FC<SectionProps> = ({ config, setField, getFie
                       const info = allModelPaths.find(o => o.path === path);
                       return (
                         <div key={path} className="flex items-center gap-2 px-3 py-2">
-                          <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded shrink-0 ${idx === 0 ? 'bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-400' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-white/40'}`}>
+                          <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded shrink-0 ${idx === 0 ? 'bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-400' : 'theme-field theme-text-muted'}`}>
                             {idx === 0 ? es.primary : `${es.fallbackN} ${idx}`}
                           </span>
                           <div className="flex-1 min-w-0">
-                            <span className="text-[11px] font-mono text-slate-700 dark:text-white/80 truncate block">{path}</span>
+                            <span className="text-[11px] font-mono text-[var(--color-text)] dark:text-white/80 truncate block">{path}</span>
                             {info && info.name && info.name !== info.model && <span className="text-[11px] text-slate-400 truncate block">{info.name}</span>}
                           </div>
                           <div className="flex items-center gap-0.5 shrink-0">
@@ -1464,7 +1467,7 @@ export const ModelsSection: React.FC<SectionProps> = ({ config, setField, getFie
                           ref={el => { if (idx === addModelHighlight && el) el.scrollIntoView({ block: 'nearest' }); }}
                           className={`w-full text-start px-3 py-2 flex items-center gap-2 transition-colors border-b border-slate-100 dark:border-white/[0.04] last:border-b-0 ${idx === addModelHighlight ? 'bg-primary/10 dark:bg-primary/20' : 'hover:bg-slate-50 dark:hover:bg-white/[0.04]'}`}>
                           <div className="min-w-0 flex-1">
-                            <div className="text-[11px] font-mono font-bold text-slate-700 dark:text-white/80 truncate">{m.id}</div>
+                            <div className="text-[11px] font-mono font-bold text-[var(--color-text)] dark:text-white/80 truncate">{m.id}</div>
                             {m.name && m.name !== m.id && <div className="text-[11px] text-slate-400 truncate">{m.name}</div>}
                           </div>
                           <span className="material-symbols-outlined text-[14px] text-primary/60 shrink-0">add_circle</span>

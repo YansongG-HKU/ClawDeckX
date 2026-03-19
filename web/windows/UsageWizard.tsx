@@ -613,7 +613,7 @@ const UsageWizard: React.FC<UsageWizardProps> = ({ language, onOpenEditor, onOpe
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
           <span className="material-symbols-outlined text-4xl text-primary animate-spin">progress_activity</span>
-          <p className="text-xs text-slate-400 dark:text-white/40 mt-3">{o?.scanning}</p>
+          <p className="text-xs theme-text-muted mt-3">{o?.scanning}</p>
         </div>
       </div>
     );
@@ -626,8 +626,8 @@ const UsageWizard: React.FC<UsageWizardProps> = ({ language, onOpenEditor, onOpe
           <div className="w-16 h-16 rounded-2xl bg-mac-red/10 flex items-center justify-center mx-auto mb-4">
             <span className="material-symbols-outlined text-[32px] text-mac-red">cloud_off</span>
           </div>
-          <h2 className="text-sm font-bold text-slate-700 dark:text-white/80 mb-2">{o?.gwErrorTitle}</h2>
-          <p className="text-[11px] text-slate-500 dark:text-white/40 mb-1">{o?.gwErrorDesc}</p>
+          <h2 className="text-sm font-bold text-[var(--color-text)] dark:text-white/80 mb-2">{o?.gwErrorTitle}</h2>
+          <p className="text-[11px] theme-text-secondary mb-1">{o?.gwErrorDesc}</p>
           <p className="text-[10px] text-slate-400 dark:text-white/30 font-mono mb-4">{gwError}</p>
           <div className="flex items-center justify-center gap-3">
             <button onClick={fetchAll}
@@ -636,7 +636,7 @@ const UsageWizard: React.FC<UsageWizardProps> = ({ language, onOpenEditor, onOpe
             </button>
             {onOpenEditor && (
               <button onClick={onOpenEditor}
-                className="text-[11px] px-4 py-2 rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/50 font-bold hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors flex items-center gap-1.5">
+                className="text-[11px] px-4 py-2 rounded-lg theme-field theme-text-secondary font-bold hover:bg-slate-100 dark:hover:bg-white/[0.03] transition-colors flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-[14px]">settings</span>{o?.goEditor}
               </button>
             )}
@@ -655,11 +655,11 @@ const UsageWizard: React.FC<UsageWizardProps> = ({ language, onOpenEditor, onOpe
     const available = dbTemplates.filter(t => t.target_file === editingFile.fileName);
     return (
       <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6" onClick={() => setEditingFile(null)}>
-        <div className="bg-white dark:bg-[#1a1c20] rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] sm:max-h-[80vh] h-full sm:h-auto sm:min-h-[50vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="theme-panel rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] sm:max-h-[80vh] h-full sm:h-auto sm:min-h-[50vh] flex flex-col" onClick={e => e.stopPropagation()}>
           <div className="flex items-center justify-between px-4 md:px-5 py-3 border-b border-slate-200 dark:border-white/[0.06] shrink-0">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-[16px] text-primary">description</span>
-              <span className="text-xs font-bold text-slate-700 dark:text-white/80 font-mono">{editingFile.fileName}</span>
+              <span className="text-xs font-bold text-[var(--color-text)] dark:text-white/80 font-mono">{editingFile.fileName}</span>
             </div>
             <div className="flex items-center gap-2">
               <button onClick={() => setShowTemplates(!showTemplates)}
@@ -681,7 +681,7 @@ const UsageWizard: React.FC<UsageWizardProps> = ({ language, onOpenEditor, onOpe
             {showTemplates && available.length > 0 && (
               <div className="hidden sm:flex w-48 md:w-56 border-e border-slate-200 dark:border-white/[0.06] flex-col shrink-0">
                 <div className="px-3 py-2 border-b border-slate-100 dark:border-white/[0.04]">
-                  <p className="text-[11px] font-bold text-slate-400 dark:text-white/40 uppercase tracking-wider">{o?.templateSidebar}</p>
+                  <p className="text-[11px] font-bold theme-text-muted uppercase tracking-wider">{o?.templateSidebar}</p>
                 </div>
                 <div className="flex-1 overflow-y-auto custom-scrollbar neon-scrollbar p-2 space-y-1.5">
                   {available.map(tpl => {
@@ -742,7 +742,7 @@ const UsageWizard: React.FC<UsageWizardProps> = ({ language, onOpenEditor, onOpe
       <div key={item.id} className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg group">
         <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusDot(item.status)}`} />
         <span className="material-symbols-outlined text-[14px] text-slate-400 dark:text-white/35">{item.icon}</span>
-        <span className={`text-[11px] flex-1 ${item.status === 'pass' ? 'text-slate-400 dark:text-white/40' : 'text-slate-600 dark:text-white/60'}`}>{(o as any)?.[item.id] || item.id}</span>
+        <span className={`text-[11px] flex-1 ${item.status === 'pass' ? 'theme-text-muted' : 'theme-text-secondary'}`}>{(o as any)?.[item.id] || item.id}</span>
         {act && (
           <button onClick={act.action}
             className="text-[10px] px-2 py-0.5 rounded-md text-primary hover:bg-primary/10 font-bold transition-colors opacity-0 group-hover:opacity-100 flex items-center gap-0.5 shrink-0">
@@ -755,16 +755,16 @@ const UsageWizard: React.FC<UsageWizardProps> = ({ language, onOpenEditor, onOpe
 
   const renderIdentityActions = () => {
     const agentId = defaultAgentId;
-    if (!agentId) return <p className="text-[10px] text-slate-400">{o?.noAgent}</p>;
+    if (!agentId) return <p className="text-[10px] theme-text-secondary">{o?.noAgent}</p>;
     const files = ['IDENTITY.md', 'USER.md'];
     return (
       <div className="space-y-1.5 mt-2">
         {files.map(f => {
           const exists = hasFile(f);
           return (
-            <div key={f} className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-slate-50/50 dark:bg-white/[0.015]">
+            <div key={f} className="flex items-center gap-2.5 px-3 py-2 rounded-lg theme-panel">
               <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${exists ? 'bg-mac-green' : 'bg-mac-yellow'}`} />
-              <span className="text-[10px] font-mono font-semibold text-slate-600 dark:text-white/50 flex-1">{f}</span>
+              <span className="text-[10px] font-mono font-semibold theme-text-secondary flex-1">{f}</span>
               <button onClick={() => openFileEditor(agentId, f)}
                 className="text-[11px] px-2 py-0.5 rounded-md text-primary hover:bg-primary/5 font-bold transition-colors">
                 {exists ? o?.edit : o?.create}
@@ -787,9 +787,9 @@ const UsageWizard: React.FC<UsageWizardProps> = ({ language, onOpenEditor, onOpe
       {activeChannels.length > 0 && (
         <div className="space-y-1">
           {activeChannels.map((ch: any, i: number) => (
-            <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50/50 dark:bg-white/[0.015]">
+            <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-lg theme-panel">
               <div className="w-1.5 h-1.5 rounded-full bg-mac-green animate-pulse shrink-0" />
-              <span className="text-[10px] font-semibold text-slate-600 dark:text-white/50 flex-1">{ch.label || ch.name || ch.id}</span>
+              <span className="text-[10px] font-semibold theme-text-secondary flex-1">{ch.label || ch.name || ch.id}</span>
               <span className="text-[10px] text-mac-green font-bold">{o?.connected}</span>
             </div>
           ))}
@@ -844,7 +844,7 @@ const UsageWizard: React.FC<UsageWizardProps> = ({ language, onOpenEditor, onOpe
           <div className="rounded-2xl border-2 border-mac-green/40 bg-gradient-to-br from-mac-green/[0.06] to-emerald-500/[0.03] p-5 text-center">
             <div className="text-3xl mb-2">🎉</div>
             <h3 className="text-sm font-bold text-mac-green mb-1">{o?.completionTitle}</h3>
-            <p className="text-[11px] text-slate-500 dark:text-white/40 mb-4">{o?.completionDesc}</p>
+            <p className="text-[11px] theme-text-secondary mb-4">{o?.completionDesc}</p>
             <div className="flex items-center justify-center gap-3">
               {onOpenChat && (
                 <button onClick={onOpenChat}
@@ -877,8 +877,8 @@ const UsageWizard: React.FC<UsageWizardProps> = ({ language, onOpenEditor, onOpe
                 </div>
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-xs font-bold text-slate-700 dark:text-white/80">{o?.readinessTitle}</h3>
-                <p className="text-[10px] text-slate-500 dark:text-white/40 mt-0.5">{readinessMsg}</p>
+                <h3 className="text-xs font-bold text-[var(--color-text)] dark:text-white/80">{o?.readinessTitle}</h3>
+                <p className="text-[10px] theme-text-secondary mt-0.5">{readinessMsg}</p>
               </div>
             </div>
           </div>
@@ -895,7 +895,7 @@ const UsageWizard: React.FC<UsageWizardProps> = ({ language, onOpenEditor, onOpe
           const allPass = sectionPass === sectionTotal;
           const isRequired = section.required;
           return (
-            <div key={sectionKey} className={`rounded-2xl border transition-all ${isOpen ? 'border-primary/30 bg-white dark:bg-white/[0.02] shadow-sm' : allPass ? 'border-mac-green/20 bg-mac-green/[0.03]' : 'border-slate-200/60 dark:border-white/[0.06] bg-white dark:bg-white/[0.02]'}`}>
+            <div key={sectionKey} className={`rounded-2xl border transition-all ${isOpen ? 'border-primary/30 theme-panel shadow-sm' : allPass ? 'border-mac-green/20 bg-mac-green/[0.03]' : 'border-slate-200/60 dark:border-white/[0.06] theme-panel'}`}>
               <button onClick={() => setActiveSection(isOpen ? null : sectionKey)}
                 className="w-full flex items-center gap-3 px-4 py-3 text-start">
                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${allPass ? 'bg-mac-green/10' : 'bg-primary/10'}`}>
@@ -905,7 +905,7 @@ const UsageWizard: React.FC<UsageWizardProps> = ({ language, onOpenEditor, onOpe
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-700 dark:text-white/80">{section.section}</span>
+                    <span className="text-xs font-bold text-[var(--color-text)] dark:text-white/80">{section.section}</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${isRequired ? 'bg-mac-red/10 text-mac-red' : 'bg-primary/10 text-primary/70'}`}>
                       {isRequired ? o?.requiredLabel : o?.recommendedLabel}
                     </span>
@@ -959,8 +959,8 @@ const UsageWizard: React.FC<UsageWizardProps> = ({ language, onOpenEditor, onOpe
               <span className={`material-symbols-outlined text-[20px] ${capabilityIssueCount === 0 ? 'text-mac-green' : capabilityFailCount > 0 ? 'text-red-500' : 'text-amber-500'}`}>tune</span>
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-xs font-bold text-slate-700 dark:text-white/80">{o?.capabilityTitle || 'Capability Limits'}</h3>
-              <p className="text-[11px] text-slate-500 dark:text-white/40 mt-0.5">{o?.capabilitySubtitle || 'These settings directly change what OpenClaw can do, even if the system is otherwise healthy.'}</p>
+              <h3 className="text-xs font-bold text-[var(--color-text)] dark:text-white/80">{o?.capabilityTitle || 'Capability Limits'}</h3>
+              <p className="text-[11px] theme-text-secondary mt-0.5">{o?.capabilitySubtitle || 'These settings directly change what OpenClaw can do, even if the system is otherwise healthy.'}</p>
               <p className="text-[11px] font-medium mt-2 text-slate-600 dark:text-white/55">
                 {capabilityIssueCount === 0
                   ? (o?.capSummaryOk || 'No major capability restrictions detected.')
@@ -1097,11 +1097,11 @@ const UsageWizard: React.FC<UsageWizardProps> = ({ language, onOpenEditor, onOpe
         {/* Mode toggle */}
         <div className="flex items-center gap-2">
           <button onClick={() => setIdentityMode('qa')}
-            className={`text-[10px] px-3 py-1.5 rounded-lg font-bold transition-colors flex items-center gap-1 ${identityMode === 'qa' ? 'bg-primary text-white' : 'text-slate-500 dark:text-white/40 hover:bg-slate-100 dark:hover:bg-white/[0.04]'}`}>
+            className={`text-[10px] px-3 py-1.5 rounded-lg font-bold transition-colors flex items-center gap-1 ${identityMode === 'qa' ? 'bg-primary text-white' : 'theme-text-secondary hover:bg-slate-100 dark:hover:bg-white/[0.04]'}`}>
             <span className="material-symbols-outlined text-[12px]">chat</span>{o?.identityModeQa}
           </button>
           <button onClick={() => setIdentityMode('manual')}
-            className={`text-[10px] px-3 py-1.5 rounded-lg font-bold transition-colors flex items-center gap-1 ${identityMode === 'manual' ? 'bg-primary text-white' : 'text-slate-500 dark:text-white/40 hover:bg-slate-100 dark:hover:bg-white/[0.04]'}`}>
+            className={`text-[10px] px-3 py-1.5 rounded-lg font-bold transition-colors flex items-center gap-1 ${identityMode === 'manual' ? 'bg-primary text-white' : 'theme-text-secondary hover:bg-slate-100 dark:hover:bg-white/[0.04]'}`}>
             <span className="material-symbols-outlined text-[12px]">edit_note</span>{o?.identityModeManual}
           </button>
         </div>
@@ -1286,27 +1286,24 @@ const UsageWizard: React.FC<UsageWizardProps> = ({ language, onOpenEditor, onOpe
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-slate-50/50 dark:bg-transparent">
+    <div className="flex-1 flex flex-col overflow-hidden theme-surface">
       {/* Header */}
       <div className="shrink-0 px-4 md:px-6 pt-4 md:pt-5 pb-3 md:pb-4 border-b border-slate-200/60 dark:border-white/[0.06]">
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
-              <span className="material-symbols-outlined text-[20px] text-primary">auto_fix_high</span>
-              {o?.title}
-            </h1>
-            <p className="text-[10px] text-slate-400 dark:text-white/40 mt-0.5 truncate">{o?.subtitle}</p>
+            <h1 className="text-sm font-bold text-[var(--color-text)] dark:text-white/80">{o?.title}</h1>
+            <p className="text-[10px] theme-text-muted mt-0.5 truncate">{o?.subtitle}</p>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            <button onClick={resetWizard} className="p-1.5 rounded-lg text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-all" title={o?.resetWizard}>
+            <button onClick={resetWizard} className="p-1.5 rounded-lg theme-text-muted hover:text-[var(--color-text-secondary)] dark:hover:text-white/60 hover:bg-slate-100 dark:hover:bg-white/[0.04] transition-all" title={o?.resetWizard}>
               <span className="material-symbols-outlined text-[16px]">restart_alt</span>
             </button>
-            <button onClick={fetchAll} className="p-1.5 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-all" title={o?.refresh}>
+            <button onClick={fetchAll} className="p-1.5 rounded-lg theme-text-muted hover:text-[var(--color-text-secondary)] dark:hover:text-white/60 hover:bg-slate-100 dark:hover:bg-white/[0.04] transition-all" title={o?.refresh}>
               <span className="material-symbols-outlined text-[16px]">refresh</span>
             </button>
             {onDismiss && (
               <button onClick={() => { try { localStorage.setItem(WIZARD_DISMISSED_KEY, '1'); } catch {} onDismiss(); }}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white/60 hover:bg-slate-100 dark:hover:bg-white/[0.04] transition-all" title={o?.dismissWizard}>
+                className="p-1.5 rounded-lg theme-text-muted hover:text-[var(--color-text-secondary)] dark:hover:text-white/60 hover:bg-slate-100 dark:hover:bg-white/[0.04] transition-all" title={o?.dismissWizard}>
                 <span className="material-symbols-outlined text-[16px]">close</span>
               </button>
             )}
@@ -1340,7 +1337,7 @@ const UsageWizard: React.FC<UsageWizardProps> = ({ language, onOpenEditor, onOpe
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold whitespace-nowrap transition-all shrink-0 ${
                   isActive
                     ? 'bg-primary text-white shadow-sm'
-                    : 'text-slate-500 dark:text-white/40 hover:bg-slate-100 dark:hover:bg-white/[0.04]'
+                    : 'theme-text-secondary hover:bg-slate-100 dark:hover:bg-white/[0.04]'
                 }`}>
                 <span className="material-symbols-outlined text-[14px]">{step.icon}</span>
                 <span className="hidden sm:inline">{label}</span>
@@ -1371,35 +1368,35 @@ const UsageWizard: React.FC<UsageWizardProps> = ({ language, onOpenEditor, onOpe
       {/* Preset preview modal */}
       {presetPreview && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setPresetPreview(null)}>
-          <div className="bg-white dark:bg-[#1a1c20] rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="theme-panel rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col sci-card" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${presetPreview.metadata.color || 'from-primary to-primary/80'} flex items-center justify-center`}>
                   <span className="material-symbols-outlined text-[14px] text-white">{presetPreview.metadata.icon || 'person'}</span>
                 </div>
-                <span className="text-xs font-bold text-slate-700 dark:text-white/80">
+                <span className="text-xs font-bold text-[var(--color-text)] dark:text-white/80">
                   {presetPreview.metadata.name}
                 </span>
               </div>
-              <button onClick={() => setPresetPreview(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white/60 p-1">
+              <button onClick={() => setPresetPreview(null)} className="theme-text-muted hover:text-[var(--color-text-secondary)] dark:hover:text-white/60 p-1">
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
             </div>
             <div className="flex-1 overflow-y-auto custom-scrollbar neon-scrollbar p-5 space-y-3">
-              <div className="rounded-lg bg-slate-50 dark:bg-white/[0.02] p-3">
+              <div className="rounded-lg theme-field p-3">
                 <p className="text-[10px] font-bold text-primary mb-1">IDENTITY.md</p>
-                <pre className="text-[11px] text-slate-600 dark:text-white/50 whitespace-pre-wrap font-mono leading-relaxed">{presetPreview.content.identityContent || ''}</pre>
+                <pre className="text-[11px] theme-text-secondary whitespace-pre-wrap font-mono leading-relaxed">{presetPreview.content.identityContent || ''}</pre>
               </div>
               {presetPreview.content.userContent && (
-                <div className="rounded-lg bg-slate-50 dark:bg-white/[0.02] p-3">
+                <div className="rounded-lg theme-field p-3">
                   <p className="text-[10px] font-bold text-primary mb-1">USER.md</p>
-                  <pre className="text-[11px] text-slate-600 dark:text-white/50 whitespace-pre-wrap font-mono leading-relaxed">{presetPreview.content.userContent}</pre>
+                  <pre className="text-[11px] theme-text-secondary whitespace-pre-wrap font-mono leading-relaxed">{presetPreview.content.userContent}</pre>
                 </div>
               )}
             </div>
             <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-slate-100 dark:border-white/[0.04]">
               <button onClick={() => setPresetPreview(null)}
-                className="text-[10px] px-3 py-1.5 rounded-lg text-slate-500 dark:text-white/40 font-bold hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors">
+                className="text-[10px] px-3 py-1.5 rounded-lg theme-text-secondary font-bold hover:bg-slate-100 dark:hover:bg-white/[0.03] transition-colors">
                 {o?.cancel}
               </button>
               <button onClick={() => { applyIdentityPreset(presetPreview); setPresetPreview(null); }}

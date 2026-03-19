@@ -397,7 +397,7 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 ${
                         isDone ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 scale-100' :
                         isActive ? 'bg-primary text-white shadow-lg shadow-primary/30 ring-4 ring-primary/20 scale-110' :
-                        'bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/30'
+                        'theme-field theme-text-muted'
                       }`}>
                         {isDone ? (
                           <span className="material-symbols-outlined text-[18px]">check</span>
@@ -410,17 +410,17 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
                       <p className={`text-[11px] font-bold mt-2 transition-colors ${
                         isDone ? 'text-emerald-600 dark:text-emerald-400' :
                         isActive ? 'text-primary' :
-                        'text-slate-400 dark:text-white/30'
+                        'theme-text-muted'
                       }`}>{step.label}</p>
                       {step.desc && (
                         <p className={`text-[9px] mt-0.5 text-center max-w-[100px] ${
-                          isActive ? 'text-slate-500 dark:text-white/40' : 'text-slate-300 dark:text-white/15'
+                          isActive ? 'theme-text-secondary' : 'theme-text-muted opacity-60'
                         }`}>{step.desc}</p>
                       )}
                     </div>
                     {!isLast && (
                       <div className="flex-1 flex items-center pt-5 px-1 min-w-[40px]">
-                        <div className="w-full h-[3px] rounded-full bg-slate-100 dark:bg-white/5 overflow-hidden relative">
+                        <div className="w-full h-[3px] rounded-full theme-field overflow-hidden relative">
                           <div className={`absolute inset-y-0 start-0 rounded-full transition-all duration-700 ease-out ${
                             isDone ? 'w-full bg-emerald-500' :
                             isActive && (phase === 'install' || phase === 'starting') ? 'bg-primary/60 animate-pulse' :
@@ -485,35 +485,35 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
 
         {/* 扫描阶段 */}
         {phase === 'scan' && (
-          <div className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+          <div className="theme-panel rounded-2xl p-6 shadow-sm">
             {isScanning ? (
               <div className="text-center py-12">
                 <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-slate-500 dark:text-white/60">{sw.scanning}</p>
+                <p className="theme-text-secondary">{sw.scanning}</p>
               </div>
             ) : scanResult ? (
               <div className="space-y-6">
                 {/* 系统信息 */}
                 <div>
-                  <h3 className="text-sm font-bold text-slate-800 dark:text-white/80 mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-[var(--color-text)] dark:text-white/80 mb-3 flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary">computer</span>
                     {sw.sysInfo}
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-slate-50 dark:bg-white/5 rounded-lg">
-                      <p className="text-[10px] text-slate-400 uppercase">OS</p>
-                      <p className="text-sm font-medium text-slate-700 dark:text-white/80">{scanResult.os} / {scanResult.arch}</p>
+                    <div className="p-3 theme-field rounded-lg">
+                      <p className="text-[10px] theme-text-muted uppercase">OS</p>
+                      <p className="text-sm font-medium text-[var(--color-text)] dark:text-white/80">{scanResult.os} / {scanResult.arch}</p>
                     </div>
-                    <div className="p-3 bg-slate-50 dark:bg-white/5 rounded-lg">
-                      <p className="text-[10px] text-slate-400 uppercase">{sw.pkgMgr}</p>
-                      <p className="text-sm font-medium text-slate-700 dark:text-white/80">{scanResult.packageManager || common.na}</p>
+                    <div className="p-3 theme-field rounded-lg">
+                      <p className="text-[10px] theme-text-muted uppercase">{sw.pkgMgr}</p>
+                      <p className="text-sm font-medium text-[var(--color-text)] dark:text-white/80">{scanResult.packageManager || common.na}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* 工具状态 */}
                 <div>
-                  <h3 className="text-sm font-bold text-slate-800 dark:text-white/80 mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-[var(--color-text)] dark:text-white/80 mb-3 flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary">build</span>
                     {sw.deps}
                   </h3>
@@ -521,8 +521,8 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
                     {['node', 'npm', 'git', 'openclaw', 'clawhub'].map(tool => {
                       const info = scanResult.tools ? scanResult.tools[tool] : undefined;
                       return (
-                        <div key={tool} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-white/5 rounded-lg">
-                          <span className="text-sm font-medium text-slate-700 dark:text-white/80 capitalize">{tool}</span>
+                        <div key={tool} className="flex items-center justify-between p-3 theme-field rounded-lg">
+                          <span className="text-sm font-medium text-[var(--color-text)] dark:text-white/80 capitalize">{tool}</span>
                           <div className="flex items-center gap-2">
                             {info?.installed ? (
                               <>
@@ -541,10 +541,10 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
 
                 {/* 技能运行时依赖 */}
                 <div>
-                  <h3 className="text-sm font-bold text-slate-800 dark:text-white/80 mb-3 flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-[var(--color-text)] dark:text-white/80 mb-3 flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary">extension</span>
                     {sw.skillDeps}
-                    <span className="text-[10px] text-slate-400 dark:text-white/40 font-normal">{sw.skillDepsDesc}</span>
+                    <span className="text-[10px] theme-text-muted font-normal">{sw.skillDepsDesc}</span>
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {([
@@ -556,8 +556,8 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
                     ] as [string, string][]).map(([key, label]) => {
                       const info = scanResult.tools ? scanResult.tools[key] : undefined;
                       return (
-                        <div key={key} className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-white/5 rounded-lg">
-                          <span className="text-xs font-medium text-slate-700 dark:text-white/80">{label}</span>
+                        <div key={key} className="flex items-center justify-between p-2.5 theme-field rounded-lg">
+                          <span className="text-xs font-medium text-[var(--color-text)] dark:text-white/80">{label}</span>
                           <div className="flex items-center gap-1.5">
                             {info?.installed ? (
                               <>
@@ -615,7 +615,7 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
                 {/* 安装选项 */}
                 {!scanResult.openClawInstalled && (
                   <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-white/10">
-                    <h4 className="text-sm font-bold text-slate-800 dark:text-white/80">
+                    <h4 className="text-sm font-bold text-[var(--color-text)] dark:text-white/80">
                       {sw.installOpts}
                     </h4>
 
@@ -627,8 +627,8 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
                       >
                         <div className="flex items-center gap-2">
                           <span className="material-symbols-outlined text-base text-slate-400">settings</span>
-                          <span className="text-sm font-medium text-slate-700 dark:text-white/80">{sw.advancedSettings}</span>
-                          <span className="text-[10px] text-slate-400 dark:text-white/40">{sw.advancedDesc}</span>
+                          <span className="text-sm font-medium text-[var(--color-text)] dark:text-white/80">{sw.advancedSettings}</span>
+                          <span className="text-[10px] theme-text-muted">{sw.advancedDesc}</span>
                         </div>
                         <span className={`material-symbols-outlined text-[16px] text-slate-400 transition-transform ${advancedOpen ? 'rotate-180' : ''}`}>expand_more</span>
                       </button>
@@ -636,7 +636,7 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
                         <div className="px-4 pb-4 space-y-4 border-t border-slate-200 dark:border-white/10 pt-3">
                           {/* npm 镜像源 */}
                           <div>
-                            <label className="text-xs text-slate-500 dark:text-white/50 mb-2 block">{sw.npmRegistry}</label>
+                            <label className="text-xs theme-text-secondary mb-2 block">{sw.npmRegistry}</label>
                             <div className="grid grid-cols-2 gap-2">
                               {NPM_REGISTRY_MIRRORS.map(mirror => {
                                 const mirrorUrl = mirror.priority === 1 ? '' : mirror.url;
@@ -644,8 +644,8 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
                                 return (
                                   <button key={mirror.url} onClick={() => setSelectedRegistry(mirrorUrl)}
                                     className={`p-3 rounded-lg border-2 transition-all relative ${selectedRegistry === mirrorUrl ? 'border-primary bg-primary/10 dark:bg-primary/20' : 'border-slate-200 dark:border-white/10 hover:border-primary/50'}`}>
-                                    <div className="text-sm font-medium text-slate-800 dark:text-white">{mirror.name}</div>
-                                    <div className="text-[10px] text-slate-500 dark:text-white/50 mt-1 truncate">{new URL(mirror.url).hostname}</div>
+                                    <div className="text-sm font-medium text-[var(--color-text)] dark:text-white">{mirror.name}</div>
+                                    <div className="text-[10px] theme-text-secondary mt-1 truncate">{new URL(mirror.url).hostname}</div>
                                     {isFastest && !isDetectingRegistry && (
                                       <span className="absolute -top-1.5 -right-1.5 text-[9px] bg-green-500 text-white px-1.5 py-0.5 rounded-full font-bold">{sw.fastest || '⚡ fastest'}</span>
                                     )}
@@ -659,15 +659,15 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
                           </div>
                           {/* 内网穿透 / 虚拟局域网 */}
                           <div>
-                            <label className="text-xs text-slate-500 dark:text-white/50 mb-1 block">{sw.vpnTools}</label>
-                            <p className="text-[10px] text-slate-400 dark:text-white/35 mb-2">{sw.vpnToolsDesc}</p>
+                            <label className="text-xs theme-text-secondary mb-1 block">{sw.vpnTools}</label>
+                            <p className="text-[10px] theme-text-muted mb-2">{sw.vpnToolsDesc}</p>
                             <div className="space-y-2">
                               <label className="flex items-start gap-3 p-3 rounded-lg border border-slate-200 dark:border-white/10 hover:border-primary/40 transition-colors cursor-pointer">
                                 <input type="checkbox" checked={installZeroTier} onChange={e => setInstallZeroTier(e.target.checked)}
                                   className="mt-0.5 w-4 h-4 rounded border-slate-300 dark:border-white/20 text-primary focus:ring-primary/30" />
                                 <div className="flex-1">
-                                  <div className="text-sm font-medium text-slate-700 dark:text-white/80">🌐 {sw.installZeroTier}</div>
-                                  <div className="text-[10px] text-slate-400 dark:text-white/40 mt-0.5">{sw.zeroTierDesc}</div>
+                                  <div className="text-sm font-medium text-[var(--color-text)] dark:text-white/80">🌐 {sw.installZeroTier}</div>
+                                  <div className="text-[10px] theme-text-muted mt-0.5">{sw.zeroTierDesc}</div>
                                 </div>
                               </label>
                               {installZeroTier && (
@@ -677,17 +677,17 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
                                     value={zerotierNetworkId}
                                     onChange={e => setZerotierNetworkId(e.target.value.replace(/[^a-fA-F0-9]/g, '').slice(0, 16))}
                                     placeholder={sw.zerotierNetworkIdPlaceholder}
-                                    className="w-full h-8 px-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-mono text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/35 outline-none focus:ring-1 focus:ring-primary/40"
+                                    className="w-full h-8 px-3 theme-field rounded-lg text-xs font-mono placeholder:text-slate-400 dark:placeholder:text-white/35 outline-none focus:ring-1 focus:ring-primary/40"
                                   />
-                                  <p className="text-[10px] text-slate-400 dark:text-white/35 mt-1">{sw.zerotierNetworkIdDesc}</p>
+                                  <p className="text-[10px] theme-text-muted mt-1">{sw.zerotierNetworkIdDesc}</p>
                                 </div>
                               )}
                               <label className="flex items-start gap-3 p-3 rounded-lg border border-slate-200 dark:border-white/10 hover:border-primary/40 transition-colors cursor-pointer">
                                 <input type="checkbox" checked={installTailscale} onChange={e => setInstallTailscale(e.target.checked)}
                                   className="mt-0.5 w-4 h-4 rounded border-slate-300 dark:border-white/20 text-primary focus:ring-primary/30" />
                                 <div className="flex-1">
-                                  <div className="text-sm font-medium text-slate-700 dark:text-white/80">🔒 {sw.installTailscale}</div>
-                                  <div className="text-[10px] text-slate-400 dark:text-white/40 mt-0.5">{sw.tailscaleDesc}</div>
+                                  <div className="text-sm font-medium text-[var(--color-text)] dark:text-white/80">🔒 {sw.installTailscale}</div>
+                                  <div className="text-[10px] theme-text-muted mt-0.5">{sw.tailscaleDesc}</div>
                                 </div>
                               </label>
                             </div>
@@ -724,7 +724,7 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
 
                 {((scanResult.openClawStateDir || scanResult.openClawConfigPath || scanResult.openClawGatewayLog || scanResult.openClawInstallLog || scanResult.openClawDoctorLog)) && (
                   <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-white/10">
-                    <h4 className="text-sm font-bold text-slate-800 dark:text-white/80">{sw.pathsTitle || 'OpenClaw Paths'}</h4>
+                    <h4 className="text-sm font-bold text-[var(--color-text)] dark:text-white/80">{sw.pathsTitle || 'OpenClaw Paths'}</h4>
                     <div className="space-y-2">
                       {[
                         [sw.pathState || 'State', scanResult.openClawStateDir],
@@ -733,9 +733,9 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
                         [sw.pathInstallLog || 'Install log', scanResult.openClawInstallLog],
                         [sw.pathDoctorLog || 'Doctor log', scanResult.openClawDoctorLog],
                       ].filter(([, value]) => Boolean(value)).map(([label, value]) => (
-                        <div key={label} className="p-3 bg-slate-50 dark:bg-white/5 rounded-lg">
-                          <p className="text-[10px] text-slate-400 uppercase">{label}</p>
-                          <p className="text-xs font-mono break-all text-slate-700 dark:text-white/80 mt-1">{value}</p>
+                        <div key={label} className="p-3 theme-field rounded-lg">
+                          <p className="text-[10px] theme-text-muted uppercase">{label}</p>
+                          <p className="text-xs font-mono break-all text-[var(--color-text)] dark:text-white/80 mt-1">{value}</p>
                         </div>
                       ))}
                     </div>
@@ -772,7 +772,7 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
                           }
                         }}
                         className={`px-5 py-3 rounded-xl font-medium transition-colors border ${!scanResult.updateAvailable
-                            ? 'bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/40 border-transparent cursor-not-allowed'
+                            ? 'theme-field theme-text-muted border-transparent cursor-not-allowed'
                             : 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/30'
                           }`}
                       >
@@ -850,7 +850,7 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
 
                 {/* 升级日志面板 */}
                 {(isUpdating || updateLogs.length > 0) && (
-                  <div className="mt-4 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden">
+                  <div className="mt-4 theme-panel rounded-xl overflow-hidden">
                     {/* 进度条 */}
                     {isUpdating && (
                       <div className="h-1 bg-slate-200 dark:bg-white/10">
@@ -869,16 +869,16 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
                         {!isUpdating && updateProgress >= 100 && (
                           <span className="material-symbols-outlined text-[14px] text-green-500">check_circle</span>
                         )}
-                        <span className="text-xs text-slate-600 dark:text-white/60">{updateStep}</span>
+                        <span className="text-xs theme-text-secondary">{updateStep}</span>
                         {isUpdating && (
-                          <span className="text-[10px] text-slate-400 dark:text-white/40 ms-auto">{updateProgress}%</span>
+                          <span className="text-[10px] theme-text-muted ms-auto">{updateProgress}%</span>
                         )}
                       </div>
                     )}
                     {/* 日志输出 */}
-                    <div ref={updateLogRef} className="max-h-32 overflow-y-auto p-3 font-mono text-[11px] text-slate-500 dark:text-white/50 space-y-0.5">
+                    <div ref={updateLogRef} className="max-h-32 overflow-y-auto p-3 font-mono text-[11px] theme-text-secondary space-y-0.5">
                       {updateLogs.length === 0 && isUpdating && (
-                        <div className="text-slate-400 dark:text-white/35">{sw.waitingOutput}</div>
+                        <div className="theme-text-muted">{sw.waitingOutput}</div>
                       )}
                       {updateLogs.map((line, i) => (
                         <div key={i} className="break-all leading-relaxed">{line}</div>
@@ -893,19 +893,19 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
 
         {/* 安装阶段 */}
         {phase === 'install' && (
-          <div className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-800 dark:text-white/80 mb-4 flex items-center gap-2">
+          <div className="theme-panel rounded-2xl p-6 shadow-sm">
+            <h3 className="text-sm font-bold text-[var(--color-text)] dark:text-white/80 mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary animate-pulse">download</span>
               {sw.installing}
             </h3>
 
             {/* 进度条 */}
             <div className="mb-4">
-              <div className="flex justify-between text-xs text-slate-500 dark:text-white/50 mb-1">
+              <div className="flex justify-between text-xs theme-text-secondary mb-1">
                 <span>{currentStep}</span>
                 <span>{progress}%</span>
               </div>
-              <div className="h-2 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+              <div className="h-2 theme-field rounded-full overflow-hidden">
                 <div
                   className="h-full bg-primary transition-all duration-300 relative"
                   style={{ width: `${progress}%` }}
@@ -921,12 +921,12 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
             </div>
 
             {/* 日志输出 */}
-            <div className="h-48 overflow-y-auto bg-slate-900 dark:bg-black/50 rounded-lg p-3 font-mono text-xs text-green-400 custom-scrollbar neon-scrollbar">
+            <div className="h-48 overflow-y-auto theme-field rounded-lg p-3 font-mono text-xs text-green-500 dark:text-green-400 custom-scrollbar neon-scrollbar">
               {logs.map((log, i) => (
                 <div key={i} className="whitespace-pre-wrap">{log}</div>
               ))}
               {logs.length === 0 && (
-                <div className="text-slate-500 dark:text-white/40">{sw.waitingOutput}</div>
+                <div className="theme-text-muted">{sw.waitingOutput}</div>
               )}
             </div>
           </div>
@@ -934,29 +934,29 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
 
         {/* 启动网关阶段 */}
         {phase === 'starting' && (
-          <div className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+          <div className="theme-panel rounded-2xl p-6 shadow-sm">
             <div className="text-center">
               {!gwStartFailed ? (
                 <>
                   <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                     <span className="material-symbols-outlined text-3xl text-yellow-600 dark:text-yellow-400 animate-spin">progress_activity</span>
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+                  <h3 className="text-lg font-bold text-[var(--color-text)] dark:text-white mb-2">
                     {sw.gwStarting}
                   </h3>
-                  <p className="text-sm text-slate-500 dark:text-white/60 mb-4">
+                  <p className="text-sm theme-text-secondary mb-4">
                     {sw.gwStartingDesc}
                   </p>
                   {/* 进度条 */}
                   <div className="max-w-xs mx-auto mb-3">
-                    <div className="h-2 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-2 theme-field rounded-full overflow-hidden">
                       <div
                         className="h-full bg-yellow-500 transition-all duration-1000"
                         style={{ width: `${Math.min((gwStartElapsed / 60) * 100, 100)}%` }}
                       />
                     </div>
                   </div>
-                  <p className="text-xs text-slate-400 dark:text-white/40">
+                  <p className="text-xs theme-text-muted">
                     {gwStartElapsed}s / 60s
                   </p>
                 </>
@@ -965,13 +965,13 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
                   <div className="w-16 h-16 bg-red-100 dark:bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                     <span className="material-symbols-outlined text-3xl text-red-600 dark:text-red-400">error</span>
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+                  <h3 className="text-lg font-bold text-[var(--color-text)] dark:text-white mb-2">
                     {sw.gwStartFailed}
                   </h3>
-                  <p className="text-sm text-slate-500 dark:text-white/60 mb-2">
+                  <p className="text-sm theme-text-secondary mb-2">
                     {gwStartError}
                   </p>
-                  <p className="text-xs text-slate-400 dark:text-white/40 mb-6">
+                  <p className="text-xs theme-text-muted mb-6">
                     {sw.gwStartFailedHint}
                   </p>
                   <div className="flex gap-3 justify-center">
@@ -987,7 +987,7 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
                     </button>
                     <button
                       onClick={() => setPhase('complete')}
-                      className="px-5 py-2.5 bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-white rounded-xl font-medium hover:bg-slate-300 dark:hover:bg-white/20 transition-colors"
+                      className="px-5 py-2.5 theme-field text-[var(--color-text)] dark:text-white rounded-xl font-medium hover:bg-slate-300 dark:hover:bg-white/20 transition-colors"
                     >
                       {sw.gwSkip}
                     </button>
@@ -1000,14 +1000,14 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
 
         {/* 完成阶段 */}
         {phase === 'complete' && (
-          <div className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-sm text-center">
+          <div className="theme-panel rounded-2xl p-6 shadow-sm text-center">
             <div className="w-16 h-16 bg-green-100 dark:bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="material-symbols-outlined text-3xl text-green-600 dark:text-green-400">check_circle</span>
             </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+            <h3 className="text-xl font-bold text-[var(--color-text)] dark:text-white mb-2">
               {sw.installComplete}
             </h3>
-            <p className="text-sm text-slate-500 dark:text-white/60 mb-4">
+            <p className="text-sm theme-text-secondary mb-4">
               {sw.installSuccess}
             </p>
 
@@ -1020,8 +1020,8 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
                   const catLabel = { deps: sw.summaryDeps, optional: sw.summaryOptional, config: sw.summaryConfig, gateway: sw.summaryGateway }[cat];
                   return (
                     <div key={cat} className="mb-3">
-                      <div className="text-[11px] font-medium text-slate-400 dark:text-white/40 uppercase tracking-wider mb-1.5 px-1">{catLabel}</div>
-                      <div className="bg-slate-50 dark:bg-white/5 rounded-xl overflow-hidden divide-y divide-slate-100 dark:divide-white/5">
+                      <div className="text-[11px] font-medium theme-text-muted uppercase tracking-wider mb-1.5 px-1">{catLabel}</div>
+                      <div className="theme-field rounded-xl overflow-hidden divide-y divide-slate-100 dark:divide-white/5">
                         {items.map((item, idx) => {
                           const isZeroTier = item.label?.toLowerCase().includes('zerotier');
                           const isTailscale = item.label?.toLowerCase().includes('tailscale');
@@ -1030,8 +1030,8 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
                               <span className="material-symbols-outlined text-sm" style={{ color: item.status === 'ok' ? '#22c55e' : item.status === 'warn' ? '#eab308' : item.status === 'fail' ? '#ef4444' : '#94a3b8' }}>
                                 {item.status === 'ok' ? 'check_circle' : item.status === 'warn' ? 'warning' : item.status === 'fail' ? 'cancel' : 'remove_circle_outline'}
                               </span>
-                              <span className="font-medium text-slate-700 dark:text-white/80 min-w-[80px]">{item.label}</span>
-                              <span className="text-slate-500 dark:text-white/50 truncate flex-1">{item.detail}</span>
+                              <span className="font-medium text-[var(--color-text)] dark:text-white/80 min-w-[80px]">{item.label}</span>
+                              <span className="theme-text-secondary truncate flex-1">{item.detail}</span>
                               {isZeroTier && item.status === 'ok' && (
                                 <a href="https://my.zerotier.com/" target="_blank" rel="noopener noreferrer"
                                   className="flex items-center gap-1 px-2 py-1 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors shrink-0"
@@ -1072,7 +1072,7 @@ const SetupWizard: React.FC<SetupWizardProps> = ({ language, onClose, onOpenEdit
                       onClose();
                       if (onOpenEditor) onOpenEditor();
                     }}
-                    className="flex-1 px-6 py-3 bg-slate-200 hover:bg-slate-300 dark:bg-white/10 dark:hover:bg-white/20 text-slate-700 dark:text-white rounded-xl font-medium transition-colors"
+                    className="flex-1 px-6 py-3 theme-field hover:bg-slate-300 dark:hover:bg-white/20 text-[var(--color-text)] dark:text-white rounded-xl font-medium transition-colors"
                   >
                     {sw.openEditor}
                   </button>

@@ -539,7 +539,7 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
       )}
 
       {/* Sidebar — desktop: static, mobile: slide-out drawer */}
-      <div className={`fixed md:static top-[32px] bottom-[72px] md:top-auto md:bottom-auto start-0 z-50 w-64 md:w-56 lg:w-64 shrink-0 border-e border-slate-200/60 dark:border-white/[0.06] bg-white dark:bg-[#1a1c22] md:dark:bg-white/[0.02] flex flex-col transform transition-transform duration-200 ease-out ${drawerOpen ? 'translate-x-0' : '-translate-x-full rtl:translate-x-full md:translate-x-0'}`}>
+      <div className={`fixed md:static top-[32px] bottom-[72px] md:top-auto md:bottom-auto start-0 z-50 w-64 md:w-56 lg:w-64 shrink-0 border-e border-slate-200/60 dark:border-white/[0.06] theme-panel flex flex-col transform transition-transform duration-200 ease-out ${drawerOpen ? 'translate-x-0' : '-translate-x-full rtl:translate-x-full md:translate-x-0'}`}>
         <div className="p-3 border-b border-slate-200/60 dark:border-white/[0.06] neon-divider">
           <div className="flex items-center justify-between">
             <div>
@@ -569,7 +569,7 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
             return (
               <button key={ag.id} onClick={() => selectAgent(ag.id)}
                 className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-start transition-all ${isSelected ? 'bg-primary/10 border border-primary/20 glow-border' : 'hover:bg-slate-100 dark:hover:bg-white/[0.03] border border-transparent'}`}>
-                <div className={`relative w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 ${isSelected ? 'bg-primary/20 text-primary' : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/40'}`}>
+                <div className={`relative w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 ${isSelected ? 'bg-primary/20 text-primary' : 'theme-field theme-text-muted'}`}>
                   {emoji || label.slice(0, 1).toUpperCase()}
                   {lastHeartbeat && (Date.now() - lastHeartbeat.ts < 120000) && (
                     <span className="absolute -bottom-0.5 -end-0.5 w-2.5 h-2.5 rounded-full bg-mac-green border-2 border-white dark:border-[#1a1c22]" />
@@ -633,13 +633,13 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
                       <>
                         <div className="fixed inset-0 z-20" onClick={() => setWakeMenuOpen(false)} />
                         <div className="absolute end-0 top-full mt-1 z-30">
-                          <div className="bg-white dark:bg-[#1a1a2e] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl p-1 min-w-[140px]">
+                          <div className="theme-panel sci-card rounded-xl shadow-xl p-1 min-w-[140px]">
                             <button onClick={() => handleWake('now')}
-                              className="w-full text-start px-3 py-1.5 rounded-lg text-[10px] font-bold text-slate-600 dark:text-white/60 hover:bg-amber-500/10 hover:text-amber-600 transition-colors">
+                              className="w-full text-start px-3 py-1.5 rounded-lg text-[10px] font-bold theme-text-secondary hover:bg-amber-500/10 hover:text-amber-600 transition-colors">
                               {a.wakeNow}
                             </button>
                             <button onClick={() => handleWake('next-heartbeat')}
-                              className="w-full text-start px-3 py-1.5 rounded-lg text-[10px] font-bold text-slate-600 dark:text-white/60 hover:bg-amber-500/10 hover:text-amber-600 transition-colors">
+                              className="w-full text-start px-3 py-1.5 rounded-lg text-[10px] font-bold theme-text-secondary hover:bg-amber-500/10 hover:text-amber-600 transition-colors">
                               {a.wakeNext}
                             </button>
                           </div>
@@ -670,7 +670,7 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
               <div className="flex gap-0.5 mt-3 border-b border-slate-200/60 dark:border-white/[0.06] overflow-x-auto no-scrollbar neon-divider">
                 {TABS.map(tab => (
                   <button key={tab.id} onClick={() => selectPanel(tab.id)}
-                    className={`px-3 py-2 text-[11px] font-medium border-b-2 transition-all whitespace-nowrap shrink-0 flex items-center gap-1 ${panel === tab.id ? 'border-primary text-primary' : 'border-transparent text-slate-500 dark:text-white/40 hover:text-slate-700 dark:hover:text-white/60'}`}>
+                    className={`px-3 py-2 text-[11px] font-medium border-b-2 transition-all whitespace-nowrap shrink-0 flex items-center gap-1 ${panel === tab.id ? 'border-primary text-primary' : 'border-transparent theme-text-muted hover:text-slate-700 dark:hover:text-white/60'}`}>
                     {tab.label}
                   </button>
                 ))}
@@ -719,7 +719,7 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
                 <div className="flex flex-col md:flex-row gap-4 max-w-5xl" style={{ minHeight: 300 }}>
                   <div className="w-full md:w-48 shrink-0 space-y-1">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-bold text-slate-500 dark:text-white/40 uppercase">{a.coreFiles}</span>
+                      <span className="text-[10px] font-bold theme-text-muted uppercase">{a.coreFiles}</span>
                       <button onClick={() => selectedId && gwApi.agentFilesList(selectedId).then(setFilesList).catch((err: any) => { toast('error', err?.message || a.fetchFailed); })} className="text-[10px] text-primary hover:underline">{a.refresh}</button>
                     </div>
                     {(filesList?.files || []).length === 0 ? (
@@ -740,7 +740,7 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
                     ) : (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-mono font-bold text-slate-600 dark:text-white/60">{fileActive}</span>
+                          <span className="text-[11px] font-mono font-bold theme-text-secondary">{fileActive}</span>
                           <div className="flex gap-2">
                             {/* Template insert dropdown */}
                             {fileActive && fileTemplates.filter(t => t.targetFile === fileActive).length > 0 && (
@@ -751,7 +751,7 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
                                   {a.insertTemplate}
                                 </button>
                                 {tplDropdown && (
-                                  <div className="absolute end-0 top-full mt-1 z-30 bg-white dark:bg-[#1a1a2e] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl p-1 min-w-[200px]">
+                                  <div className="absolute end-0 top-full mt-1 z-30 theme-panel sci-card rounded-xl shadow-xl p-1 min-w-[200px]">
                                     {fileTemplates.filter(t => t.targetFile === fileActive).map((tpl: WorkspaceTemplate) => {
                                       const resolved = templateSystem.resolveI18n(tpl, language);
                                       return (
@@ -774,7 +774,7 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
                             )}
                             <button onClick={() => { if (fileActive) setFileDrafts(prev => ({ ...prev, [fileActive]: fileContents[fileActive] || '' })); }}
                               disabled={!fileActive || fileDrafts[fileActive] === fileContents[fileActive]}
-                              className="text-[10px] px-2 py-1 rounded-lg bg-slate-100 dark:bg-white/5 text-slate-500 disabled:opacity-30">{a.reset}</button>
+                              className="text-[10px] px-2 py-1 rounded-lg theme-field theme-text-secondary disabled:opacity-30">{a.reset}</button>
                             <button onClick={saveFile} disabled={fileSaving || !fileActive || fileDrafts[fileActive] === fileContents[fileActive]}
                               className="text-[10px] px-3 py-1 rounded-lg bg-primary text-white font-bold disabled:opacity-30">{fileSaving ? a.saving : a.save}</button>
                           </div>
@@ -800,14 +800,14 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
                   <div className="space-y-4 max-w-5xl">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-[11px] font-bold text-slate-600 dark:text-white/60 uppercase">{a.toolAccess}</h3>
+                        <h3 className="text-[11px] font-bold theme-text-secondary uppercase">{a.toolAccess}</h3>
                         <p className="text-[11px] text-slate-400 dark:text-white/35 mt-0.5">{a.profile}: <span className="font-mono text-primary">{profile}</span></p>
                       </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {TOOL_SECTIONS.map(section => (
                         <div key={section.label} className="rounded-xl bg-white dark:bg-white/[0.03] border border-slate-200/60 dark:border-white/[0.06] p-3">
-                          <p className="text-[10px] font-bold text-slate-500 dark:text-white/40 uppercase mb-2">{section.label}</p>
+                          <p className="text-[10px] font-bold theme-text-muted uppercase mb-2">{section.label}</p>
                           <div className="space-y-1">
                             {section.tools.map(tool => {
                               const denied = Array.isArray(tools.deny) && tools.deny.includes(tool);
@@ -847,7 +847,7 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
                 return (
                   <div className="space-y-4 max-w-5xl">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-[11px] font-bold text-slate-600 dark:text-white/60 uppercase">{a.skills}</h3>
+                      <h3 className="text-[11px] font-bold theme-text-secondary uppercase">{a.skills}</h3>
                       <button onClick={() => {
                         if (!selectedId) return;
                         setSkillsLoaded(false);

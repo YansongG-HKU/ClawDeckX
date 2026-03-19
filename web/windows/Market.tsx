@@ -11,7 +11,7 @@ const MARKET_ITEMS = [
 const Market: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-transparent transition-colors">
-      <div className="flex flex-col items-center gap-4 py-4 px-8 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 shrink-0">
+      <div className="flex flex-col items-center gap-4 py-4 px-8 border-b border-slate-200 dark:border-white/10 theme-panel shrink-0">
         <div className="flex h-9 w-[480px] items-center justify-center rounded-lg bg-slate-200/50 dark:bg-white/5 p-1 border border-slate-300 dark:border-white/10">
           <button className="flex-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">Installed</button>
           <button className="flex-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">Available</button>
@@ -28,7 +28,7 @@ const Market: React.FC = () => {
         <h2 className="text-lg font-bold tracking-tight mb-4 px-1 text-slate-800 dark:text-white">Featured Skills</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {MARKET_ITEMS.map(item => (
-            <div key={item.title} className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-xl p-4 hover:bg-slate-100 dark:hover:bg-white/10 transition-all cursor-pointer group shadow-sm">
+            <div key={item.title} className="theme-panel rounded-xl p-4 hover:bg-slate-100 dark:hover:bg-white/10 transition-all cursor-pointer group shadow-sm sci-card">
               <div className={`w-14 h-14 bg-gradient-to-br ${item.color} rounded-xl mb-4 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform`}>
                 <span className="material-symbols-outlined text-3xl text-white">{item.icon}</span>
               </div>
@@ -42,7 +42,7 @@ const Market: React.FC = () => {
         <h2 className="text-lg font-bold tracking-tight mb-4 px-1 text-slate-800 dark:text-white">Popular Servers</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[1,2,3,4].map(i => (
-            <div key={i} className="flex items-center gap-4 bg-slate-50 dark:bg-white/5 p-3 rounded-xl border border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/10 transition-all group shadow-sm">
+            <div key={i} className="flex items-center gap-4 theme-panel p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-all group shadow-sm sci-card">
               <div className="w-16 h-16 rounded-lg bg-slate-200 dark:bg-[#2c2c2e] flex items-center justify-center shrink-0 border border-slate-300 dark:border-white/10">
                 <span className="material-symbols-outlined text-slate-400 dark:text-white/60">terminal</span>
               </div>
@@ -56,7 +56,7 @@ const Market: React.FC = () => {
         </div>
       </div>
 
-      <div className="h-10 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-4 flex items-center justify-between shrink-0">
+      <div className="h-10 border-t border-slate-200 dark:border-white/10 theme-panel px-4 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3 text-[10px] text-slate-400 dark:text-white/40 font-bold uppercase tracking-widest">
           <span>Total Skills: 42</span>
           <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-white/20"></span>

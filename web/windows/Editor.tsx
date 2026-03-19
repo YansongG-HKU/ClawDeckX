@@ -73,7 +73,7 @@ const Editor: React.FC<EditorProps> = ({ language }) => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-[#1a1c20] relative">
-      <header className="h-12 border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/5 flex items-center justify-between px-3 md:px-4 shrink-0 overflow-x-auto no-scrollbar">
+      <header className="h-12 border-b border-slate-200 dark:border-white/5 theme-panel flex items-center justify-between px-3 md:px-4 shrink-0 overflow-x-auto no-scrollbar">
         <div className="flex items-center gap-3 md:gap-4">
           <div className="flex bg-slate-200 dark:bg-black/20 p-0.5 rounded-lg border border-slate-300 dark:border-white/5 shrink-0">
             <button onClick={() => setTab('models')} aria-pressed={tab === 'models'} className={`px-3 md:px-4 py-1 rounded-md text-[10px] md:text-[11px] font-bold transition-all ${tab === 'models' ? 'bg-white dark:bg-primary shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700'}`}>{edit.modelMgmt}</button>
@@ -98,10 +98,10 @@ const Editor: React.FC<EditorProps> = ({ language }) => {
                   </div>
                   <button onClick={() => setShowAddModal('provider')} className="text-[11px] md:text-[10px] font-bold text-primary hover:underline">+ {menuAddProviderLabel}</button>
                 </div>
-                <div className="bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-xl p-4">
+                <div className="theme-panel rounded-xl p-4">
                   <div className="space-y-4">
                     <div className="flex flex-col sm:grid sm:grid-cols-3 sm:items-center gap-1.5 sm:gap-4">
-                      <label className="text-[10px] md:text-xs font-bold text-slate-500">{edit.mainModel}</label>
+                      <label className="text-[10px] md:text-xs font-bold theme-text-muted">{edit.mainModel}</label>
                       <input className="sm:col-span-2 h-8 bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-md px-3 text-[11px] md:text-xs text-primary font-mono" defaultValue="gemini-3-flash-preview" />
                     </div>
                     <div className="flex flex-col sm:grid sm:grid-cols-3 sm:items-center gap-1.5 sm:gap-4">
@@ -127,10 +127,10 @@ const Editor: React.FC<EditorProps> = ({ language }) => {
                   </div>
                    <button onClick={() => setShowAddModal('model')} className="text-[11px] md:text-[10px] font-bold text-primary hover:underline">+ {menuAddModelLabel}</button>
                 </div>
-                <div className="bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-xl p-4">
+                <div className="theme-panel rounded-xl p-4">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-slate-500">{edit.autoDiscovery}</label>
+                      <label className="text-xs font-bold theme-text-muted">{edit.autoDiscovery}</label>
                       <div className="w-8 h-4 bg-primary rounded-full relative">
                         <div className="absolute end-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
                       </div>
@@ -165,7 +165,7 @@ const Editor: React.FC<EditorProps> = ({ language }) => {
         )}
       </div>
 
-      <footer className="h-7 md:h-8 border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-[#1e1e1e] flex items-center px-4 text-[11px] md:text-[10px] text-slate-400 font-mono">
+      <footer className="h-7 md:h-8 border-t border-slate-200 dark:border-white/5 theme-panel flex items-center px-4 text-[11px] md:text-[10px] text-slate-400 font-mono">
         <span className="me-4 hidden xs:inline">{edit.ln} 12, {edit.col} 8</span>
         <span>UTF-8</span>
         {saveError ? <span className="ms-3 text-red-500 truncate">{saveError}</span> : null}

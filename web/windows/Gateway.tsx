@@ -771,23 +771,23 @@ const Gateway: React.FC<GatewayProps> = ({ language }) => {
   const eventsLabel = gw.events;
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-transparent">
+    <div className="flex-1 flex flex-col overflow-hidden bg-[var(--color-surface)] dark:bg-transparent">
       {/* 网关选择区 */}
-      <div className="p-3 md:p-4 border-b border-slate-200 dark:border-white/5 bg-slate-50/80 dark:bg-white/[0.02] shrink-0">
+      <div className="p-3 md:p-4 border-b border-slate-200 dark:border-white/5 theme-panel shrink-0">
         <div className="flex items-center justify-between mb-2.5">
-          <h3 className="text-[10px] md:text-[11px] font-bold text-slate-400 dark:text-white/40 uppercase tracking-widest">{gw.profiles}</h3>
+          <h3 className="text-[10px] md:text-[11px] font-bold theme-text-muted uppercase tracking-widest">{gw.profiles}</h3>
           <button onClick={openAddForm} className="flex items-center gap-1 px-2.5 py-1 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-[10px] md:text-[11px] font-bold transition-all border border-primary/20">
             <span className="material-symbols-outlined text-[14px]">add</span> {gw.addGateway}
           </button>
         </div>
 
         {profilesLoading && profiles.length === 0 ? (
-          <div className="w-full py-4 border border-slate-200 dark:border-white/10 rounded-xl text-slate-400 dark:text-white/40 text-xs flex items-center justify-center gap-2">
+          <div className="w-full py-4 border border-slate-200 dark:border-white/10 rounded-xl theme-text-muted text-xs flex items-center justify-center gap-2">
             <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
             {gw.loading}
           </div>
         ) : profiles.length === 0 ? (
-          <button onClick={openAddForm} className="w-full py-4 border-2 border-dashed border-slate-300 dark:border-white/10 rounded-xl text-slate-400 dark:text-white/40 text-xs font-medium hover:border-primary hover:text-primary transition-all">
+          <button onClick={openAddForm} className="w-full py-4 border-2 border-dashed border-slate-300 dark:border-white/10 rounded-xl theme-text-muted text-xs font-medium hover:border-primary hover:text-primary transition-all">
             <span className="material-symbols-outlined text-[20px] block mb-1">add_circle</span>
             {gw.noProfiles}
           </button>
@@ -799,7 +799,7 @@ const Gateway: React.FC<GatewayProps> = ({ language }) => {
                 className={`group relative flex-shrink-0 w-44 md:w-52 rounded-xl border p-3 cursor-pointer transition-all ${
                   p.is_active
                     ? 'bg-primary/5 dark:bg-primary/10 border-primary/30 shadow-sm shadow-primary/10'
-                    : 'bg-white dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:border-primary/20'
+                    : 'theme-panel border-slate-200 dark:border-white/10 hover:border-primary/20'
                 }`}
                 onClick={() => !p.is_active && handleActivateProfile(p.id)}
               >
@@ -807,7 +807,7 @@ const Gateway: React.FC<GatewayProps> = ({ language }) => {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-1.5">
                     <div className={`w-2 h-2 rounded-full ${p.is_active && status?.running ? 'bg-mac-green animate-pulse' : p.is_active ? 'bg-mac-yellow animate-pulse' : 'bg-slate-300 dark:bg-white/20'}`}></div>
-                    <span className={`text-[11px] font-bold uppercase ${p.is_active && status?.running ? 'text-mac-green' : p.is_active ? 'text-mac-yellow' : 'text-slate-400 dark:text-white/40'}`}>
+                    <span className={`text-[11px] font-bold uppercase ${p.is_active && status?.running ? 'text-mac-green' : p.is_active ? 'text-mac-yellow' : 'theme-text-muted'}`}>
                       {p.is_active ? (status?.running ? gw.running : gw.stopped) : gw.inactive}
                     </span>
                     {p.is_active && status?.running && gwWsConnected !== null && (
@@ -826,29 +826,29 @@ const Gateway: React.FC<GatewayProps> = ({ language }) => {
                       {isLocal(p.host) ? gw.local : gw.remote}
                     </span>
                     {p.is_active && status?.running && status?.runtime && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/35">{(gw as any)[`runtime${status.runtime.charAt(0).toUpperCase()}${status.runtime.slice(1)}`] || status.runtime}</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded theme-field theme-text-muted">{(gw as any)[`runtime${status.runtime.charAt(0).toUpperCase()}${status.runtime.slice(1)}`] || status.runtime}</span>
                     )}
                   </div>
                 </div>
                 {/* 名称 */}
                 <div className="flex items-center gap-1.5">
-                  <h4 className="text-xs font-bold text-slate-800 dark:text-white truncate">{isLocal(p.host) && (p.name === 'Local Gateway' || p.name === '本地网关') ? (gw.localGateway || p.name) : p.name}</h4>
+                  <h4 className="text-xs font-bold text-[var(--color-text)] dark:text-white truncate">{isLocal(p.host) && (p.name === 'Local Gateway' || p.name === '本地网关') ? (gw.localGateway || p.name) : p.name}</h4>
                   {p.is_active && status?.running && displayUptimeMs > 0 && (
                     <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-mac-green font-mono font-bold">{fmtUptime(displayUptimeMs)}</span>
                   )}
                 </div>
-                <p className="text-[11px] text-slate-400 dark:text-white/40 font-mono mt-0.5 truncate">{p.host}:{p.port}</p>
+                <p className="text-[11px] theme-text-muted font-mono mt-0.5 truncate">{p.host}:{p.port}</p>
                 {/* 操作按钮 */}
                 <div className="absolute top-2 end-2 hidden group-hover:flex items-center gap-0.5">
                   <button
                     onClick={(e) => { e.stopPropagation(); openEditForm(p); }}
-                    className="w-5 h-5 rounded flex items-center justify-center bg-slate-200/80 dark:bg-white/10 hover:bg-primary/20 text-slate-500 dark:text-white/50 hover:text-primary transition-all"
+                    className="w-5 h-5 rounded flex items-center justify-center theme-field hover:bg-primary/20 theme-text-secondary hover:text-primary transition-all"
                   >
                     <span className="material-symbols-outlined text-[12px]">edit</span>
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDeleteProfile(p.id); }}
-                    className="w-5 h-5 rounded flex items-center justify-center bg-slate-200/80 dark:bg-white/10 hover:bg-mac-red/20 text-slate-500 dark:text-white/50 hover:text-mac-red transition-all"
+                    className="w-5 h-5 rounded flex items-center justify-center theme-field hover:bg-mac-red/20 theme-text-secondary hover:text-mac-red transition-all"
                   >
                     <span className="material-symbols-outlined text-[12px]">close</span>
                   </button>
@@ -862,26 +862,26 @@ const Gateway: React.FC<GatewayProps> = ({ language }) => {
       {/* 网关配置表单弹窗 */}
       {showProfilePanel && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={() => setShowProfilePanel(false)}>
-          <div className="w-[90%] max-w-md bg-white dark:bg-[#1c1f26] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 overflow-hidden" onClick={e => e.stopPropagation()}>
+          <div className="w-[90%] max-w-md rounded-2xl shadow-2xl theme-panel overflow-hidden sci-card" onClick={e => e.stopPropagation()}>
             <div className="px-5 py-4 border-b border-slate-200 dark:border-white/10 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-white">{editingProfile ? gw.editGateway : gw.addGateway}</h3>
-              <button onClick={() => setShowProfilePanel(false)} className="w-6 h-6 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center text-slate-500 dark:text-white/50 hover:bg-mac-red hover:text-white transition-all">
+              <h3 className="text-sm font-bold text-[var(--color-text)] dark:text-white">{editingProfile ? gw.editGateway : gw.addGateway}</h3>
+              <button onClick={() => setShowProfilePanel(false)} className="w-6 h-6 rounded-full theme-field flex items-center justify-center theme-text-secondary hover:bg-mac-red hover:text-white transition-all">
                 <span className="material-symbols-outlined text-[14px]">close</span>
               </button>
             </div>
             <div className="p-5 space-y-3">
               <div>
-                <label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-wider mb-1 block">{gw.gwName}</label>
+                <label className="text-[11px] font-bold theme-text-secondary uppercase tracking-wider mb-1 block">{gw.gwName}</label>
                 <input
                   value={formData.name}
                   onChange={e => setFormData(f => ({ ...f, name: e.target.value }))}
                   placeholder={gw.namePlaceholder}
-                  className="w-full h-9 px-3 bg-slate-100 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg text-sm font-mono text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/20 focus:ring-1 focus:ring-primary outline-none transition-all"
+                  className="w-full h-9 px-3 theme-field rounded-lg text-sm font-mono placeholder:text-slate-400 dark:placeholder:text-white/20 focus:ring-1 focus:ring-primary outline-none transition-all sci-input"
                 />
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <div className="col-span-2">
-                  <label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-wider mb-1 block">{gw.gwHost}</label>
+                  <label className="text-[11px] font-bold theme-text-secondary uppercase tracking-wider mb-1 block">{gw.gwHost}</label>
                   <input
                     value={formData.host}
                     onChange={e => {
@@ -890,12 +890,12 @@ const Gateway: React.FC<GatewayProps> = ({ language }) => {
                       setFormData(f => ({ ...f, host: v }));
                     }}
                     placeholder={gw.hostPlaceholder}
-                    className={`w-full h-9 px-3 bg-slate-100 dark:bg-black/20 border rounded-lg text-sm font-mono text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/20 focus:ring-1 focus:ring-primary outline-none transition-all ${formErrors.host ? 'border-mac-red' : 'border-slate-200 dark:border-white/10'}`}
+                    className={`w-full h-9 px-3 theme-field rounded-lg text-sm font-mono placeholder:text-slate-400 dark:placeholder:text-white/20 focus:ring-1 focus:ring-primary outline-none transition-all sci-input ${formErrors.host ? 'border-mac-red' : ''}`}
                   />
                   {formErrors.host && <p className="text-[10px] text-mac-red mt-0.5">{formErrors.host}</p>}
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-wider mb-1 block">{gw.gwPort}</label>
+                  <label className="text-[11px] font-bold theme-text-secondary uppercase tracking-wider mb-1 block">{gw.gwPort}</label>
                   <NumberStepper
                     min={1}
                     max={65535}
@@ -913,24 +913,24 @@ const Gateway: React.FC<GatewayProps> = ({ language }) => {
                 </div>
               </div>
               <div>
-                <label className="text-[11px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-wider mb-1 block">{gw.gwToken}</label>
+                <label className="text-[11px] font-bold theme-text-secondary uppercase tracking-wider mb-1 block">{gw.gwToken}</label>
                 <input
                   type="password"
                   value={formData.token}
                   onChange={e => setFormData(f => ({ ...f, token: e.target.value }))}
                   placeholder={gw.tokenPlaceholder}
-                  className="w-full h-9 px-3 bg-slate-100 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg text-sm font-mono text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/20 focus:ring-1 focus:ring-primary outline-none transition-all"
+                  className="w-full h-9 px-3 theme-field rounded-lg text-sm font-mono placeholder:text-slate-400 dark:placeholder:text-white/20 focus:ring-1 focus:ring-primary outline-none transition-all sci-input"
                 />
               </div>
             </div>
-            <div className="px-5 py-3 border-t border-slate-200 dark:border-white/10 flex items-center justify-between bg-slate-50 dark:bg-white/[0.02]">
+            <div className="px-5 py-3 border-t border-slate-200 dark:border-white/10 flex items-center justify-between theme-panel">
               <button onClick={handleTestConnection} disabled={testingConnection || !formData.host.trim()}
-                className="px-3 py-1.5 text-xs font-bold text-slate-500 dark:text-white/50 hover:text-primary border border-slate-200 dark:border-white/10 rounded-lg transition-all disabled:opacity-40 flex items-center gap-1">
+                className="px-3 py-1.5 text-xs font-bold theme-text-secondary hover:text-primary border border-slate-200 dark:border-white/10 rounded-lg transition-all disabled:opacity-40 flex items-center gap-1">
                 <span className={`material-symbols-outlined text-[14px] ${testingConnection ? 'animate-spin' : ''}`}>{testingConnection ? 'progress_activity' : 'cable'}</span>
                 {gw.testConnection || 'Test'}
               </button>
               <div className="flex items-center gap-2">
-                <button onClick={() => setShowProfilePanel(false)} className="px-4 py-1.5 text-xs font-bold text-slate-500 dark:text-white/50 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg transition-all">
+                <button onClick={() => setShowProfilePanel(false)} className="px-4 py-1.5 text-xs font-bold theme-text-secondary hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg transition-all">
                   {gw.cancel}
                 </button>
                 <button
@@ -947,11 +947,11 @@ const Gateway: React.FC<GatewayProps> = ({ language }) => {
       )}
 
       {/* 状态与控制区 — 紧凑布局 */}
-      <div className="px-3 md:px-4 py-2 md:py-3 border-b border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] shrink-0 space-y-2">
+      <div className="px-3 md:px-4 py-2 md:py-3 border-b border-slate-200 dark:border-white/5 theme-panel shrink-0 space-y-2">
         {initialDetecting && (
           <div className="rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 flex items-center gap-2">
             <span className="material-symbols-outlined text-[14px] text-primary animate-spin">progress_activity</span>
-            <span className="text-[11px] font-medium text-slate-600 dark:text-white/60">{gw.detecting || gw.loading}</span>
+            <span className="text-[11px] font-medium theme-text-secondary">{gw.detecting || gw.loading}</span>
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
           </div>
         )}
@@ -962,7 +962,7 @@ const Gateway: React.FC<GatewayProps> = ({ language }) => {
               <span className="material-symbols-outlined text-[16px] text-mac-yellow">warning</span>
               <span className="text-[11px] font-bold text-mac-yellow">{gw.wsDisconnected || 'Data channel disconnected'}</span>
             </div>
-            <p className="text-[10px] text-slate-500 dark:text-white/40 mt-1 ms-6 leading-relaxed">{gw.wsDisconnectedHint || 'WebSocket data channel is not established. Check token, firewall, and proxy settings.'}</p>
+            <p className="text-[10px] theme-text-secondary mt-1 ms-6 leading-relaxed">{gw.wsDisconnectedHint || 'WebSocket data channel is not established. Check token, firewall, and proxy settings.'}</p>
             {status?.ws_error && (
               <p className="text-[10px] text-mac-red/80 mt-1 ms-6 font-mono break-all">{status.ws_error}</p>
             )}
@@ -974,12 +974,12 @@ const Gateway: React.FC<GatewayProps> = ({ language }) => {
             <span className="material-symbols-outlined text-[20px]">router</span>
           </div>
           <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
-            <h3 className="text-slate-800 dark:text-white font-bold text-sm">{activeProfile ? (isLocal(activeProfile.host) && (activeProfile.name === 'Local Gateway' || activeProfile.name === '本地网关') ? (gw.localGateway || activeProfile.name) : activeProfile.name) : gw.status}</h3>
+            <h3 className="text-[var(--color-text)] dark:text-white font-bold text-sm">{activeProfile ? (isLocal(activeProfile.host) && (activeProfile.name === 'Local Gateway' || activeProfile.name === '本地网关') ? (gw.localGateway || activeProfile.name) : activeProfile.name) : gw.status}</h3>
             {/* 看门狗探测状态 */}
             {status?.running && (
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-slate-200/60 dark:border-white/[0.06] bg-white dark:bg-white/[0.02]">
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-slate-200/60 dark:border-white/[0.06] theme-panel">
                 {(() => {
-                  if (!healthStatus?.last_ok) return <><span className="material-symbols-outlined text-[12px] text-mac-yellow animate-spin">progress_activity</span><span className="text-[11px] text-slate-400 dark:text-white/40">{gw.hbProbing}</span></>;
+                  if (!healthStatus?.last_ok) return <><span className="material-symbols-outlined text-[12px] text-mac-yellow animate-spin">progress_activity</span><span className="text-[11px] theme-text-muted">{gw.hbProbing}</span></>;
                   if (healthStatus.fail_count > 0) return <><span className="material-symbols-outlined text-[12px] text-mac-red">heart_broken</span><span className="text-[11px] font-bold text-mac-red">{gw.hbUnhealthy} ({healthStatus.fail_count})</span></>;
                   return <><span className="material-symbols-outlined text-[12px] text-mac-green animate-pulse">favorite</span><span className="text-[11px] font-bold text-mac-green">{gw.hbHealthy}</span></>;
                 })()}
@@ -1008,13 +1008,13 @@ const Gateway: React.FC<GatewayProps> = ({ language }) => {
               </button>
               <div className="w-px h-4 bg-slate-200 dark:bg-white/10 mx-0.5" />
               {/* Watchdog toggle */}
-              <button onClick={toggleHealthCheck} className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${healthCheckEnabled ? 'bg-mac-green/10 text-mac-green' : 'bg-slate-100 dark:bg-white/5 text-slate-400'}`}>
+              <button onClick={toggleHealthCheck} className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${healthCheckEnabled ? 'bg-mac-green/10 text-mac-green' : 'theme-field theme-text-muted'}`}>
                 <span className="material-symbols-outlined text-[14px]">{healthCheckEnabled ? 'monitor_heart' : 'heart_minus'}</span>
                 {gw.healthCheck || 'Watchdog'}
               </button>
               <button
                 onClick={() => setWatchdogAdvancedOpen(v => !v)}
-                className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${watchdogAdvancedOpen ? 'bg-primary/15 text-primary' : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/50'}`}
+                className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${watchdogAdvancedOpen ? 'bg-primary/15 text-primary' : 'theme-field theme-text-secondary'}`}
               >
                 <span className="material-symbols-outlined text-[14px]">tune</span>
                 {gw.watchdogAdvanced || 'Advanced'}
@@ -1023,9 +1023,9 @@ const Gateway: React.FC<GatewayProps> = ({ language }) => {
           );
         })()}
         {watchdogAdvancedOpen && (
-          <div className="mt-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-white/[0.02] p-2">
+          <div className="mt-1 rounded-lg border border-slate-200 dark:border-white/10 theme-panel p-2">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-              <label className="text-[10px] text-slate-500 dark:text-white/50">
+              <label className="text-[10px] theme-text-secondary">
                 {gw.watchdogInterval || 'Interval(s)'}
                 <NumberStepper
                   value={watchdogIntervalSec}
@@ -1038,7 +1038,7 @@ const Gateway: React.FC<GatewayProps> = ({ language }) => {
                   buttonClassName="!w-6 text-[11px]"
                 />
               </label>
-              <label className="text-[10px] text-slate-500 dark:text-white/50">
+              <label className="text-[10px] theme-text-secondary">
                 {gw.watchdogMaxFails || 'Max fails'}
                 <NumberStepper
                   value={watchdogMaxFails}
@@ -1051,7 +1051,7 @@ const Gateway: React.FC<GatewayProps> = ({ language }) => {
                   buttonClassName="!w-6 text-[11px]"
                 />
               </label>
-              <label className="text-[10px] text-slate-500 dark:text-white/50">
+              <label className="text-[10px] theme-text-secondary">
                 {gw.watchdogBackoffCap || 'Backoff cap(ms)'}
                 <NumberStepper
                   value={watchdogBackoffCapMs}
@@ -1072,7 +1072,7 @@ const Gateway: React.FC<GatewayProps> = ({ language }) => {
                   setWatchdogMaxFails('3');
                   setWatchdogBackoffCapMs('30000');
                 }}
-                className="px-2 py-1 rounded text-[10px] font-bold bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/60"
+                className="px-2 py-1 rounded text-[10px] font-bold theme-field theme-text-secondary"
               >
                 {gw.watchdogResetDefaults || 'Defaults'}
               </button>
@@ -1089,16 +1089,16 @@ const Gateway: React.FC<GatewayProps> = ({ language }) => {
       </div>
 
       {/* 日志 & 调试区 */}
-      <div className="flex-1 flex flex-col bg-slate-900 dark:bg-[#0a0f14] border-t border-slate-200 dark:border-white/10 overflow-hidden sci-card">
+      <div className="flex-1 flex flex-col theme-panel border-t border-slate-200 dark:border-white/10 overflow-hidden sci-card">
         {/* Tab Bar + Search + Filters — 单行紧凑 */}
-        <div className="shrink-0 min-h-9 flex items-center gap-1.5 px-3 bg-white/5 border-b border-white/5 overflow-x-auto scrollbar-none">
+        <div className="shrink-0 min-h-9 flex items-center gap-1.5 px-3 theme-field border-b border-slate-200 dark:border-white/5 overflow-x-auto scrollbar-none">
           {/* Tabs */}
           {(['logs', 'events', 'channels', 'service', 'debug'] as const).map(tab => {
             const icons: Record<string, string> = { logs: 'terminal', events: 'event_note', channels: 'cell_tower', service: 'settings_system_daydream', debug: 'bug_report' };
             const labels: Record<string, string> = { logs: gw.logs, events: eventsLabel, channels: gw.channels || 'Channels', service: gw.service || 'Service', debug: gw.debug };
             return (
               <button key={tab} onClick={() => { setActiveTab(tab); if (tab === 'debug') fetchDebugData(); if (tab === 'events') fetchEvents(); if (tab === 'channels') fetchChannels(true); }}
-                className={`px-2 py-1 rounded text-[11px] font-bold uppercase tracking-wider transition-all whitespace-nowrap shrink-0 ${activeTab === tab ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/60'} flex items-center gap-1`}>
+                className={`px-2 py-1 rounded text-[11px] font-bold uppercase tracking-wider transition-all whitespace-nowrap shrink-0 ${activeTab === tab ? 'bg-primary/15 text-primary' : 'theme-text-muted hover:text-[var(--color-text)] dark:hover:text-white/60'} flex items-center gap-1`}>
                 <span className="material-symbols-outlined text-[12px] align-middle">{icons[tab]}</span>
                 {labels[tab]}
                 {tab === 'service' && gwWsConnected !== null && (
@@ -1122,12 +1122,12 @@ const Gateway: React.FC<GatewayProps> = ({ language }) => {
           {activeTab === 'logs' && (
             <>
               {/* Divider */}
-              <div className="w-px h-4 bg-white/10 mx-0.5" />
+              <div className="w-px h-4 theme-divider mx-0.5" />
               {/* Search */}
               <div className="relative flex-1 min-w-[100px] max-w-[200px]">
-                <span className="material-symbols-outlined absolute start-1.5 top-1/2 -translate-y-1/2 text-white/20 text-[12px]">search</span>
+                <span className="material-symbols-outlined absolute start-1.5 top-1/2 -translate-y-1/2 theme-text-muted text-[12px]">search</span>
                 <input value={logSearch} onChange={e => setLogSearch(e.target.value)} placeholder={gw.search}
-                  className="w-full h-6 ps-6 pe-2 bg-white/5 border border-white/5 rounded text-[11px] text-white/80 placeholder:text-white/20 focus:ring-1 focus:ring-primary/50 outline-none sci-input" />
+                  className="w-full h-6 ps-6 pe-2 theme-field rounded text-[11px] theme-text-secondary placeholder:theme-text-muted focus:ring-1 focus:ring-primary/50 outline-none sci-input" />
               </div>
               {/* Level Filters */}
               <div className="flex items-center gap-px">
@@ -1135,32 +1135,32 @@ const Gateway: React.FC<GatewayProps> = ({ language }) => {
                   const colors: Record<string, string> = { trace: 'bg-slate-500', debug: 'bg-slate-400', info: 'bg-blue-500', warn: 'bg-yellow-500', error: 'bg-red-500', fatal: 'bg-red-700' };
                   return (
                     <button key={lvl} onClick={() => setLevelFilters(f => ({ ...f, [lvl]: !f[lvl] }))}
-                      className={`px-1.5 py-0.5 rounded text-[11px] font-bold uppercase transition-all ${levelFilters[lvl] ? `${colors[lvl]}/20 text-white/70` : 'bg-white/5 text-white/15 line-through'}`}>
+                      className={`px-1.5 py-0.5 rounded text-[11px] font-bold uppercase transition-all ${levelFilters[lvl] ? `${colors[lvl]}/20 theme-text-secondary` : 'theme-field theme-text-muted line-through'}`}>
                       {lvl.slice(0, 3)}
                     </button>
                   );
                 })}
               </div>
               {/* Log limit switcher */}
-              <div className="w-px h-4 bg-white/10 mx-0.5" />
+              <div className="w-px h-4 theme-divider mx-0.5" />
               <div className="flex items-center gap-px">
                 {[120, 500, 1000].map(n => (
                   <button key={n} onClick={() => { setLogLimit(n); logCursorRef.current = undefined; logInitializedRef.current = false; fetchLogs(true); }}
-                    className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all ${logLimit === n ? 'bg-white/10 text-white/70' : 'bg-white/5 text-white/15 hover:text-white/40'}`}>{n}</button>
+                    className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all ${logLimit === n ? 'bg-primary/10 text-primary' : 'theme-field theme-text-muted hover:text-[var(--color-text-secondary)]'}`}>{n}</button>
                 ))}
               </div>
               {/* Spacer */}
               <div className="flex-1" />
               {/* Actions */}
-              <button onClick={handleClearLogs} className="text-white/30 hover:text-white transition-colors" title={gw.clear}>
+              <button onClick={handleClearLogs} className="theme-text-muted hover:text-[var(--color-text)] transition-colors" title={gw.clear}>
                 <span className="material-symbols-outlined text-[14px]">delete_sweep</span>
               </button>
               <button onClick={() => { const blob = new Blob([filteredLogs.map(item => item.line).join('\n')], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `gateway-logs-${Date.now()}.txt`; a.click(); }}
-                className="text-white/30 hover:text-white transition-colors" title={gw.export}>
+                className="theme-text-muted hover:text-[var(--color-text)] transition-colors" title={gw.export}>
                 <span className="material-symbols-outlined text-[14px]">download</span>
               </button>
               <button onClick={() => setAutoFollow(!autoFollow)}
-                className={`p-0.5 rounded transition-all ${autoFollow ? 'text-primary' : 'text-white/30'}`} title={gw.autoFollow}>
+                className={`p-0.5 rounded transition-all ${autoFollow ? 'text-primary' : 'theme-text-muted hover:text-[var(--color-text)]'}`} title={gw.autoFollow}>
                 <span className="material-symbols-outlined text-[14px]">{autoFollow ? 'vertical_align_bottom' : 'pause'}</span>
               </button>
             </>
@@ -1170,9 +1170,9 @@ const Gateway: React.FC<GatewayProps> = ({ language }) => {
         {/* Content Area */}
         {activeTab === 'logs' ? (
           <>
-            <div className="flex-1 overflow-y-auto font-mono text-[11px] md:text-[12px] p-4 custom-scrollbar neon-scrollbar">
+            <div className="flex-1 overflow-y-auto font-mono text-[11px] md:text-[12px] p-4 custom-scrollbar neon-scrollbar bg-[var(--color-surface)] dark:bg-transparent">
               {filteredLogs.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-white/15">
+                <div className="flex flex-col items-center justify-center h-full theme-text-muted/50">
                   <span className="material-symbols-outlined text-[32px] mb-2">terminal</span>
                   <span className="text-[10px]">{gw.noLogs}</span>
                 </div>
@@ -1187,39 +1187,39 @@ const Gateway: React.FC<GatewayProps> = ({ language }) => {
                 };
                 if (!parsed) {
                   return (
-                    <div key={idx} className="flex gap-2 md:gap-3 mb-0.5 group leading-relaxed hover:bg-white/[0.02] rounded px-1 -mx-1">
-                      <span className="text-white/10 select-none w-6 md:w-8 text-end shrink-0 text-[10px]">{lineNum}</span>
-                      <span className={`flex-1 text-white/60 break-all ${log.includes('ERROR') || log.includes('error') ? 'text-red-400' : log.includes('WARN') || log.includes('warn') ? 'text-yellow-400' : ''}`}>{highlightText(log)}</span>
-                      <button onClick={() => copyLogLine(log)} className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-white shrink-0 transition-opacity" title="Copy">
+                    <div key={idx} className="flex gap-2 md:gap-3 mb-0.5 group leading-relaxed hover:bg-slate-100 dark:hover:bg-white/[0.02] rounded px-1 -mx-1">
+                      <span className="text-slate-300 dark:text-white/10 select-none w-6 md:w-8 text-end shrink-0 text-[10px]">{lineNum}</span>
+                      <span className={`flex-1 text-slate-600 dark:text-white/60 break-all ${log.includes('ERROR') || log.includes('error') ? 'text-red-500 dark:text-red-400' : log.includes('WARN') || log.includes('warn') ? 'text-amber-500 dark:text-yellow-400' : ''}`}>{highlightText(log)}</span>
+                      <button onClick={() => copyLogLine(log)} className="opacity-0 group-hover:opacity-100 text-slate-300 dark:text-white/20 hover:text-slate-700 dark:hover:text-white shrink-0 transition-opacity" title="Copy">
                         <span className="material-symbols-outlined text-[12px]">content_copy</span>
                       </button>
                     </div>
                   );
                 }
-                const lvlColor = parsed.level === 'error' || parsed.level === 'fatal' ? 'text-red-400' : parsed.level === 'warn' ? 'text-yellow-400' : parsed.level === 'debug' || parsed.level === 'trace' ? 'text-white/30' : 'text-white/60';
-                const lvlBg = parsed.level === 'error' || parsed.level === 'fatal' ? 'bg-red-500/15' : parsed.level === 'warn' ? 'bg-yellow-500/15' : parsed.level === 'info' ? 'bg-blue-500/10' : 'bg-white/5';
+                const lvlColor = parsed.level === 'error' || parsed.level === 'fatal' ? 'text-red-500 dark:text-red-400' : parsed.level === 'warn' ? 'text-amber-500 dark:text-yellow-400' : parsed.level === 'debug' || parsed.level === 'trace' ? 'text-slate-400 dark:text-white/30' : 'text-slate-600 dark:text-white/60';
+                const lvlBg = parsed.level === 'error' || parsed.level === 'fatal' ? 'bg-red-500/15' : parsed.level === 'warn' ? 'bg-yellow-500/15' : parsed.level === 'info' ? 'bg-blue-500/10' : 'bg-slate-100 dark:bg-white/5';
                 const hasLongExtra = parsed.extra && parsed.extra.length > 80;
                 const isExtraExpanded = expandedExtras.has(idx);
                 return (
-                  <div key={idx} className="flex gap-2 md:gap-3 mb-0.5 group leading-relaxed hover:bg-white/[0.02] rounded px-1 -mx-1">
-                    <span className="text-white/10 select-none w-6 md:w-8 text-end shrink-0 text-[10px]">{lineNum}</span>
+                  <div key={idx} className="flex gap-2 md:gap-3 mb-0.5 group leading-relaxed hover:bg-slate-100 dark:hover:bg-white/[0.02] rounded px-1 -mx-1">
+                    <span className="text-slate-300 dark:text-white/10 select-none w-6 md:w-8 text-end shrink-0 text-[10px]">{lineNum}</span>
                     <div className="flex-1 break-all">
-                      {parsed.time && <span className="text-cyan-400/50 me-2">{parsed.time}</span>}
+                      {parsed.time && <span className="text-cyan-600/70 dark:text-cyan-400/50 me-2">{parsed.time}</span>}
                       <span className={`inline-block px-1 rounded text-[11px] font-bold uppercase me-2 ${lvlColor} ${lvlBg}`}>{parsed.level}</span>
-                      {parsed.component && <span className="text-purple-400/60 me-2">[{parsed.component}]</span>}
+                      {parsed.component && <span className="text-purple-600/70 dark:text-purple-400/60 me-2">[{parsed.component}]</span>}
                       <span className={lvlColor}>{highlightText(parsed.message)}</span>
                       {parsed.extra && (
                         hasLongExtra && !isExtraExpanded ? (
                           <button onClick={() => setExpandedExtras(prev => { const n = new Set(prev); n.add(idx); return n; })}
-                            className="text-white/20 ms-2 text-[10px] hover:text-white/40">{parsed.extra.slice(0, 80)}… <span className="text-primary/50">▸</span></button>
+                            className="text-slate-400 dark:text-white/20 ms-2 text-[10px] hover:text-slate-500 dark:hover:text-white/40">{parsed.extra.slice(0, 80)}… <span className="text-primary/60">▸</span></button>
                         ) : (
-                          <span className="text-white/20 ms-2 text-[10px]">{parsed.extra}
-                            {hasLongExtra && <button onClick={() => setExpandedExtras(prev => { const n = new Set(prev); n.delete(idx); return n; })} className="text-primary/50 ms-1">▾</button>}
+                          <span className="text-slate-400 dark:text-white/20 ms-2 text-[10px]">{parsed.extra}
+                            {hasLongExtra && <button onClick={() => setExpandedExtras(prev => { const n = new Set(prev); n.delete(idx); return n; })} className="text-primary/60 ms-1">▾</button>}
                           </span>
                         )
                       )}
                     </div>
-                    <button onClick={() => copyLogLine(log)} className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-white shrink-0 transition-opacity" title="Copy">
+                    <button onClick={() => copyLogLine(log)} className="opacity-0 group-hover:opacity-100 text-slate-300 dark:text-white/20 hover:text-slate-700 dark:hover:text-white shrink-0 transition-opacity" title="Copy">
                       <span className="material-symbols-outlined text-[12px]">content_copy</span>
                     </button>
                   </div>
@@ -1227,13 +1227,13 @@ const Gateway: React.FC<GatewayProps> = ({ language }) => {
               })}
               <div ref={logEndRef} />
             </div>
-            <div className="h-7 bg-black/40 px-4 flex items-center justify-between text-[11px] text-white/30 font-bold uppercase shrink-0">
+            <div className="h-7 theme-field px-4 flex items-center justify-between text-[11px] theme-text-muted font-bold uppercase shrink-0 border-t border-slate-200 dark:border-white/5">
               <div className="flex gap-4">
                 <span>{filteredLogs.length}{filteredLogs.length !== visibleLogs.length ? `/${visibleLogs.length}` : ''} {gw.lines}</span>
                 {omittedLogCount > 0 && <span>+{omittedLogCount}</span>}
-                {logStats.errors > 0 && <span className="text-red-400">{logStats.errors} ERR</span>}
-                {logStats.warns > 0 && <span className="text-yellow-400">{logStats.warns} WARN</span>}
-                {activeProfile && <span className="text-primary/60">{activeProfile.host}:{activeProfile.port}</span>}
+                {logStats.errors > 0 && <span className="text-red-500 dark:text-red-400">{logStats.errors} ERR</span>}
+                {logStats.warns > 0 && <span className="text-amber-500 dark:text-yellow-400">{logStats.warns} WARN</span>}
+                {activeProfile && <span className="text-primary">{activeProfile.host}:{activeProfile.port}</span>}
               </div>
               <div className="flex items-center gap-1">
                 <span className="material-symbols-outlined text-[10px]">terminal</span>

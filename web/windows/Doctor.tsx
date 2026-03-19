@@ -1494,7 +1494,7 @@ const Doctor: React.FC<DoctorProps> = ({ language }) => {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-sm md:text-base font-bold text-slate-800 dark:text-white">{maint.title || text.title}</h2>
-            <p className="text-[11px] text-slate-500 dark:text-white/40 mt-0.5">{maint.subtitle || text.subtitle}</p>
+            <p className="text-[11px] theme-text-muted mt-0.5">{maint.subtitle || text.subtitle}</p>
           </div>
           {activeTab === 'diagnose' && (
             <div className="flex items-center gap-2">
@@ -1513,7 +1513,7 @@ const Doctor: React.FC<DoctorProps> = ({ language }) => {
         {/* Tab Navigation */}
         <div className="flex items-center gap-1 mt-3 overflow-x-auto pb-1">
           {tabs.map((tab) => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`h-8 px-3 rounded-lg text-[11px] font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${activeTab === tab.id ? 'bg-primary/15 text-primary' : 'bg-slate-100 dark:bg-white/[0.04] text-slate-500 dark:text-white/40 hover:bg-slate-200 dark:hover:bg-white/[0.06]'}`}>
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`h-8 px-3 rounded-lg text-[11px] font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${activeTab === tab.id ? 'bg-primary/15 text-primary' : 'theme-field theme-text-muted hover:bg-slate-200 dark:hover:bg-white/[0.06]'}`}>
               <span className="material-symbols-outlined text-[14px]">{tab.icon}</span>
               <span className="hidden sm:inline">{tab.label}</span>
             </button>
@@ -1586,7 +1586,7 @@ const Doctor: React.FC<DoctorProps> = ({ language }) => {
                     {/* #9 Time Range Selector */}
                     <div className="flex items-center gap-1 mt-2">
                       {(['1h', '6h', '24h'] as TimeRange[]).map(r => (
-                        <button key={r} onClick={() => setTimeRange(r)} className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${timeRange === r ? 'bg-primary/15 text-primary' : 'bg-slate-100 dark:bg-white/[0.04] text-slate-500 dark:text-white/40 hover:bg-slate-200 dark:hover:bg-white/[0.06]'}`}>
+                        <button key={r} onClick={() => setTimeRange(r)} className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${timeRange === r ? 'bg-primary/15 text-primary' : 'theme-field theme-text-muted hover:bg-slate-200 dark:hover:bg-white/[0.06]'}`}>
                           {r === '1h' ? text.timeRange1h : r === '6h' ? text.timeRange6h : text.timeRange24h}
                         </button>
                       ))}
@@ -1603,7 +1603,7 @@ const Doctor: React.FC<DoctorProps> = ({ language }) => {
                       <p className={`text-[12px] font-bold ${summaryView.gateway?.running ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>{summaryView.gateway?.running ? text.ok : text.error}</p>
                       <span className={`material-symbols-outlined text-[12px] ${summaryView.gateway?.running ? 'text-emerald-500' : 'text-red-500'}`}>{summaryView.gateway?.running ? 'arrow_upward' : 'arrow_downward'}</span>
                     </div>
-                    <p className="text-[10px] text-slate-500 dark:text-white/40 mt-1 break-all leading-relaxed line-clamp-1">{summaryView.gateway?.detail || na}</p>
+                    <p className="text-[10px] theme-text-muted mt-1 break-all leading-relaxed line-clamp-1">{summaryView.gateway?.detail || na}</p>
                   </button>
                   <button type="button" onClick={() => jumpToWindow('gateway')} className="rounded-xl bg-white/80 dark:bg-white/[0.03] border border-slate-200/70 dark:border-white/10 p-3 text-start hover:border-primary/30 transition-colors">
                     <p className="text-[10px] text-slate-400 dark:text-white/35 uppercase tracking-wider">{text.summaryHealthCheck}</p>
@@ -1618,14 +1618,14 @@ const Doctor: React.FC<DoctorProps> = ({ language }) => {
                     </div>
                     {/* #7 Health Check mini bar */}
                     {summaryView.healthCheck?.enabled && summaryView.healthCheck.maxFails > 0 && (
-                      <div className="h-1 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden mt-1.5">
+                      <div className="h-1 theme-field rounded-full overflow-hidden mt-1.5">
                         <div className="h-full rounded-full transition-all duration-500" style={{
                           width: `${Math.min(100, ((summaryView.healthCheck.failCount || 0) / summaryView.healthCheck.maxFails) * 100)}%`,
                           background: (summaryView.healthCheck.failCount || 0) >= summaryView.healthCheck.maxFails ? '#ef4444' : '#f59e0b',
                         }} />
                       </div>
                     )}
-                    <p className="text-[10px] text-slate-500 dark:text-white/40 mt-1">{summaryView.healthCheck?.lastOk ? new Date(summaryView.healthCheck.lastOk).toLocaleTimeString(dateLocale) : na}</p>
+                    <p className="text-[10px] theme-text-muted mt-1">{summaryView.healthCheck?.lastOk ? new Date(summaryView.healthCheck.lastOk).toLocaleTimeString(dateLocale) : na}</p>
                   </button>
                   <div className="rounded-xl bg-white/80 dark:bg-white/[0.03] border border-slate-200/70 dark:border-white/10 p-3 text-start">
                     <p className="text-[10px] text-slate-400 dark:text-white/35 uppercase tracking-wider">{text.summaryExceptions5m}</p>
@@ -1637,14 +1637,14 @@ const Doctor: React.FC<DoctorProps> = ({ language }) => {
                         <span className="material-symbols-outlined text-[12px] text-red-500">arrow_upward</span>
                       )}
                     </div>
-                    <p className="text-[10px] text-slate-500 dark:text-white/40 mt-1">{text.summaryRiskMix}</p>
+                    <p className="text-[10px] theme-text-muted mt-1">{text.summaryRiskMix}</p>
                   </div>
                   <div className="rounded-xl bg-white/80 dark:bg-white/[0.03] border border-slate-200/70 dark:border-white/10 p-3 text-start">
                     <p className="text-[10px] text-slate-400 dark:text-white/35 uppercase tracking-wider">{text.summaryRecentVolume}</p>
                     <div className="flex items-center gap-1.5 mt-1">
                       <p className="text-[12px] font-bold text-slate-700 dark:text-white/75">{scopedSummaryStats?.total1h || 0} / {scopedSummaryStats?.total24h || 0}</p>
                     </div>
-                    <p className="text-[10px] text-slate-500 dark:text-white/40 mt-1">{text.summaryRecentWindow}</p>
+                    <p className="text-[10px] theme-text-muted mt-1">{text.summaryRecentWindow}</p>
                   </div>
                   <button type="button" onClick={() => jumpToWindow('sessions')} className="rounded-xl bg-white/80 dark:bg-white/[0.03] border border-slate-200/70 dark:border-white/10 p-3 text-start hover:border-primary/30 transition-colors">
                     <p className="text-[10px] text-slate-400 dark:text-white/35 uppercase tracking-wider">{text.summarySessionErrors}</p>
@@ -1656,7 +1656,7 @@ const Doctor: React.FC<DoctorProps> = ({ language }) => {
                         <span className="material-symbols-outlined text-[12px] text-pink-500">error</span>
                       )}
                     </div>
-                    <p className="text-[10px] text-slate-500 dark:text-white/40 mt-1">
+                    <p className="text-[10px] theme-text-muted mt-1">
                       {formatText(text.summarySessionErrorsDetail || '{errors} errors / {sessions} sessions', { errors: chatSessionErrors.totalErrors, sessions: chatSessionErrors.errorSessions })}
                     </p>
                   </button>

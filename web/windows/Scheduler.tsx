@@ -472,26 +472,26 @@ const Scheduler: React.FC<SchedulerProps> = ({ language }) => {
         {/* Status Card - full width when no form */}
         <div className={`grid grid-cols-1 ${showForm ? 'lg:grid-cols-2' : ''} gap-4`}>
           <div className="rounded-2xl border border-slate-200/60 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4 sci-card">
-            <h3 className="text-[11px] font-bold text-slate-600 dark:text-white/60 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <h3 className="text-[11px] font-bold theme-text-secondary uppercase tracking-wider mb-3 flex items-center gap-2">
               <span className="material-symbols-outlined text-[14px] text-primary">schedule</span>
               {s.scheduler}
             </h3>
             <div className={`grid ${showForm ? 'grid-cols-3' : 'grid-cols-4'} gap-3`}>
-              <div className="rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 p-3 text-center">
-                <p className="text-[11px] font-bold text-slate-400 dark:text-white/40 uppercase">{s.status}</p>
+              <div className="rounded-xl theme-panel p-3 text-center">
+                <p className="text-[11px] font-bold theme-text-muted uppercase">{s.status}</p>
                 <p className={`text-sm font-bold mt-0.5 ${status?.enabled ? 'text-mac-green' : 'text-slate-400'}`}>{status ? (status.enabled ? s.enabled : s.disabled) : s.na}</p>
               </div>
-              <div className="rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 p-3 text-center">
-                <p className="text-[11px] font-bold text-slate-400 dark:text-white/40 uppercase">{s.jobs}</p>
+              <div className="rounded-xl theme-panel p-3 text-center">
+                <p className="text-[11px] font-bold theme-text-muted uppercase">{s.jobs}</p>
                 <p className="text-sm font-bold text-slate-700 dark:text-white/70 mt-0.5">{jobsTotal || status?.jobs || na}</p>
               </div>
-              <div className="rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 p-3 text-center">
-                <p className="text-[11px] font-bold text-slate-400 dark:text-white/40 uppercase">{s.nextWake}</p>
+              <div className="rounded-xl theme-panel p-3 text-center">
+                <p className="text-[11px] font-bold theme-text-muted uppercase">{s.nextWake}</p>
                 <p className="text-[10px] font-bold text-primary mt-0.5">{fmtRelativeFuture(status?.nextWakeAtMs, s)}</p>
               </div>
               {!showForm && (
-                <div className="rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 p-3 text-center">
-                  <p className="text-[11px] font-bold text-slate-400 dark:text-white/40 uppercase">{s.running}</p>
+                <div className="rounded-xl theme-panel p-3 text-center">
+                  <p className="text-[11px] font-bold theme-text-muted uppercase">{s.running}</p>
                   <p className="text-sm font-bold text-slate-700 dark:text-white/70 mt-0.5">{jobs.filter(j => j.state?.runningAtMs).length}</p>
                 </div>
               )}
@@ -501,7 +501,7 @@ const Scheduler: React.FC<SchedulerProps> = ({ language }) => {
           {/* Form Modal (add / edit) */}
           {showForm && (
             <div className="rounded-2xl border border-primary/20 bg-white dark:bg-white/[0.02] p-4 max-h-[70vh] overflow-y-auto custom-scrollbar neon-scrollbar sci-card">
-              <h3 className="text-[11px] font-bold text-slate-600 dark:text-white/60 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <h3 className="text-[11px] font-bold theme-text-secondary uppercase tracking-wider mb-3 flex items-center gap-2">
                 <span className="material-symbols-outlined text-[14px] text-primary">{editingJobId ? 'edit' : 'add_task'}</span>
                 {editingJobId ? s.editJob : s.newJob}
               </h3>
@@ -636,16 +636,16 @@ const Scheduler: React.FC<SchedulerProps> = ({ language }) => {
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-1">
                   <label className="flex items-center gap-1.5">
                     <input type="checkbox" checked={form.enabled} onChange={e => patchForm({ enabled: e.target.checked })} className="accent-primary" />
-                    <span className="text-[10px] text-slate-500 dark:text-white/40">{s.enabled}</span>
+                    <span className="text-[10px] theme-text-muted">{s.enabled}</span>
                   </label>
                   <label className="flex items-center gap-1.5">
                     <input type="checkbox" checked={form.deleteAfterRun} onChange={e => patchForm({ deleteAfterRun: e.target.checked })} className="accent-mac-yellow" />
-                    <span className="text-[10px] text-slate-500 dark:text-white/40" title={s.deleteAfterRunHint}>{s.deleteAfterRun}</span>
+                    <span className="text-[10px] theme-text-muted" title={s.deleteAfterRunHint}>{s.deleteAfterRun}</span>
                   </label>
                   {form.deliveryMode !== 'none' && (
                     <label className="flex items-center gap-1.5">
                       <input type="checkbox" checked={form.bestEffort} onChange={e => patchForm({ bestEffort: e.target.checked })} className="accent-primary" />
-                      <span className="text-[10px] text-slate-500 dark:text-white/40" title={s.bestEffortHint}>{s.bestEffort}</span>
+                      <span className="text-[10px] theme-text-muted" title={s.bestEffortHint}>{s.bestEffort}</span>
                     </label>
                   )}
                 </div>
@@ -672,7 +672,7 @@ const Scheduler: React.FC<SchedulerProps> = ({ language }) => {
         <div className="rounded-2xl border border-slate-200/60 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
           {/* Search / Filter / Sort bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-            <h3 className="text-[11px] font-bold text-slate-600 dark:text-white/60 uppercase tracking-wider flex items-center gap-2">
+            <h3 className="text-[11px] font-bold theme-text-secondary uppercase tracking-wider flex items-center gap-2">
               <span className="material-symbols-outlined text-[14px] text-primary">list_alt</span>
               {s.jobs} ({jobsTotal || jobs.length})
             </h3>
@@ -680,12 +680,12 @@ const Scheduler: React.FC<SchedulerProps> = ({ language }) => {
               <div className="relative">
                 <span className="material-symbols-outlined text-[14px] text-slate-400 absolute start-2 top-1/2 -translate-y-1/2">search</span>
                 <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder={s.searchJobs || s.search}
-                  className="ps-7 pe-2 py-1 w-36 rounded-lg bg-slate-50 dark:bg-white/[0.03] border border-slate-200/60 dark:border-white/[0.06] text-[10px] text-slate-600 dark:text-white/60 focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                  className="ps-7 pe-2 py-1 w-36 rounded-lg theme-field text-[10px] focus:outline-none focus:ring-1 focus:ring-primary/30 sci-input" />
               </div>
               <CustomSelect value={filterEnabled}
                 onChange={v => setFilterEnabled(v as 'all' | 'enabled' | 'disabled')}
                 options={[{ value: 'all', label: s.filterAll || s.all }, { value: 'enabled', label: s.enabled }, { value: 'disabled', label: s.disabled }]}
-                className="px-2 py-1 rounded-lg bg-slate-50 dark:bg-white/[0.03] border border-slate-200/60 dark:border-white/[0.06] text-[10px] text-slate-600 dark:text-white/60" />
+                className="px-2 py-1 rounded-lg theme-field text-[10px] theme-text-secondary" />
               <CustomSelect value={`${sortBy}-${sortDir}`}
                 onChange={v => { const [b, d] = v.split('-'); setSortBy(b as any); setSortDir(d as any); }}
                 options={[
@@ -693,7 +693,7 @@ const Scheduler: React.FC<SchedulerProps> = ({ language }) => {
                   { value: 'nextRunAtMs-asc', label: `${s.sortNextRun || s.sortNext} ↑` }, { value: 'nextRunAtMs-desc', label: `${s.sortNextRun || s.sortNext} ↓` },
                   { value: 'updatedAtMs-desc', label: `${s.sortUpdated} ↓` }, { value: 'updatedAtMs-asc', label: `${s.sortUpdated} ↑` },
                 ]}
-                className="px-2 py-1 rounded-lg bg-slate-50 dark:bg-white/[0.03] border border-slate-200/60 dark:border-white/[0.06] text-[10px] text-slate-600 dark:text-white/60" />
+                className="px-2 py-1 rounded-lg theme-field text-[10px] theme-text-secondary" />
             </div>
           </div>
 
