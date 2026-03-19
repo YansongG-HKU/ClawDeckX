@@ -200,7 +200,7 @@ if command -v openclaw &>/dev/null; then
         GATEWAY_PID=$!
         GATEWAY_WAIT_SECONDS=15
         if [ "$OPENCLAW_CONFIG_CREATED" = "1" ]; then
-            GATEWAY_WAIT_SECONDS=45
+            GATEWAY_WAIT_SECONDS=60
         fi
         echo "[docker-entrypoint] Waiting up to ${GATEWAY_WAIT_SECONDS}s for OpenClaw gateway readiness..."
         # Wait for gateway to be ready
