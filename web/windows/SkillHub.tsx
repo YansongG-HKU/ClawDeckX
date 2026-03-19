@@ -1,18 +1,39 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { Language } from '../types';
 import { getTranslation } from '../locales';
-import { skillHubApi, SkillHubSkill, SkillHubData, SkillHubPageResponse } from '../services/api';
+import { skillHubApi, skillHubRemoteApi, SkillHubSkill, SkillHubPageResponse } from '../services/api';
 import { useToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
 import CustomSelect from '../components/CustomSelect';
 import { copyToClipboard } from '../utils/clipboard';
-import { idbGet, idbSet, idbDelete } from '../utils/idbCache';
+import { idbGet, idbSet } from '../utils/idbCache';
+import { pickLocalizedField } from '../utils/localizedContent';
 
 interface SkillHubProps { language: Language; }
 
-const CACHE_KEY = 'skillhub_data_cache';
-const CACHE_EXPIRY_HOURS = 24;
 const BANNER_DISMISSED_KEY = 'skillhub_banner_dismissed';
+const TOP_CACHE_KEY = 'skillhub_top_cache';
+const TOP_CACHE_EXPIRY_HOURS = 6;
+const TOP_CACHE_VERSION = 1;
+const REMOTE_SKILLHUB_CATEGORIES = [
+  'ai-intelligence',
+  'developer-tools',
+  'productivity',
+  'data-analysis',
+  'content-creation',
+  'security-compliance',
+  'communication-collaboration',
+] as const;
+
+const REMOTE_SKILLHUB_CATEGORY_LABELS: Record<(typeof REMOTE_SKILLHUB_CATEGORIES)[number], { zh: string; en: string }> = {
+  'ai-intelligence': { zh: 'AI 智能', en: 'AI Intelligence' },
+  'developer-tools': { zh: '开发工具', en: 'Developer Tools' },
+  'productivity': { zh: '效率提升', en: 'Productivity' },
+  'data-analysis': { zh: '数据分析', en: 'Data Analysis' },
+  'content-creation': { zh: '内容创作', en: 'Content Creation' },
+  'security-compliance': { zh: '安全合规', en: 'Security & Compliance' },
+  'communication-collaboration': { zh: '通讯协作', en: 'Communication & Collaboration' },
+};
 
 // 可展开描述组件（与 Skills.tsx 中的 ExpandableDesc 保持一致）
 const ExpandableDesc: React.FC<{ text: string; moreLabel: string }> = ({ text, moreLabel }) => {
@@ -32,10 +53,10 @@ const ExpandableDesc: React.FC<{ text: string; moreLabel: string }> = ({ text, m
   );
 };
 
-interface CacheData {
-  data: SkillHubData;
+interface TopCacheData {
+  skills: SkillHubSkill[];
   timestamp: number;
-  url: string;
+  version: number;
 }
 
 // 技能详情弹窗组件
@@ -49,12 +70,12 @@ const SkillDetailModal: React.FC<{
 }> = ({ skill, onClose, onCopyPrompt, onCopyCLI, language, sk }) => {
   if (!skill) return null;
 
-  const desc = language === 'zh' || language === 'zh-TW' ? (skill.description_zh || skill.description) : skill.description;
+  const desc = pickLocalizedField(language, skill, { base: 'description', zh: 'description_zh' });
   const updatedDate = new Date(skill.updated_at).toLocaleDateString();
 
-  const promptCode = `请先检查是否已安装 SkillHub 商店，若未安装，请根据 https://skillhub-1251783334.cos.ap-guangzhou.myqcloud.com/install/skillhub.md 安装 SkillHub 商店，然后安装 ${skill.slug} 技能。
-
-若已安装，则直接安装 ${skill.slug} 技能。`;
+  const promptCode = (sk.skillHubInstallPrompt || 'Please first check whether the SkillHub store is installed. If it is not installed, install SkillHub following {url}, then install the {slug} skill.\n\nIf SkillHub is already installed, install the {slug} skill directly.')
+    .replace(/\{url\}/g, 'https://skillhub-1251783334.cos.ap-guangzhou.myqcloud.com/install/skillhub.md')
+    .replace(/\{slug\}/g, skill.slug);
 
   const cliCode = `skillhub install ${skill.slug}`;
 
@@ -255,65 +276,47 @@ const SkillHub: React.FC<SkillHubProps> = ({ language }) => {
   const [cliStatus, setCLIStatus] = useState<'checking' | 'not-installed' | 'installing' | 'installed' | 'error' | 'dismissed'>('checking');
   const [cliError, setCLIError] = useState<string>('');
 
-  const [data, setData] = useState<SkillHubData | null>(null);
   const [skills, setSkills] = useState<SkillHubSkill[]>([]);
   const [totalSkills, setTotalSkills] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
-  const [categoriesList, setCategoriesList] = useState<Record<string, string[]>>({});
-  const [featuredList, setFeaturedList] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [category, setCategory] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<'newest' | 'downloads' | 'stars'>('newest');
+  const [sortBy, setSortBy] = useState<'score' | 'downloads' | 'stars' | 'installs' | 'name'>('score');
   const [showFeatured, setShowFeatured] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
+  const [topSkills, setTopSkills] = useState<SkillHubSkill[]>([]);
+  const [topLoading, setTopLoading] = useState(false);
   const [detailSkill, setDetailSkill] = useState<SkillHubSkill | null>(null);
   const [installingSlug, setInstallingSlug] = useState<string | null>(null);
   const [confirmSkill, setConfirmSkill] = useState<SkillHubSkill | null>(null);
   const [installedSkillNames, setInstalledSkillNames] = useState<Set<string>>(new Set());
-  const [usePaginatedApi, setUsePaginatedApi] = useState(true);
 
   const searchRef = useRef<HTMLInputElement>(null);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load cache from IndexedDB (with localStorage migration fallback)
-  const loadCache = useCallback(async (): Promise<CacheData | null> => {
+  const loadTopCache = useCallback(async (): Promise<TopCacheData | null> => {
     try {
-      const cached = await idbGet<CacheData>(CACHE_KEY);
-      if (cached) {
-        const age = Date.now() - cached.timestamp;
-        const maxAge = CACHE_EXPIRY_HOURS * 60 * 60 * 1000;
-        if (age > maxAge) {
-          idbDelete(CACHE_KEY);
-          return null;
-        }
-        return cached;
-      }
-      // Migrate from localStorage if exists
-      const lsData = localStorage.getItem(CACHE_KEY);
-      if (lsData) {
-        const parsed: CacheData = JSON.parse(lsData);
-        localStorage.removeItem(CACHE_KEY);
-        const age = Date.now() - parsed.timestamp;
-        if (age <= CACHE_EXPIRY_HOURS * 60 * 60 * 1000) {
-          idbSet(CACHE_KEY, parsed);
-          return parsed;
-        }
-      }
-      return null;
+      const cached = await idbGet<TopCacheData>(TOP_CACHE_KEY);
+      if (!cached || cached.version !== TOP_CACHE_VERSION) return null;
+      const age = Date.now() - cached.timestamp;
+      const maxAge = TOP_CACHE_EXPIRY_HOURS * 60 * 60 * 1000;
+      if (age > maxAge) return null;
+      return cached;
     } catch {
       return null;
     }
   }, []);
 
-  // Save cache to IndexedDB
-  const saveCache = useCallback((data: SkillHubData, url: string) => {
-    const cacheData: CacheData = { data, timestamp: Date.now(), url };
-    idbSet(CACHE_KEY, cacheData);
-    setLastUpdated(Date.now());
+  const saveTopCache = useCallback((skills: SkillHubSkill[]) => {
+    const cacheData: TopCacheData = {
+      skills,
+      timestamp: Date.now(),
+      version: TOP_CACHE_VERSION,
+    };
+    idbSet(TOP_CACHE_KEY, cacheData);
   }, []);
 
   // Apply paginated response to state
@@ -326,85 +329,87 @@ const SkillHub: React.FC<SkillHubProps> = ({ language }) => {
     setTotalSkills(res.total);
     setHasMore(res.hasMore);
     setCurrentPage(res.page);
-    if (res.categories) setCategoriesList(res.categories);
-    if (res.featured) setFeaturedList(res.featured);
-    setLastUpdated(Date.now());
   }, []);
 
-  // Fetch page via paginated API (primary path)
-  const fetchPage = useCallback(async (page = 1, append = false) => {
-    try {
-      if (page === 1 && !append) setLoading(true);
-      else setLoadingMore(true);
-      if (page === 1 && !append) setLoadError(false);
+  // Map UI sort to remote API sortBy parameter
+  const mapSortToRemote = (sort: string): { sortBy: 'score' | 'downloads' | 'stars' | 'installs' | 'name'; order: 'asc' | 'desc' } => {
+    if (sort === 'score') return { sortBy: 'score', order: 'desc' };
+    if (sort === 'downloads') return { sortBy: 'downloads', order: 'desc' };
+    if (sort === 'stars') return { sortBy: 'stars', order: 'desc' };
+    if (sort === 'installs') return { sortBy: 'installs', order: 'desc' };
+    if (sort === 'name') return { sortBy: 'name', order: 'asc' };
+    return { sortBy: 'score', order: 'desc' };
+  };
 
-      const res = await skillHubApi.listSkills(page, 60, sortBy, category, showFeatured);
+  // Fetch page from remote proxy API
+  const fetchPage = useCallback(async (page = 1, append = false) => {
+    if (page === 1 && !append) { setLoading(true); setLoadError(false); }
+    else setLoadingMore(true);
+
+    try {
+      const { sortBy: remoteSortBy, order } = mapSortToRemote(sortBy);
+      const res = await skillHubRemoteApi.listSkills(page, 24, remoteSortBy, order, category);
       applyPageResponse(res, append);
       setLoading(false);
       setLoadingMore(false);
-    } catch (err: any) {
+      return;
+    } catch (err) {
+      console.warn('[SkillHub] Remote API failed:', err);
       setLoadingMore(false);
-      // Fallback to full data API if paginated API not available
-      if (page === 1) {
-        setUsePaginatedApi(false);
-        await fetchDataFallback();
-      } else {
-        setLoading(false);
-        setLoadError(true);
-        toast('error', `${skRef.current.loadFailed || 'Load failed'}: ${err?.message || ''}`);
-      }
+      setLoading(false);
+      setLoadError(true);
+      toast('error', `${skRef.current.loadFailed || 'Load failed'}: ${(err as any)?.message || ''}`);
     }
-  }, [sortBy, category, showFeatured, applyPageResponse, toast]);
+  }, [sortBy, category, applyPageResponse, toast]);
 
-  // Server-side search
+  // Server-side search via remote proxy API
   const fetchSearch = useCallback(async (q: string) => {
+    setLoading(true);
+    setLoadError(false);
+
     try {
-      setLoading(true);
-      setLoadError(false);
-      const res = await skillHubApi.searchSkills(q, 60);
+      const res = await skillHubRemoteApi.searchSkills(q, 24, category);
       setSkills(res.skills);
       setTotalSkills(res.total);
       setHasMore(false);
       setLoading(false);
-    } catch {
+      return;
+    } catch (err) {
+      console.warn('[SkillHub] Remote search failed:', err);
       setLoading(false);
       setLoadError(true);
     }
-  }, []);
+  }, [category]);
 
-  // Fallback: full data API (old path) — used if paginated API unavailable
-  const fetchDataFallback = useCallback(async () => {
-    try {
-      // Try IndexedDB cache first
-      const cached = await loadCache();
-      if (cached) {
-        setData(cached.data);
-        setLastUpdated(cached.timestamp);
-        setLoadError(false);
-        setLoading(false);
-        return;
+  const fetchData = useCallback(async () => {
+    await fetchPage(1);
+  }, [fetchPage]);
+
+  const fetchTopSkills = useCallback(async (force = false) => {
+    if (!force) {
+      const cached = await loadTopCache();
+      if (cached && cached.skills.length > 0) {
+        setTopSkills(cached.skills);
       }
-      setLoading(true);
-      setLoadError(false);
-      const result = await skillHubApi.getData();
-      setData(result);
-      saveCache(result, '');
-      setLoading(false);
-    } catch (err: any) {
-      setLoading(false);
-      setLoadError(true);
-      toast('error', `${skRef.current.loadFailed || 'Load failed'}: ${err?.message || ''}`);
     }
-  }, [loadCache, saveCache, toast]);
 
-  // Unified fetch entry point
-  const fetchData = useCallback(async (force = false) => {
-    if (usePaginatedApi) {
-      await fetchPage(1);
-    } else {
-      await fetchDataFallback();
+    setTopLoading(true);
+    try {
+      const remoteTopSkills = await skillHubRemoteApi.topSkills();
+      setTopSkills(remoteTopSkills);
+      saveTopCache(remoteTopSkills);
+    } catch (err) {
+      if (force || topSkills.length === 0) {
+        const cached = await loadTopCache();
+        if (cached?.skills?.length) {
+          setTopSkills(cached.skills);
+        }
+      }
+      console.debug('Failed to fetch top skills:', err);
+    } finally {
+      setTopLoading(false);
     }
-  }, [usePaginatedApi, fetchPage, fetchDataFallback]);
+  }, [loadTopCache, saveTopCache, topSkills.length]);
 
   // Check CLI status
   const CLI_INSTALLED_KEY = 'skillhub_cli_installed';
@@ -480,71 +485,78 @@ useEffect(() => {
     checkCLI();
   }
   fetchData();
+  fetchTopSkills();
   fetchInstalledSkills();
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, []); // Only run once on mount
 
-// Client-side filtering (only used in fallback mode when paginated API is unavailable)
-const filteredSkills = useMemo(() => {
-  if (usePaginatedApi || !data) return [];
-  let list = data.skills;
-
-  if (showFeatured) {
-    const featuredSet = new Set(data.featured);
-    list = list.filter(s => featuredSet.has(s.slug));
-  }
-  if (category !== 'all') {
-    const categoryTags = data.categories[category] || [];
-    const tagSet = new Set(categoryTags.map(t => t.toLowerCase()));
-    list = list.filter(s => s.tags.some(t => tagSet.has(t.toLowerCase())));
-  }
+// Unified rendered skills list
+const featuredRenderedSkills = useMemo(() => {
+  let list = topSkills;
   if (searchQuery.trim()) {
-    const q = searchQuery.toLowerCase();
+    const q = searchQuery.trim().toLowerCase();
     list = list.filter(s =>
       s.name.toLowerCase().includes(q) ||
       s.slug.toLowerCase().includes(q) ||
+      pickLocalizedField(language, s, { base: 'description', zh: 'description_zh' }).toLowerCase().includes(q) ||
       s.description.toLowerCase().includes(q) ||
       s.description_zh?.toLowerCase().includes(q)
     );
   }
-  list = [...list].sort((a, b) => {
-    if (sortBy === 'downloads') return b.downloads - a.downloads;
-    if (sortBy === 'stars') return b.stars - a.stars;
-    return b.updated_at - a.updated_at;
-  });
   return list;
-}, [data, showFeatured, category, searchQuery, sortBy, usePaginatedApi]);
+}, [topSkills, searchQuery, language]);
 
-// Unified rendered skills list
 const renderedSkills = useMemo(() => {
-  if (usePaginatedApi) return skills;
-  return filteredSkills.slice(0, 60);
-}, [usePaginatedApi, skills, filteredSkills]);
+  if (showFeatured) return featuredRenderedSkills;
+  return skills;
+}, [showFeatured, featuredRenderedSkills, skills]);
 
 // Re-fetch when sort/category/featured change (paginated mode)
 useEffect(() => {
-  if (!usePaginatedApi) return;
+  if (showFeatured) {
+    if (topSkills.length === 0) fetchTopSkills();
+    setHasMore(false);
+    setCurrentPage(1);
+    return;
+  }
   if (searchQuery.trim()) return; // search has its own handler
   fetchPage(1);
-}, [sortBy, category, showFeatured]);
+}, [sortBy, category, showFeatured, fetchPage, fetchTopSkills, searchQuery, topSkills.length]);
 
 // Debounced server-side search
 useEffect(() => {
-  if (!usePaginatedApi) return;
   if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
   if (!searchQuery.trim()) {
+    if (showFeatured) {
+      if (topSkills.length === 0) fetchTopSkills();
+      setHasMore(false);
+      setCurrentPage(1);
+      return;
+    }
     fetchPage(1);
+    return;
+  }
+  if (showFeatured) {
+    setTotalSkills(featuredRenderedSkills.length);
+    setHasMore(false);
     return;
   }
   searchDebounceRef.current = setTimeout(() => {
     fetchSearch(searchQuery.trim());
   }, 300);
   return () => { if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current); };
-}, [searchQuery]);
+}, [searchQuery, showFeatured, fetchPage, fetchSearch, featuredRenderedSkills.length, fetchTopSkills, topSkills.length]);
+
+useEffect(() => {
+  if (!showFeatured) return;
+  setTotalSkills(featuredRenderedSkills.length || topSkills.length || 50);
+}, [showFeatured, featuredRenderedSkills.length, topSkills.length]);
 
 // Copy prompt
 const handleCopyPrompt = useCallback((skill: SkillHubSkill) => {
-  const prompt = `请先检查是否已安装 SkillHub 商店，若未安装，请根据 https://skillhub-1251783334.cos.ap-guangzhou.myqcloud.com/install/skillhub.md 安装 SkillHub 商店，然后安装 ${skill.slug} 技能。\n\n若已安装，则直接安装 ${skill.slug} 技能。`;
+  const prompt = (skRef.current.skillHubInstallPrompt || 'Please first check whether the SkillHub store is installed. If it is not installed, install SkillHub following {url}, then install the {slug} skill.\n\nIf SkillHub is already installed, install the {slug} skill directly.')
+    .replace(/\{url\}/g, 'https://skillhub-1251783334.cos.ap-guangzhou.myqcloud.com/install/skillhub.md')
+    .replace(/\{slug\}/g, skill.slug);
   copyToClipboard(prompt).then(() => {
     toast('success', skRef.current.copiedHint || 'Copied to clipboard');
   }).catch(() => {
@@ -567,9 +579,12 @@ const handleRightButton = useCallback((skill: SkillHubSkill) => {
   if (cliStatus === 'installed') {
     setConfirmSkill(skill);
   } else {
+    toast('warning', skRef.current.skillHubBannerNotInstalled || 'SkillHub CLI not installed');
     handleCopyCLI(skill);
   }
-}, [cliStatus, handleCopyCLI]);
+}, [cliStatus, handleCopyCLI, toast]);
+
+const isSkillHubCLIInstalled = cliStatus === 'installed';
 
 // Install skill via API (called after confirmation)
 const handleInstallSkill = useCallback(async (skill: SkillHubSkill) => {
@@ -597,20 +612,19 @@ const handleInstallSkill = useCallback(async (skill: SkillHubSkill) => {
 }, [installingSlug, toast, fetchInstalledSkills]);
 
 const categories = useMemo(() => {
-  if (usePaginatedApi) return Object.keys(categoriesList);
-  if (!data) return [];
-  return Object.keys(data.categories);
-}, [usePaginatedApi, categoriesList, data]);
+  return [...REMOTE_SKILLHUB_CATEGORIES];
+}, []);
 
-  const cacheAge = useMemo(() => {
-    if (!lastUpdated) return '';
-    const age = Date.now() - lastUpdated;
-    const hours = Math.floor(age / (60 * 60 * 1000));
-    const minutes = Math.floor((age % (60 * 60 * 1000)) / (60 * 1000));
-    if (hours > 0) return `${hours}${sk.hoursAgo || 'h ago'}`;
-    if (minutes > 0) return `${minutes}${sk.minutesAgo || 'm ago'}`;
-    return sk.justNow || 'Just now';
-  }, [lastUpdated, sk]);
+const categoryOptions = useMemo(() => {
+  const isChinese = language === 'zh' || language === 'zh-TW';
+  return [
+    { value: 'all', label: sk.categoryAll || 'All Categories' },
+    ...categories.map(cat => ({
+      value: cat,
+      label: REMOTE_SKILLHUB_CATEGORY_LABELS[cat]?.[isChinese ? 'zh' : 'en'] || cat,
+    })),
+  ];
+}, [language, sk.categoryAll, categories]);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-[#0f1115]">
@@ -628,10 +642,7 @@ const categories = useMemo(() => {
           <CustomSelect
             value={category}
             onChange={(v) => setCategory(v)}
-            options={[
-              { value: 'all', label: sk.categoryAll || 'All Categories' },
-              ...categories.map(cat => ({ value: cat, label: cat }))
-            ]}
+            options={categoryOptions}
             className="h-9 px-2 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-[10px] font-bold text-slate-600 dark:text-white/60 outline-none shrink-0"
           />
 
@@ -647,7 +658,13 @@ const categories = useMemo(() => {
 
           {/* Sort */}
           <div className="flex bg-slate-200 dark:bg-black/40 p-0.5 rounded-lg shadow-inner shrink-0">
-            {([['newest', sk.sortNewest || 'Newest'], ['downloads', sk.sortDownloads || 'Downloads'], ['stars', sk.sortStars || 'Stars']] as const).map(([val, label]) => (
+            {([
+              ['score', sk.sortScore || '综合'],
+              ['downloads', sk.sortDownloads || '下载'],
+              ['stars', sk.sortStars || '星数'],
+              ['installs', sk.sortInstalls || '安装'],
+              ['name', sk.sortName || '名称'],
+            ] as const).map(([val, label]) => (
               <button key={val} onClick={() => setSortBy(val as any)}
                 className={`px-2 py-1 rounded text-[10px] font-bold transition-all whitespace-nowrap ${sortBy === val ? 'bg-white dark:bg-primary shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>
                 {label}
@@ -656,18 +673,11 @@ const categories = useMemo(() => {
           </div>
 
           {/* Refresh */}
-          <button onClick={() => fetchData(true)} disabled={loading}
+          <button onClick={() => showFeatured ? fetchTopSkills(true) : fetchData()} disabled={loading || (showFeatured && topLoading)}
             className="h-9 w-9 flex items-center justify-center bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 rounded-lg shrink-0 disabled:opacity-50"
             title={sk.forceRefresh || 'Force Refresh'}>
-            <span className={`material-symbols-outlined text-[16px] text-slate-500 ${loading ? 'animate-spin' : ''}`}>{loading ? 'progress_activity' : 'refresh'}</span>
+            <span className={`material-symbols-outlined text-[16px] text-slate-500 ${(loading || (showFeatured && topLoading)) ? 'animate-spin' : ''}`}>{(loading || (showFeatured && topLoading)) ? 'progress_activity' : 'refresh'}</span>
           </button>
-
-          {/* Cache status */}
-          {lastUpdated && (
-            <span className="h-9 px-2 flex items-center text-[10px] text-slate-500 dark:text-white/50 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-lg whitespace-nowrap shrink-0">
-              {sk.lastUpdated || 'Updated'}: {cacheAge}
-            </span>
-          )}
         </div>
       </div>
 
@@ -678,27 +688,27 @@ const categories = useMemo(() => {
           <CLIBanner status={cliStatus} onInstall={handleInstallCLI} onDismiss={handleDismissBanner} error={cliError} sk={sk} />
 
           {/* Loading */}
-          {loading && !data && skills.length === 0 && (
+          {(loading || (showFeatured && topLoading)) && renderedSkills.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 text-slate-400">
               <span className="material-symbols-outlined text-4xl animate-spin mb-3">progress_activity</span>
               <span className="text-xs">{sk.loading || 'Loading...'}</span>
-              <span className="text-[10px] mt-2 text-slate-400">{sk.loadingLargeFile || 'Loading large file, please wait...'}</span>
+              <span className="text-[10px] mt-2 text-slate-400">{sk.pleaseWait || 'Please wait, this may take a few minutes...'}</span>
             </div>
           )}
 
           {/* Error - no data at all and not loading */}
-          {!loading && loadError && !data && skills.length === 0 && (
+          {!loading && !(showFeatured && topLoading) && loadError && renderedSkills.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 text-slate-400">
               <span className="material-symbols-outlined text-4xl mb-3 text-red-500">error</span>
               <span className="text-xs mb-3">{sk.loadFailed || 'Failed to load data'}</span>
-              <button onClick={() => fetchData(true)} className="h-8 px-4 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90">
+              <button onClick={() => showFeatured ? fetchTopSkills(true) : fetchData()} className="h-8 px-4 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90">
                 {sk.retry || 'Retry'}
               </button>
             </div>
           )}
 
           {/* Empty */}
-          {!loading && !loadError && renderedSkills.length === 0 && (data || skills.length === 0) && (
+          {!loading && !loadError && renderedSkills.length === 0 && (
             <EmptyState icon="search_off" title={sk.noResults || 'No skills found'} />
           )}
 
@@ -706,7 +716,7 @@ const categories = useMemo(() => {
           {renderedSkills.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {renderedSkills.map(skill => {
-                const desc = language === 'zh' || language === 'zh-TW' ? (skill.description_zh || skill.description) : skill.description;
+                const desc = pickLocalizedField(language, skill, { base: 'description', zh: 'description_zh' });
                 return (
                   <div key={skill.slug} className="bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 rounded-2xl p-4 hover:border-primary/30 transition-all group shadow-sm flex flex-col cursor-pointer" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 220px' }} onClick={() => setDetailSkill(skill)}>
                     {/* Header */}
@@ -772,18 +782,18 @@ const categories = useMemo(() => {
                     {/* Actions */}
                     <div className="flex items-center gap-1 mt-2 pt-2 border-t border-slate-100 dark:border-white/5">
                       <button onClick={(e) => { e.stopPropagation(); handleCopyPrompt(skill); }}
-                        className={`flex-1 h-7 text-[10px] font-bold rounded-lg transition-colors flex items-center justify-center gap-1 ${cliStatus === 'installed' ? 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/50 hover:bg-slate-200 dark:hover:bg-white/10' : 'bg-primary/15 text-primary hover:bg-primary/25'}`}>
+                        className={`flex-1 h-7 text-[10px] font-bold rounded-lg transition-colors flex items-center justify-center gap-1 ${isSkillHubCLIInstalled ? 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/50 hover:bg-slate-200 dark:hover:bg-white/10' : 'bg-primary/15 text-primary hover:bg-primary/25'}`}>
                         <span className="material-symbols-outlined text-[12px]">content_copy</span>
-                        <span className="truncate">{sk.copyPrompt || 'Copy Prompt'}</span>
+                        <span className="truncate">{sk.copyPrompt || '复制提示词'}</span>
                       </button>
                       <button onClick={(e) => { e.stopPropagation(); handleRightButton(skill); }}
                         disabled={installingSlug === skill.slug}
-                        className={`h-7 px-3 text-[10px] font-bold rounded-lg transition-colors flex items-center gap-1 shrink-0 ${installingSlug === skill.slug ? 'bg-primary/20 text-primary cursor-wait' : cliStatus === 'installed' ? 'bg-primary text-white hover:bg-primary/90' : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/60 hover:bg-slate-200 dark:hover:bg-white/10'}`}
-                        title={cliStatus === 'installed' ? `${sk.installSkill || 'Install'} ${skill.slug}` : `${sk.copyCLI || 'Copy'}: skillhub install ${skill.slug}`}>
+                        className={`h-7 px-3 text-[10px] font-bold rounded-lg transition-colors flex items-center gap-1 shrink-0 ${installingSlug === skill.slug ? 'bg-primary/20 text-primary cursor-wait' : isSkillHubCLIInstalled ? 'bg-primary text-white hover:bg-primary/90' : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/60 hover:bg-slate-200 dark:hover:bg-white/10'}`}
+                        title={isSkillHubCLIInstalled ? `${sk.installSkill || 'Install'} ${skill.slug}` : `${sk.copyCLI || 'Copy'}: skillhub install ${skill.slug}`}>
                         <span className={`material-symbols-outlined text-[12px] ${installingSlug === skill.slug ? 'animate-spin' : ''}`}>
-                          {installingSlug === skill.slug ? 'progress_activity' : (cliStatus === 'installed' ? 'download' : 'terminal')}
+                          {installingSlug === skill.slug ? 'progress_activity' : (isSkillHubCLIInstalled ? 'download' : 'terminal')}
                         </span>
-                        {cliStatus === 'installed' && <span className="truncate">{sk.installSkill || 'Install'}</span>}
+                        <span className="truncate">{isSkillHubCLIInstalled ? (sk.installSkill || '安装') : (sk.copyCLI || '复制命令')}</span>
                       </button>
                     </div>
                   </div>
@@ -793,10 +803,10 @@ const categories = useMemo(() => {
           )}
 
           {/* Load More Button */}
-          {hasMore && (
+          {!showFeatured && hasMore && (
             <div className="flex justify-center mt-6">
               <button 
-                onClick={() => usePaginatedApi ? fetchPage(currentPage + 1, true) : null}
+                onClick={() => fetchPage(currentPage + 1, true)}
                 disabled={loadingMore}
                 className="h-10 px-6 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 rounded-lg text-sm font-bold text-slate-700 dark:text-white/70 transition-colors flex items-center gap-2 disabled:opacity-50"
               >

@@ -57,11 +57,32 @@ export const selfUpdateApi = {
 };
 
 export const serviceApi = {
-  status: () => get<{ openclaw_installed: boolean; clawdeckx_installed: boolean }>('/api/v1/service/status'),
+  status: () => get<{ openclaw_installed: boolean; clawdeckx_installed: boolean; is_docker: boolean }>('/api/v1/service/status'),
   installOpenClaw: () => post<{ message: string }>('/api/v1/service/openclaw/install', {}),
   uninstallOpenClaw: () => post<{ message: string }>('/api/v1/service/openclaw/uninstall', {}),
   installClawDeckX: () => post<{ message: string }>('/api/v1/service/clawdeckx/install', {}),
   uninstallClawDeckX: () => post<{ message: string }>('/api/v1/service/clawdeckx/uninstall', {}),
+};
+
+// ==================== Docker 运行时覆盖 ====================
+export interface RuntimeComponentStatus {
+  component: string;
+  active_version: string;
+  image_version: string;
+  runtime_version?: string;
+  source?: string;
+  installed_at?: string;
+  prev_version?: string;
+  using_overlay: boolean;
+}
+export interface RuntimeStatus {
+  is_docker: boolean;
+  clawdeckx: RuntimeComponentStatus;
+  openclaw: RuntimeComponentStatus;
+}
+export const runtimeApi = {
+  status: () => get<RuntimeStatus>('/api/v1/runtime/status'),
+  rollback: (component: string) => post<{ message: string; status: RuntimeComponentStatus }>('/api/v1/runtime/rollback', { component }),
 };
 
 // ==================== 服务器访问配置 ====================
@@ -1297,21 +1318,93 @@ export interface SkillHubSearchResponse {
   query: string;
 }
 
+interface RemoteSkillHubResponse {
+  code: number;
+  data: {
+    skills: Array<{
+      category: string;
+      description: string;
+      description_zh?: string;
+      downloads: number;
+      homepage: string;
+      installs: number;
+      name: string;
+      ownerName: string;
+      score: number;
+      slug: string;
+      stars: number;
+      tags: string[] | null;
+      updated_at: number;
+      version: string;
+    }>;
+    total: number;
+  };
+  message: string;
+}
+
+type RemoteSortBy = 'score' | 'downloads' | 'stars' | 'installs' | 'name';
+type RemoteOrder = 'asc' | 'desc';
+
+function mapRemoteSkill(s: RemoteSkillHubResponse['data']['skills'][number]): SkillHubSkill {
+  return {
+    slug: s.slug,
+    name: s.name,
+    homepage: s.homepage,
+    version: s.version,
+    description: s.description,
+    description_zh: s.description_zh,
+    stars: s.stars,
+    downloads: s.downloads,
+    installs: s.installs,
+    tags: s.tags ?? [],
+    updated_at: s.updated_at,
+    score: s.score,
+  };
+}
+
+export const skillHubRemoteApi = {
+  listSkills: async (
+    page = 1,
+    pageSize = 24,
+    sortBy: RemoteSortBy = 'score',
+    order: RemoteOrder = 'desc',
+    category?: string,
+  ): Promise<SkillHubPageResponse> => {
+    let url = `/api/v1/skillhub/remote/skills?page=${page}&pageSize=${pageSize}&sortBy=${sortBy}&order=${order}`;
+    if (category && category !== 'all') url += `&category=${encodeURIComponent(category)}`;
+    const json = await get<RemoteSkillHubResponse>(url);
+    const skills = json.data.skills.map(mapRemoteSkill);
+    const total = json.data.total;
+    const hasMore = page * pageSize < total;
+    return {
+      skills,
+      total,
+      page,
+      size: pageSize,
+      hasMore,
+      categories: {},
+      featured: [],
+    };
+  },
+  searchSkills: async (q: string, pageSize = 24, category?: string): Promise<SkillHubSearchResponse> => {
+    let url = `/api/v1/skillhub/remote/search?q=${encodeURIComponent(q)}&pageSize=${pageSize}`;
+    if (category && category !== 'all') url += `&category=${encodeURIComponent(category)}`;
+    const json = await get<RemoteSkillHubResponse>(url);
+    return {
+      skills: json.data.skills.map(mapRemoteSkill),
+      total: json.data.total,
+      query: q,
+    };
+  },
+  topSkills: async (): Promise<SkillHubSkill[]> => {
+    const json = await get<RemoteSkillHubResponse>('/api/v1/skillhub/remote/top');
+    return json.data.skills.map(mapRemoteSkill);
+  },
+};
+
 export const skillHubApi = {
   cliStatus: () => get<SkillHubCLIStatus>('/api/v1/skillhub/cli-status'),
   install: () => post<{ success: boolean; output: string }>('/api/v1/skillhub/install', {}),
   installSkill: (slug: string) => post<{ success: boolean; output: string; slug: string }>('/api/v1/skillhub/install-skill', { slug }),
-  getData: (url?: string) => {
-    const endpoint = url ? `/api/v1/skillhub/data?url=${encodeURIComponent(url)}` : '/api/v1/skillhub/data';
-    return get<SkillHubData>(endpoint);
-  },
-  listSkills: (page = 1, size = 60, sort = 'newest', category = 'all', featured = false) => {
-    let url = `/api/v1/skillhub/skills?page=${page}&size=${size}&sort=${sort}`;
-    if (category && category !== 'all') url += `&category=${encodeURIComponent(category)}`;
-    if (featured) url += '&featured=true';
-    return get<SkillHubPageResponse>(url);
-  },
-  searchSkills: (q: string, limit = 20) =>
-    get<SkillHubSearchResponse>(`/api/v1/skillhub/search?q=${encodeURIComponent(q)}&limit=${limit}`),
   getInstalledSkills: () => get<{ skills: string[] }>('/api/v1/skillhub/installed'),
 };

@@ -28,6 +28,7 @@ import (
 	"ClawDeckX/internal/notify"
 	"ClawDeckX/internal/openclaw"
 	"ClawDeckX/internal/proclock"
+	"ClawDeckX/internal/runtime"
 	"ClawDeckX/internal/sentinel"
 	"ClawDeckX/internal/tray"
 	"ClawDeckX/internal/version"
@@ -366,6 +367,16 @@ func RunServe(args []string) int {
 	maintenanceHandler := handlers.NewMaintenanceHandler(svc)
 	maintenanceHandler.SetGWClient(gwClient)
 
+	// Runtime overlay manager (Docker persistent updates)
+	var runtimeMgr *runtime.Manager
+	if runtimeDir := os.Getenv("OCD_RUNTIME_DIR"); runtimeDir != "" {
+		runtimeMgr = runtime.NewManager(runtimeDir)
+		if err := runtimeMgr.EnsureDirs(); err != nil {
+			logger.Log.Warn().Err(err).Msg("failed to initialize runtime overlay dirs")
+		}
+	}
+	runtimeHandler := handlers.NewRuntimeHandler(runtimeMgr)
+
 	router := web.NewRouter()
 
 	router.GET("/api/v1/auth/needs-setup", authHandler.NeedsSetup)
@@ -391,6 +402,11 @@ func RunServe(args []string) int {
 
 	serviceHandler := handlers.NewServiceHandler(database.NewAuditLogRepo())
 	router.GET("/api/v1/service/status", serviceHandler.Status)
+
+	router.GET("/api/v1/runtime/status", runtimeHandler.Status)
+	router.POST("/api/v1/runtime/clawdeckx/update", web.RequireAdmin(runtimeHandler.UpdateClawDeckX))
+	router.POST("/api/v1/runtime/openclaw/update", web.RequireAdmin(runtimeHandler.UpdateOpenClaw))
+	router.POST("/api/v1/runtime/rollback", web.RequireAdmin(runtimeHandler.Rollback))
 	router.POST("/api/v1/service/openclaw/install", web.RequireAdmin(serviceHandler.InstallOpenClaw))
 	router.POST("/api/v1/service/openclaw/uninstall", web.RequireAdmin(serviceHandler.UninstallOpenClaw))
 	router.POST("/api/v1/service/clawdeckx/install", web.RequireAdmin(serviceHandler.InstallClawDeckX))
@@ -596,15 +612,14 @@ func RunServe(args []string) int {
 	router.POST("/api/v1/plugins/uninstall", web.RequireAdmin(pluginInstallHandler.Uninstall))
 	router.POST("/api/v1/plugins/update", web.RequireAdmin(pluginInstallHandler.Update))
 
-	skillHubHandler := handlers.NewSkillHubHandler(webconfig.DataDir(), cfg.Server.SkillHubDataURL)
+	skillHubHandler := handlers.NewSkillHubHandler()
 	skillHubHandler.SetGatewayClient(gwClient)
-	skillHubHandler.WarmCache()
 	router.GET("/api/v1/skillhub/cli-status", skillHubHandler.CLIStatus)
 	router.POST("/api/v1/skillhub/install", web.RequireAdmin(skillHubHandler.Install))
 	router.POST("/api/v1/skillhub/install-skill", web.RequireAdmin(skillHubHandler.InstallSkill))
-	router.GET("/api/v1/skillhub/data", skillHubHandler.ProxyData)
-	router.GET("/api/v1/skillhub/skills", skillHubHandler.ListSkills)
-	router.GET("/api/v1/skillhub/search", skillHubHandler.SearchSkills)
+	router.GET("/api/v1/skillhub/remote/skills", skillHubHandler.RemoteListSkills)
+	router.GET("/api/v1/skillhub/remote/search", skillHubHandler.RemoteSearchSkills)
+	router.GET("/api/v1/skillhub/remote/top", skillHubHandler.RemoteTopSkills)
 	router.GET("/api/v1/skillhub/installed", skillHubHandler.GetInstalledSkills)
 
 	multiAgentHandler := handlers.NewMultiAgentHandler(gwClient)
