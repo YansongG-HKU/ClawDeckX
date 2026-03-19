@@ -1634,7 +1634,10 @@ const Skills: React.FC<SkillsProps> = ({ language }) => {
                               </span>
                             )}
                             {item.createdAt && (
-                              <span className="shrink-0">{new Date(item.createdAt).toLocaleDateString()}</span>
+                              <span className="flex items-center gap-0.5 shrink-0">
+                                <span className="material-symbols-outlined text-[10px]">calendar_today</span>
+                                {new Date(item.createdAt).toLocaleDateString()}
+                              </span>
                             )}
                             <a href={`https://clawhub.ai/skills/${encodeURIComponent(slug)}`} target="_blank" rel="noopener noreferrer"
                               className="ms-auto flex items-center shrink-0 text-primary/60 hover:text-primary transition-colors" onClick={e => e.stopPropagation()}>

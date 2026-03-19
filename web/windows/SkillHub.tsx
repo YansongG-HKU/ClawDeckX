@@ -121,11 +121,32 @@ const SkillDetailModal: React.FC<{
 
         {/* Modal body */}
         <div className="flex-1 overflow-y-auto px-5 py-4 custom-scrollbar neon-scrollbar space-y-4">
-          {/* Basic info grid — consistent with PluginCenter detail */}
-          <div className="grid grid-cols-3 gap-2 text-[11px]">
-            <div><span className="text-slate-400 dark:text-white/30">{sk.stars || 'Stars'}:</span> <span className="font-bold text-amber-500">{skill.stars}</span></div>
-            <div><span className="text-slate-400 dark:text-white/30">{sk.downloads || 'Downloads'}:</span> <span className="font-bold text-blue-500">{skill.downloads >= 1000 ? `${(skill.downloads / 1000).toFixed(1)}k` : skill.downloads}</span></div>
-            <div><span className="text-slate-400 dark:text-white/30">{sk.installs || 'Installs'}:</span> <span className="font-bold text-mac-green">{skill.installs}</span></div>
+          {/* Stats — unified order: downloads → stars → installs → date */}
+          <div className="flex flex-wrap gap-4 text-[11px] text-slate-400">
+            {skill.downloads > 0 && (
+              <span className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-[12px]">download</span>
+                {skill.downloads >= 1000 ? `${(skill.downloads / 1000).toFixed(1)}k` : skill.downloads.toLocaleString()} {sk.downloads || 'Downloads'}
+              </span>
+            )}
+            {skill.stars > 0 && (
+              <span className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-[12px]">star</span>
+                {skill.stars} {sk.stars || 'Stars'}
+              </span>
+            )}
+            {skill.installs > 0 && (
+              <span className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-[12px]">check_circle</span>
+                {skill.installs >= 1000 ? `${(skill.installs / 1000).toFixed(1)}k` : skill.installs.toLocaleString()} {sk.installs || 'Installs'}
+              </span>
+            )}
+            {skill.updated_at && (
+              <span className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-[12px]">calendar_today</span>
+                {new Date(skill.updated_at).toLocaleDateString()}
+              </span>
+            )}
           </div>
 
           {/* Description */}
@@ -806,20 +827,20 @@ const categoryOptions = useMemo(() => {
                     )}
 
                     {/* Stats */}
-                    <div className="flex items-center gap-2 mt-auto text-[10px] text-slate-400 dark:text-white/35">
-                      {skill.stars > 0 && (
-                        <span className="flex items-center gap-0.5">
-                          <span className="material-symbols-outlined text-[10px]">star</span>{skill.stars}
-                        </span>
-                      )}
+                    <div className="flex items-center gap-2 mt-auto text-[10px] text-slate-400 dark:text-white/35 overflow-hidden whitespace-nowrap">
                       {skill.downloads > 0 && (
-                        <span className="flex items-center gap-0.5">
+                        <span className="flex items-center gap-0.5 shrink-0">
                           <span className="material-symbols-outlined text-[10px]">download</span>
                           {skill.downloads >= 1000 ? `${(skill.downloads / 1000).toFixed(1)}k` : skill.downloads}
                         </span>
                       )}
+                      {skill.stars > 0 && (
+                        <span className="flex items-center gap-0.5 shrink-0">
+                          <span className="material-symbols-outlined text-[10px]">star</span>{skill.stars}
+                        </span>
+                      )}
                       {skill.installs > 0 && (
-                        <span className="flex items-center gap-0.5">
+                        <span className="flex items-center gap-0.5 shrink-0">
                           <span className="material-symbols-outlined text-[10px]">check_circle</span>
                           {skill.installs >= 1000 ? `${(skill.installs / 1000).toFixed(1)}k` : skill.installs}
                         </span>
