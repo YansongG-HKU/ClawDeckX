@@ -17,8 +17,7 @@ const ConfigBackupTab: React.FC<ConfigBackupTabProps> = ({ s }) => {
   const [previewContent, setPreviewContent] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
   const [diffPath, setDiffPath] = useState<string | null>(null);
-  const [diffCurrent, setDiffCurrent] = useState('');
-  const [diffBackup, setDiffBackup] = useState('');
+  const [diffLines, setDiffLines] = useState<{ type: 'equal' | 'add' | 'remove' | 'separator'; text: string }[]>([]);
   const [diffLoading, setDiffLoading] = useState(false);
   const [restoring, setRestoring] = useState<string | null>(null);
 
@@ -58,11 +57,9 @@ const ConfigBackupTab: React.FC<ConfigBackupTabProps> = ({ s }) => {
     setDiffLoading(true);
     try {
       const data = await configBackupApi.diff(path);
-      setDiffCurrent(data.current);
-      setDiffBackup(data.backup);
+      setDiffLines(data.diffLines || []);
     } catch {
-      setDiffCurrent('');
-      setDiffBackup('Error loading diff');
+      setDiffLines([{ type: 'equal', text: 'Error loading diff' }]);
     } finally {
       setDiffLoading(false);
     }
@@ -193,15 +190,18 @@ const ConfigBackupTab: React.FC<ConfigBackupTabProps> = ({ s }) => {
                     <span className="material-symbols-outlined text-[16px] animate-spin text-primary/40">progress_activity</span>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 divide-x divide-slate-100 dark:divide-white/5">
-                    <div className="px-3 py-2">
-                      <div className="text-[10px] font-bold text-slate-400 dark:text-white/30 mb-1">{s.configBackupCurrent || 'Current'}</div>
-                      <pre className="text-[9px] font-mono text-slate-600 dark:text-white/50 overflow-x-auto max-h-[250px] overflow-y-auto custom-scrollbar neon-scrollbar whitespace-pre-wrap break-words leading-relaxed">{diffCurrent}</pre>
+                  <div className="px-3 py-2 max-h-[350px] overflow-y-auto custom-scrollbar neon-scrollbar">
+                    <div className="flex items-center gap-3 mb-2 text-[9px]">
+                      <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm bg-red-100 dark:bg-red-500/20 border border-red-300 dark:border-red-500/30" />{s.configBackupCurrent || 'Current'}</span>
+                      <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-100 dark:bg-emerald-500/20 border border-emerald-300 dark:border-emerald-500/30" />{s.configBackupBackup || 'Backup'}</span>
                     </div>
-                    <div className="px-3 py-2">
-                      <div className="text-[10px] font-bold text-slate-400 dark:text-white/30 mb-1">{s.configBackupBackup || 'Backup'}</div>
-                      <pre className="text-[9px] font-mono text-slate-600 dark:text-white/50 overflow-x-auto max-h-[250px] overflow-y-auto custom-scrollbar neon-scrollbar whitespace-pre-wrap break-words leading-relaxed">{diffBackup}</pre>
-                    </div>
+                    {diffLines.map((dl, idx) => {
+                      if (dl.type === 'separator') return <div key={idx} className="text-[9px] text-slate-300 dark:text-white/15 text-center py-0.5 select-none">···</div>;
+                      const bgCls = dl.type === 'add' ? 'bg-emerald-50 dark:bg-emerald-500/10' : dl.type === 'remove' ? 'bg-red-50 dark:bg-red-500/10' : '';
+                      const textCls = dl.type === 'add' ? 'text-emerald-700 dark:text-emerald-300' : dl.type === 'remove' ? 'text-red-700 dark:text-red-300' : 'text-slate-500 dark:text-white/40';
+                      const prefix = dl.type === 'add' ? '+' : dl.type === 'remove' ? '-' : ' ';
+                      return <div key={idx} className={`flex ${bgCls} rounded-sm`}><span className={`inline-block w-4 shrink-0 text-center text-[9px] font-mono select-none ${textCls} opacity-60`}>{prefix}</span><pre className={`text-[9px] font-mono ${textCls} whitespace-pre-wrap break-words leading-relaxed flex-1 min-w-0`}>{dl.text}</pre></div>;
+                    })}
                   </div>
                 )}
               </div>

@@ -570,7 +570,7 @@ export const configBackupApi = {
   list: () => get<{ configPath: string; backups: ConfigBackupFile[] }>('/api/v1/config-backups'),
   preview: (path: string) => post<{ content: string; valid: boolean }>('/api/v1/config-backups/preview', { path }),
   restore: (path: string) => post<{ restored: boolean }>('/api/v1/config-backups/restore', { path }),
-  diff: (path: string) => post<{ current: string; backup: string }>('/api/v1/config-backups/diff', { path }),
+  diff: (path: string) => post<{ current: string; backup: string; diffLines: { type: 'equal' | 'add' | 'remove' | 'separator'; text: string }[] }>('/api/v1/config-backups/diff', { path }),
 };
 
 // ==================== 诊断修复 ====================

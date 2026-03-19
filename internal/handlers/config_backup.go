@@ -21,11 +21,11 @@ func NewConfigBackupHandler() *ConfigBackupHandler {
 }
 
 type ConfigBackupFile struct {
-	Name     string `json:"name"`
-	Path     string `json:"path"`
-	Size     int64  `json:"size"`
-	ModTime  string `json:"modTime"`
-	Index    int    `json:"index"` // 0 = .bak, 1 = .bak.1, etc.
+	Name    string `json:"name"`
+	Path    string `json:"path"`
+	Size    int64  `json:"size"`
+	ModTime string `json:"modTime"`
+	Index   int    `json:"index"` // 0 = .bak, 1 = .bak.1, etc.
 }
 
 // List returns all .bak files for the openclaw config.
@@ -175,10 +175,115 @@ func (h *ConfigBackupHandler) Diff(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Compute line-level diff
+	diffLines := computeLineDiff(currentPretty, bakPretty)
+
 	web.OK(w, r, map[string]any{
-		"current": currentPretty,
-		"backup":  bakPretty,
+		"current":   currentPretty,
+		"backup":    bakPretty,
+		"diffLines": diffLines,
 	})
+}
+
+// DiffLine represents a single line in the diff output.
+type DiffLine struct {
+	Type string `json:"type"` // "equal", "add", "remove"
+	Text string `json:"text"`
+}
+
+// computeLineDiff computes a line-level diff between current and backup text.
+func computeLineDiff(current, backup string) []DiffLine {
+	currentLines := strings.Split(current, "\n")
+	backupLines := strings.Split(backup, "\n")
+	m, n := len(currentLines), len(backupLines)
+
+	// Build LCS table
+	lcs := make([][]int, m+1)
+	for i := range lcs {
+		lcs[i] = make([]int, n+1)
+	}
+	for i := 1; i <= m; i++ {
+		for j := 1; j <= n; j++ {
+			if currentLines[i-1] == backupLines[j-1] {
+				lcs[i][j] = lcs[i-1][j-1] + 1
+			} else if lcs[i-1][j] >= lcs[i][j-1] {
+				lcs[i][j] = lcs[i-1][j]
+			} else {
+				lcs[i][j] = lcs[i][j-1]
+			}
+		}
+	}
+
+	// Backtrack to build diff
+	var result []DiffLine
+	i, j := m, n
+	var stack []DiffLine
+	for i > 0 || j > 0 {
+		if i > 0 && j > 0 && currentLines[i-1] == backupLines[j-1] {
+			stack = append(stack, DiffLine{Type: "equal", Text: currentLines[i-1]})
+			i--
+			j--
+		} else if j > 0 && (i == 0 || lcs[i][j-1] >= lcs[i-1][j]) {
+			stack = append(stack, DiffLine{Type: "add", Text: backupLines[j-1]})
+			j--
+		} else {
+			stack = append(stack, DiffLine{Type: "remove", Text: currentLines[i-1]})
+			i--
+		}
+	}
+	// Reverse
+	for k := len(stack) - 1; k >= 0; k-- {
+		result = append(result, stack[k])
+	}
+
+	// Compact: only keep diff hunks with context (3 lines before/after changes)
+	const contextLines = 3
+	changed := make([]bool, len(result))
+	for idx, dl := range result {
+		if dl.Type != "equal" {
+			changed[idx] = true
+		}
+	}
+	// Mark context lines around changes
+	show := make([]bool, len(result))
+	for idx := range result {
+		if changed[idx] {
+			for c := max(0, idx-contextLines); c <= min(len(result)-1, idx+contextLines); c++ {
+				show[c] = true
+			}
+		}
+	}
+
+	var compact []DiffLine
+	lastShown := -1
+	for idx, dl := range result {
+		if !show[idx] {
+			continue
+		}
+		if lastShown >= 0 && idx > lastShown+1 {
+			compact = append(compact, DiffLine{Type: "separator", Text: "···"})
+		}
+		compact = append(compact, dl)
+		lastShown = idx
+	}
+
+	if len(compact) == 0 {
+		return []DiffLine{{Type: "equal", Text: "(no differences)"}}
+	}
+	return compact
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 func (h *ConfigBackupHandler) findBackupFiles(configPath string) []ConfigBackupFile {
