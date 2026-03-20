@@ -402,6 +402,9 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [patchBusy, setPatchBusy] = useState(false);
   const [savedField, setSavedField] = useState<string | null>(null);
+  // Grace window: recently-patched session fields that loadSessions should not overwrite.
+  // Map<sessionKey, { fields: Record<string, unknown>, expiresAt: number }>
+  const patchGraceRef = useRef<Map<string, { fields: Record<string, unknown>; expiresAt: number }>>(new Map());
 
   // Inject system message
   const [injectOpen, setInjectOpen] = useState(false);
@@ -894,6 +897,11 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
         compacted: !!s.compacted,
         fastMode: s.fastMode ?? undefined,
       }));
+      // Clean up expired patch grace entries
+      const nowMs = Date.now();
+      for (const [k, v] of patchGraceRef.current) {
+        if (v.expiresAt <= nowMs) patchGraceRef.current.delete(k);
+      }
       setSessions(prev => {
         if (areSessionsEquivalent(prev, mapped)) {
           return prev;
@@ -902,12 +910,15 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
         const prevMap = new Map(prev.map(s => [s.key, s]));
         let changed = prev.length !== mapped.length;
         const merged = mapped.map((next: GwSession) => {
-          const existing = prevMap.get(next.key);
-          if (existing && areSessionsEquivalent([existing], [next])) {
+          // Re-apply grace-protected fields so recent patches aren't overwritten by stale server data
+          const grace = patchGraceRef.current.get(next.key);
+          const effective = grace ? { ...next, ...grace.fields } as GwSession : next;
+          const existing = prevMap.get(effective.key);
+          if (existing && areSessionsEquivalent([existing], [effective])) {
             return existing; // preserve identity
           }
           changed = true;
-          return next;
+          return effective;
         });
         if (!changed) return prev;
         // Persist to sessionStorage for instant display on next window open
@@ -1895,6 +1906,10 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
     try {
       await gwApi.sessionsPatch(sessionKey, patch as any);
       setSessions(prev => prev.map(s => s.key === sessionKey ? { ...s, ...patch } as GwSession : s));
+      // Protect patched fields from being overwritten by the next loadSessions for 10s
+      const existing = patchGraceRef.current.get(sessionKey);
+      const merged = { ...(existing?.fields ?? {}), ...patch };
+      patchGraceRef.current.set(sessionKey, { fields: merged, expiresAt: Date.now() + 10_000 });
       setSavedField(field);
       setTimeout(() => setSavedField(f => f === field ? null : f), 2000);
     } catch (e: any) {
@@ -2993,7 +3008,12 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
         onModelChange={async (model) => {
           try {
             await gwApi.sessionsPatch(sessionKey, { model: model || null });
-            setSessions(prev => prev.map(s => s.key === sessionKey ? { ...s, model: model || '' } as GwSession : s));
+            const patch = { model: model || '' };
+            setSessions(prev => prev.map(s => s.key === sessionKey ? { ...s, ...patch } as GwSession : s));
+            // Protect from loadSessions overwrite for 10s
+            const existing = patchGraceRef.current.get(sessionKey);
+            const merged = { ...(existing?.fields ?? {}), ...patch };
+            patchGraceRef.current.set(sessionKey, { fields: merged, expiresAt: Date.now() + 10_000 });
             toast('info', `Model → ${model || 'inherit'}`, 2000);
           } catch (e: any) {
             toast('error', e?.message || 'Failed to change model');
