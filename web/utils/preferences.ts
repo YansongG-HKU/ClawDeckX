@@ -272,6 +272,20 @@ export function stepWallpaperHistory(wallpaper: WallpaperConfig, direction: -1 |
   };
 }
 
+export function selectWallpaperHistoryEntry(wallpaper: WallpaperConfig, url: string): WallpaperConfig {
+  const trimmed = url.trim();
+  if (!trimmed) return wallpaper;
+  const idx = wallpaper.history.indexOf(trimmed);
+  if (idx < 0) return { ...wallpaper, cachedUrl: trimmed, currentSourceUrl: trimmed, cachedAt: Date.now() };
+  return {
+    ...wallpaper,
+    historyIndex: idx,
+    cachedUrl: trimmed,
+    currentSourceUrl: wallpaper.sourceHistory[idx] || trimmed,
+    cachedAt: Date.now(),
+  };
+}
+
 export function toggleWallpaperFavorite(wallpaper: WallpaperConfig, url?: string): WallpaperConfig {
   const target = (url || wallpaper.cachedUrl).trim();
   if (!target) return wallpaper;

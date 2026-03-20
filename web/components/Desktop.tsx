@@ -1,9 +1,8 @@
 ﻿import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { WindowID, WindowState, Language } from '../types';
-import type { WallpaperConfig, WallpaperProvider } from '../utils/preferences';
+import type { WallpaperConfig } from '../utils/preferences';
 import {
   applyResolvedWallpaper,
-  fetchAndCacheWallpaper,
   getCachedWallpaper,
   getWallpaperHistoryUrl,
   isWallpaperCacheStale,
@@ -11,6 +10,7 @@ import {
   loadPreferences,
   pushWallpaperHistoryEntry,
   resolveWallpaperData,
+  setCachedWallpaper,
   setWallpaperPrefetchedEntries,
   shiftPrefetchedWallpaper,
   stepWallpaperHistory,
@@ -155,22 +155,19 @@ const Desktop: React.FC<DesktopProps> = ({
     ? "linear-gradient(135deg, #0f1923 0%, #1a3a5f 50%, #2e4b6b 100%)"
     : "linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%)";
 
+  // Sync desktop background whenever the authoritative cachedUrl changes
+  // (e.g. user clicks a history/favorite item in Settings).
+  useEffect(() => {
+    if (!wallpaper?.imageEnabled || !wallpaper.cachedUrl) return;
+    setBgImage(wallpaper.cachedUrl);
+  }, [wallpaper?.cachedUrl]);
+
   // Load wallpaper from cache or fetch
   useEffect(() => {
     if (!wallpaper?.imageEnabled) {
       setBgImage('');
       return;
     }
-
-    const refreshWallpaper = (resolved: { url: string; provider: WallpaperProvider }) => {
-      fetchAndCacheWallpaper(resolved.url).then(dataUrl => {
-        setBgImage(dataUrl);
-        const nextWallpaper = applyResolvedWallpaper(wallpaper, dataUrl, resolved.provider, resolved.url);
-        updatePreferences({
-          wallpaper: nextWallpaper,
-        });
-      }).catch(() => {});
-    };
 
     const cached = getCachedWallpaper();
     if (cached) {
@@ -190,7 +187,7 @@ const Desktop: React.FC<DesktopProps> = ({
         updatePreferences({ wallpaper: applyResolvedWallpaper(wallpaper, resolved.dataUrl, resolved.provider, resolved.sourceUrl) });
       });
     }
-  }, [wallpaper?.imageEnabled, wallpaper?.source, wallpaper?.customUrl, wallpaper?.cachedAt, wallpaper?.query, wallpaper?.minResolution, wallpaper?.ratios, wallpaper?.apiKey, wallpaper?.purity, wallpaper?.categories]);
+  }, [wallpaper?.imageEnabled, wallpaper?.source, wallpaper?.customUrl, wallpaper?.query, wallpaper?.minResolution, wallpaper?.ratios, wallpaper?.apiKey, wallpaper?.purity, wallpaper?.categories]);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [isTrashCleaning, setIsTrashCleaning] = useState(false);
   const [dockPeeking, setDockPeeking] = useState(false);
@@ -268,7 +265,7 @@ const Desktop: React.FC<DesktopProps> = ({
     const nextUrl = getWallpaperHistoryUrl(effective, direction);
     if (!nextUrl) return;
     setBgImage(nextUrl);
-    try { localStorage.setItem('clawdeck-wallpaper-cache', nextUrl); } catch {}
+    try { setCachedWallpaper(nextUrl); } catch {}
     const stepped = stepWallpaperHistory(effective, direction);
     updatePreferences({ wallpaper: stepped });
   }, []);

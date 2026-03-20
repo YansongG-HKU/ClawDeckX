@@ -1,7 +1,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import type { Preferences, WindowControlsPosition, WallpaperSource, StartupWindowMode } from '../../utils/preferences';
-import { updatePreferences, resolveWallpaperData, applyResolvedWallpaper, getCachedWallpaper } from '../../utils/preferences';
+import { updatePreferences, resolveWallpaperData, applyResolvedWallpaper, getCachedWallpaper, selectWallpaperHistoryEntry, setCachedWallpaper } from '../../utils/preferences';
 import { useToast } from '../../components/Toast';
 
 interface PreferencesTabProps {
@@ -60,17 +60,10 @@ const PreferencesTab: React.FC<PreferencesTabProps> = ({ s, pref, prefs, onPrefs
 
   const handleSetWallpaperFromUrl = useCallback((url: string) => {
     setWallpaperPreview(url);
-    const next = updatePreferences({
-      wallpaper: {
-        ...prefs.wallpaper,
-        cachedUrl: url,
-        currentSourceUrl: url,
-        cachedAt: Date.now(),
-      },
-    });
+    const selected = selectWallpaperHistoryEntry(prefs.wallpaper, url);
+    const next = updatePreferences({ wallpaper: selected });
     onPrefsChange(next);
-    // Also update the localStorage wallpaper cache so Desktop picks it up
-    try { localStorage.setItem('clawdeck-wallpaper-cache', url); } catch {}
+    try { setCachedWallpaper(url); } catch {}
   }, [prefs.wallpaper, onPrefsChange]);
 
   const handleRefreshWallpaper = useCallback(async () => {
