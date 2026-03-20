@@ -433,14 +433,15 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
         workspace: crudWorkspace.trim() || undefined,
         emoji: crudEmoji.trim() || undefined,
       });
-      // Patch config for model/default if specified
-      if (crudModel.trim() || crudDefault) {
+      // Patch config for model/default/theme if specified
+      if (crudModel.trim() || crudDefault || crudTheme.trim()) {
         try {
           const cfgRaw = await gwApi.configGet() as any;
           const baseHash = cfgRaw?.hash || cfgRaw?.baseHash || '';
           const agentEntry: Record<string, any> = { id: crudName.trim() };
           if (crudModel.trim()) agentEntry.model = crudModel.trim();
           if (crudDefault) agentEntry.default = true;
+          if (crudTheme.trim()) agentEntry.identity = { theme: crudTheme.trim() };
           await gwApi.configPatch(JSON.stringify({ agents: { list: [agentEntry] } }), baseHash);
         } catch { /* best-effort */ }
       }
@@ -452,7 +453,7 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
     }
     setCrudBusy(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [crudName, crudWorkspace, crudEmoji, crudModel, crudDefault, crudBusy, loadAgents]);
+  }, [crudName, crudWorkspace, crudEmoji, crudModel, crudDefault, crudTheme, crudBusy, loadAgents]);
 
   const handleUpdate = useCallback(async () => {
     if (!gwReady || crudBusy || !selectedId) return;
@@ -1391,16 +1392,14 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
                   </label>
                 </div>
               </div>
-              {crudMode === 'edit' && (
-                <div>
-                  <label className="text-[10px] font-bold text-slate-500 dark:text-white/40 uppercase block mb-1">{a.theme}</label>
-                  <textarea value={crudTheme} onChange={e => setCrudTheme(e.target.value)}
-                    placeholder={a.themeHint || 'Agent personality / instructions...'}
-                    rows={3}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 text-[12px] text-slate-800 dark:text-white/80 focus:outline-none focus:ring-1 focus:ring-primary/30 resize-none"
-                    disabled={crudBusy} />
-                </div>
-              )}
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 dark:text-white/40 uppercase block mb-1">{a.theme}</label>
+                <textarea value={crudTheme} onChange={e => setCrudTheme(e.target.value)}
+                  placeholder={a.themeHint || 'Agent personality / instructions...'}
+                  rows={3}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 text-[12px] text-slate-800 dark:text-white/80 focus:outline-none focus:ring-1 focus:ring-primary/30 resize-none"
+                  disabled={crudBusy} />
+              </div>
             </div>
 
             <div className="flex justify-end gap-2 mt-5">
