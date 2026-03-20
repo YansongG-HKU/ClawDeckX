@@ -11,6 +11,9 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// Pre-computed pong response to avoid repeated JSON marshal on every ping
+var pongResponse = []byte(`{"action":"pong"}`)
+
 // newUpgrader creates a WebSocket upgrader that validates Origin against allowed origins.
 // If allowedOrigins is empty, only same-origin requests are accepted.
 func newUpgrader(allowedOrigins []string) websocket.Upgrader {
@@ -36,11 +39,13 @@ func newUpgrader(allowedOrigins []string) websocket.Upgrader {
 }
 
 type WSClient struct {
-	hub      *WSHub
-	conn     *websocket.Conn
-	send     chan []byte
-	channels map[string]bool
-	mu       sync.RWMutex
+	hub         *WSHub
+	conn        *websocket.Conn
+	send        chan []byte
+	channels    map[string]bool
+	mu          sync.RWMutex
+	dropped     int // count of messages dropped due to backpressure
+	connectedAt time.Time
 }
 
 type WSHub struct {
@@ -65,7 +70,7 @@ func NewWSHub(allowedOrigins ...[]string) *WSHub {
 	}
 	return &WSHub{
 		clients:        make(map[*WSClient]bool),
-		broadcast:      make(chan WSMessage, 256),
+		broadcast:      make(chan WSMessage, 512),
 		register:       make(chan *WSClient),
 		unregister:     make(chan *WSClient),
 		allowedOrigins: origins,
@@ -105,8 +110,13 @@ func (h *WSHub) Run() {
 				if subscribed {
 					select {
 					case client.send <- data:
+						client.dropped = 0 // reset on successful send — client recovered from backpressure
 					default:
-						stale = append(stale, client)
+						// Buffer full — count the drop. Evict after sustained backpressure (3+ drops).
+						client.dropped++
+						if client.dropped >= 3 {
+							stale = append(stale, client)
+						}
 					}
 				}
 			}
@@ -116,6 +126,11 @@ func (h *WSHub) Run() {
 				h.mu.Lock()
 				for _, c := range stale {
 					if _, ok := h.clients[c]; ok {
+						logger.WS.Warn().
+							Str("remote", c.conn.RemoteAddr().String()).
+							Int("dropped", c.dropped).
+							Dur("age", time.Since(c.connectedAt)).
+							Msg("evicting client due to sustained send backpressure")
 						delete(h.clients, c)
 						close(c.send)
 					}
@@ -127,7 +142,15 @@ func (h *WSHub) Run() {
 }
 
 func (h *WSHub) Broadcast(channel string, msgType string, data interface{}) {
-	h.broadcast <- WSMessage{Type: msgType, Data: data, Channel: channel}
+	msg := WSMessage{Type: msgType, Data: data, Channel: channel}
+	select {
+	case h.broadcast <- msg:
+	default:
+		logger.WS.Warn().
+			Str("type", msgType).
+			Str("channel", channel).
+			Msg("broadcast channel full, dropping message")
+	}
 }
 
 func (h *WSHub) ClientCount() int {
@@ -162,10 +185,11 @@ func (h *WSHub) HandleWS(jwtSecret string) http.HandlerFunc {
 		}
 
 		client := &WSClient{
-			hub:      h,
-			conn:     conn,
-			send:     make(chan []byte, 256),
-			channels: make(map[string]bool),
+			hub:         h,
+			conn:        conn,
+			send:        make(chan []byte, 512),
+			channels:    make(map[string]bool),
+			connectedAt: time.Now(),
 		}
 		h.register <- client
 
@@ -189,6 +213,8 @@ func (c *WSClient) readPump() {
 		if err != nil {
 			break
 		}
+		// Any incoming message proves liveness — extend read deadline
+		c.conn.SetReadDeadline(time.Now().Add(90 * time.Second))
 		var msg struct {
 			Action   string   `json:"action"`
 			Channel  string   `json:"channel"`
@@ -213,9 +239,8 @@ func (c *WSClient) readPump() {
 			delete(c.channels, msg.Channel)
 			c.mu.Unlock()
 		case "ping":
-			resp, _ := json.Marshal(map[string]string{"action": "pong"})
 			select {
-			case c.send <- resp:
+			case c.send <- pongResponse:
 			default:
 			}
 		}
@@ -238,6 +263,18 @@ func (c *WSClient) writePump() {
 			}
 			if err := c.conn.WriteMessage(websocket.TextMessage, message); err != nil {
 				return
+			}
+			// Batch: drain any additional queued messages to reduce per-message syscall overhead
+			n := len(c.send)
+			for i := 0; i < n; i++ {
+				extra, ok := <-c.send
+				if !ok {
+					c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+					return
+				}
+				if err := c.conn.WriteMessage(websocket.TextMessage, extra); err != nil {
+					return
+				}
 			}
 		case <-ticker.C:
 			c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))

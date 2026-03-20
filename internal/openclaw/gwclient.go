@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand/v2"
 	"net"
 	"net/url"
 	"os"
@@ -109,6 +110,10 @@ type GWClient struct {
 	backoffMs      int
 	backoffCapMs   int
 
+	lastSeq      *int          // last received event seq for gap detection
+	lastTick     time.Time     // last tick event time for silent disconnect detection
+	tickInterval time.Duration // expected tick interval from gateway (default 30s)
+
 	healthMu         sync.Mutex
 	healthEnabled    bool          // enable heartbeat auto-restart
 	healthInterval   time.Duration // probe interval (default 30s)
@@ -130,6 +135,7 @@ func NewGWClient(cfg GWClientConfig) *GWClient {
 		stopCh:         make(chan struct{}),
 		backoffMs:      1000,
 		backoffCapMs:   30000,
+		tickInterval:   30 * time.Second,
 		healthInterval: 30 * time.Second,
 		healthMaxFails: 3,
 	}
@@ -239,6 +245,24 @@ func (c *GWClient) healthCheckLoop() {
 			healthy := false
 			c.mu.Lock()
 			wsConnected := c.connected && c.conn != nil
+			// Tick stall detection: if connected but no tick received for 3× tick interval,
+			// the connection is likely silently dead (NAT timeout, proxy drop, etc.)
+			if wsConnected && !c.lastTick.IsZero() {
+				tickStallThreshold := c.tickInterval * 3
+				if tickStallThreshold < 60*time.Second {
+					tickStallThreshold = 60 * time.Second
+				}
+				if time.Since(c.lastTick) > tickStallThreshold {
+					logger.Gateway.Warn().
+						Dur("since_last_tick", time.Since(c.lastTick)).
+						Dur("threshold", tickStallThreshold).
+						Msg("tick stall detected, forcing reconnect")
+					staleConn := c.conn
+					c.mu.Unlock()
+					staleConn.Close()
+					continue
+				}
+			}
 			if wsConnected {
 				err := c.conn.WriteControl(
 					websocket.PingMessage,
@@ -408,6 +432,17 @@ func (c *GWClient) ConnectionStatus() map[string]interface{} {
 	if c.gwUptimeMs > 0 && !c.gwConnectedAt.IsZero() {
 		gwUptimeMs = c.gwUptimeMs + time.Since(c.gwConnectedAt).Milliseconds()
 	}
+	// Seq/tick diagnostic fields
+	var lastSeq *int
+	if c.lastSeq != nil {
+		v := *c.lastSeq
+		lastSeq = &v
+	}
+	lastTickAge := ""
+	if !c.lastTick.IsZero() {
+		lastTickAge = time.Since(c.lastTick).Round(time.Second).String()
+	}
+	tickIntervalMs := c.tickInterval.Milliseconds()
 	c.mu.Unlock()
 
 	c.healthMu.Lock()
@@ -440,6 +475,9 @@ func (c *GWClient) ConnectionStatus() map[string]interface{} {
 		"grace_until":       graceStr,
 		"version":           c.gwVersion,
 		"gateway_uptime_ms": gwUptimeMs,
+		"last_seq":          lastSeq,
+		"last_tick_age":     lastTickAge,
+		"tick_interval_ms":  tickIntervalMs,
 	}
 }
 
@@ -457,6 +495,11 @@ func (c *GWClient) Stop() {
 	close(c.stopCh)
 	if c.conn != nil {
 		c.conn.Close()
+	}
+	// Drain pending requests so callers get an immediate error instead of hanging
+	for id, ch := range c.pending {
+		close(ch)
+		delete(c.pending, id)
 	}
 	c.mu.Unlock()
 }
@@ -585,10 +628,14 @@ func (c *GWClient) connectLoop() {
 				Msg(i18n.T(i18n.MsgLogGatewayWsConnectFailed))
 		}
 
+		// Add ±20% jitter to prevent reconnect storms across instances
+		jitter := 0.8 + rand.Float64()*0.4 // [0.8, 1.2)
+		delay := time.Duration(float64(c.backoffMs)*jitter) * time.Millisecond
+		logger.Log.Debug().Dur("delay", delay).Int("backoff_ms", c.backoffMs).Msg("gateway reconnect backoff")
 		select {
 		case <-c.stopCh:
 			return
-		case <-time.After(time.Duration(c.backoffMs) * time.Millisecond):
+		case <-time.After(delay):
 		}
 
 		c.mu.Lock()
@@ -630,6 +677,8 @@ func (c *GWClient) readLoop(conn *websocket.Conn) error {
 		c.gwVersion = ""
 		c.gwUptimeMs = 0
 		c.gwConnectedAt = time.Time{}
+		c.lastSeq = nil
+		c.lastTick = time.Time{}
 		if c.conn == conn {
 			c.conn = nil
 		}
@@ -685,7 +734,23 @@ func (c *GWClient) readLoop(conn *websocket.Conn) error {
 				continue
 			}
 
+			// Track event sequence numbers for gap detection
+			if evt.Seq != nil {
+				c.mu.Lock()
+				if c.lastSeq != nil && *evt.Seq > *c.lastSeq+1 {
+					logger.Gateway.Warn().
+						Int("expected", *c.lastSeq+1).
+						Int("received", *evt.Seq).
+						Msg("event sequence gap detected, events may have been lost")
+				}
+				c.lastSeq = evt.Seq
+				c.mu.Unlock()
+			}
+
 			if evt.Event == "tick" {
+				c.mu.Lock()
+				c.lastTick = time.Now()
+				c.mu.Unlock()
 				continue
 			}
 
@@ -846,31 +911,56 @@ func (c *GWClient) sendConnect(conn *websocket.Conn, nonce string) {
 			c.connected = true
 			c.backoffMs = 1000
 			c.lastError = ""
-			// Parse snapshot.uptimeMs from hello-ok payload
+			c.lastTick = time.Now()
+			// Parse snapshot.uptimeMs and policy.tickIntervalMs from hello-ok payload
 			if resp.Payload != nil {
 				var helloOk struct {
 					Snapshot struct {
 						UptimeMs int64 `json:"uptimeMs"`
 					} `json:"snapshot"`
+					Policy struct {
+						TickIntervalMs int64 `json:"tickIntervalMs"`
+					} `json:"policy"`
 				}
-				if json.Unmarshal(resp.Payload, &helloOk) == nil && helloOk.Snapshot.UptimeMs > 0 {
-					c.gwUptimeMs = helloOk.Snapshot.UptimeMs
-					c.gwConnectedAt = time.Now()
+				if json.Unmarshal(resp.Payload, &helloOk) == nil {
+					if helloOk.Snapshot.UptimeMs > 0 {
+						c.gwUptimeMs = helloOk.Snapshot.UptimeMs
+						c.gwConnectedAt = time.Now()
+					}
+					if helloOk.Policy.TickIntervalMs > 0 {
+						c.tickInterval = time.Duration(helloOk.Policy.TickIntervalMs) * time.Millisecond
+					}
 				}
 			}
+			reconnects := c.reconnectCount
 			c.mu.Unlock()
-			logger.Log.Info().
+			logEvt := logger.Log.Info().
 				Str("host", c.cfg.Host).
-				Int("port", c.cfg.Port).
-				Msg(i18n.T(i18n.MsgLogGatewayWsConnected))
+				Int("port", c.cfg.Port)
+			if reconnects > 0 {
+				logEvt = logEvt.Int("reconnects", reconnects)
+			}
+			logEvt.Msg(i18n.T(i18n.MsgLogGatewayWsConnected))
 			// Fetch gateway version after connect
 			go c.fetchGatewayVersion()
-			// Fire lifecycle callback for successful connection
+			// Brief grace period after reconnect to avoid false health-check failures
 			c.healthMu.Lock()
+			if reconnects > 0 {
+				c.healthGraceUntil = time.Now().Add(10 * time.Second)
+			}
+			c.healthFailCount = 0
+			// Fire lifecycle callback — distinguish initial connect from reconnect
 			lcFn := c.onLifecycle
 			c.healthMu.Unlock()
 			if lcFn != nil {
-				go lcFn("connected", "")
+				c.mu.Lock()
+				isReconnect := c.reconnectCount > 0
+				c.mu.Unlock()
+				if isReconnect {
+					go lcFn("reconnected", "")
+				} else {
+					go lcFn("connected", "")
+				}
 			}
 		} else {
 			msg := i18n.T(i18n.MsgGwclientUnknownError)
