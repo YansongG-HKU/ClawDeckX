@@ -691,6 +691,10 @@ export const ModelsSection: React.FC<SectionProps> = ({ config, setField, getFie
     const providerName = preset.id === 'custom' ? (wizCustomName.trim() || wizBaseUrl.replace(/https?:\/\//, '').split('/')[0] || 'custom') : preset.id;
     const defaults = resolveProviderDefaultParams(providerName, { apiType: preset.api, baseUrl: preset.baseUrl });
     // 构建模型列表，包含自定义或预设费用配置
+    const effectiveApiType = wizApiType || defaults.apiType;
+    const effectiveBaseUrl = wizBaseUrl || defaults.baseUrl;
+    const needsUsageCompat = effectiveApiType === 'openai-completions'
+      && !effectiveBaseUrl.includes('api.openai.com');
     const modelsWithCost = wizModels.map(id => {
       const presetModel = wizardModelCandidates.find(m => m.id === id);
       const customCost = wizModelCosts[id];
@@ -708,6 +712,9 @@ export const ModelsSection: React.FC<SectionProps> = ({ config, setField, getFie
         if (Object.keys(cost).length > 0) m.cost = cost;
       } else if (presetModel?.cost) {
         m.cost = presetModel.cost;
+      }
+      if (needsUsageCompat) {
+        m.compat = { supportsUsageInStreaming: true };
       }
       return m;
     });
@@ -753,6 +760,13 @@ export const ModelsSection: React.FC<SectionProps> = ({ config, setField, getFie
     if (newModel.cost.cacheRead) cost.cacheRead = Number(newModel.cost.cacheRead);
     if (newModel.cost.cacheWrite) cost.cacheWrite = Number(newModel.cost.cacheWrite);
     if (Object.keys(cost).length > 0) m.cost = cost;
+    // Enable streaming usage for non-native OpenAI completions providers
+    const providerCfg = getField(['models', 'providers', showAddModel]) as any;
+    const providerApi = providerCfg?.api || 'openai-completions';
+    const providerBaseUrl = providerCfg?.baseUrl || '';
+    if (providerApi === 'openai-completions' && !providerBaseUrl.includes('api.openai.com')) {
+      m.compat = { supportsUsageInStreaming: true };
+    }
     setField(['models', 'providers', showAddModel, 'models'], [...models, m]);
     setNewModel({ id: '', name: '', reasoning: false, contextWindow: '', inputCapability: 'text+image', cost: { input: '', output: '', cacheRead: '', cacheWrite: '' } });
     setShowAddModel(null);
