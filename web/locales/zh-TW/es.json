@@ -1359,5 +1359,8 @@
   "tipWecomConn": "連線模式（建議長連線）",
   "tipYuanbaoAppSecret": "元宝派 AppSecret（從元宝 App 關聯頁面獲取）",
   "tipYuanbaoAppKey": "元宝派 App ID（從元宝 App 關聯頁面獲取）",
-  "appKey": "App Key"
+  "appKey": "App Key",
+  "wizCredentialRequired": "必填欄位未填寫",
+  "wizWarnDmAllowlistEmpty": "私訊策略為「白名單」但 Allow From 為空 — 所有私訊訊息將被靜默丟棄",
+  "wizWarnGroupAllowlistEmpty": "群組策略為「白名單」但 Allow From / Group Allow From 均為空 — 所有群組訊息將被靜默丟棄"
 }

@@ -1359,5 +1359,8 @@
   "tipZaloWebhookSecret": "Zalo webhook signing secret",
   "tipZaloWebhookPath": "Zalo webhook callback path",
   "tipYuanbaoAppKey": "Yuanbao Party App ID (from Yuanbao App linking page)",
-  "appKey": "App Key"
+  "appKey": "App Key",
+  "wizCredentialRequired": "Required fields missing",
+  "wizWarnDmAllowlistEmpty": "DM policy is \"Allowlist\" but Allow From is empty — all DMs will be silently dropped",
+  "wizWarnGroupAllowlistEmpty": "Group policy is \"Allowlist\" but Allow From / Group Allow From are both empty — all group messages will be silently dropped"
 }

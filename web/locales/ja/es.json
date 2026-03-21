@@ -1359,5 +1359,8 @@
   "tipWecomConn": "接続モード（長接続推奨）",
   "tipYuanbaoAppSecret": "Yuanbao Party AppSecret（Yuanbao Appの関連付けページから取得）",
   "tipYuanbaoAppKey": "Yuanbao Party App ID（Yuanbao Appの関連付けページから取得）",
-  "appKey": "App Key"
+  "appKey": "App Key",
+  "wizCredentialRequired": "必須項目が未入力です",
+  "wizWarnDmAllowlistEmpty": "DMポリシーが「許可リスト」ですが Allow From が空です — すべてのDMが無視されます",
+  "wizWarnGroupAllowlistEmpty": "グループポリシーが「許可リスト」ですが Allow From / Group Allow From が空です — すべてのグループメッセージが無視されます"
 }

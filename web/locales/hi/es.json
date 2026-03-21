@@ -1359,5 +1359,8 @@
   "tipWecomConn": "Long connection mode requires no public IP (recommended); Webhook mode needs public callback URL",
   "tipYuanbaoAppSecret": "Yuanbao Party AppSecret (from Yuanbao App linking page)",
   "tipYuanbaoAppKey": "Yuanbao Party App ID (from Yuanbao App linking page)",
-  "appKey": "App Key"
+  "appKey": "App Key",
+  "wizCredentialRequired": "आवश्यक फ़ील्ड भरे नहीं गए",
+  "wizWarnDmAllowlistEmpty": "DM नीति \"अनुमति सूची\" है लेकिन Allow From खाली है — सभी DM चुपचाप छोड़ दिए जाएंगे",
+  "wizWarnGroupAllowlistEmpty": "समूह नीति \"अनुमति सूची\" है लेकिन Allow From / Group Allow From खाली हैं — सभी समूह संदेश चुपचाप छोड़ दिए जाएंगे"
 }

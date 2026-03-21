@@ -1359,5 +1359,8 @@
   "tipZaloWebhookPath": "Zalo Webhook 回调路径",
   "tipYuanbaoAppSecret": "元宝派 AppSecret（从元宝 App 关联页面获取）",
   "tipYuanbaoAppKey": "元宝派 App ID（从元宝 App 关联页面获取）",
-  "appKey": "App Key"
+  "appKey": "App Key",
+  "wizCredentialRequired": "必填字段未填写",
+  "wizWarnDmAllowlistEmpty": "私聊策略为「白名单」但 Allow From 为空 — 所有私聊消息将被静默丢弃",
+  "wizWarnGroupAllowlistEmpty": "群聊策略为「白名单」但 Allow From / Group Allow From 均为空 — 所有群聊消息将被静默丢弃"
 }

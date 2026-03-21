@@ -1359,5 +1359,8 @@
   "tipWecomConn": "연결 모드 (장기 연결 권장)",
   "tipYuanbaoAppSecret": "Yuanbao Party AppSecret (Yuanbao 앱 연결 페이지에서 확인)",
   "tipYuanbaoAppKey": "Yuanbao Party App ID (Yuanbao 앱 연결 페이지에서 확인)",
-  "appKey": "App Key"
+  "appKey": "App Key",
+  "wizCredentialRequired": "필수 항목이 비어 있습니다",
+  "wizWarnDmAllowlistEmpty": "DM 정책이 \"허용 목록\"이지만 Allow From이 비어 있습니다 — 모든 DM이 무시됩니다",
+  "wizWarnGroupAllowlistEmpty": "그룹 정책이 \"허용 목록\"이지만 Allow From / Group Allow From이 비어 있습니다 — 모든 그룹 메시지가 무시됩니다"
 }

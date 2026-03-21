@@ -118,6 +118,50 @@ const TIP_KEYS: Record<string, string> = {
 };
 
 // ============================================================================
+// Required credential fields per channel (used for wizard validation)
+// ============================================================================
+const REQUIRED_CREDENTIALS: Record<string, { field: string; labelKey: string }[]> = {
+  telegram: [{ field: 'botToken', labelKey: 'botToken' }],
+  discord: [{ field: 'token', labelKey: 'chToken' }],
+  slack: [{ field: 'botToken', labelKey: 'botToken' }, { field: 'appToken', labelKey: 'appToken' }],
+  signal: [{ field: 'account', labelKey: 'chAccount' }],
+  feishu: [{ field: 'appId', labelKey: 'appId' }, { field: 'appSecret', labelKey: 'appSecret' }],
+  wecom: [{ field: 'token', labelKey: 'chToken' }, { field: 'encodingAESKey', labelKey: 'encodingAESKey' }],
+  wecom_kf: [{ field: 'corpId', labelKey: 'corpId' }, { field: 'corpSecret', labelKey: 'corpSecret' }, { field: 'token', labelKey: 'chToken' }],
+  dingtalk: [{ field: 'clientId', labelKey: 'clientId' }, { field: 'clientSecret', labelKey: 'clientSecret' }],
+  msteams: [{ field: 'appId', labelKey: 'appId' }, { field: 'appPassword', labelKey: 'appPassword' }],
+  matrix: [{ field: 'homeserver', labelKey: 'homeserver' }],
+  yuanbao: [{ field: 'appKey', labelKey: 'appKey' }, { field: 'appSecret', labelKey: 'appSecret' }],
+  mattermost: [{ field: 'botToken', labelKey: 'botToken' }, { field: 'baseUrl', labelKey: 'baseUrl' }],
+  bluebubbles: [{ field: 'serverUrl', labelKey: 'serverUrl' }, { field: 'password', labelKey: 'password' }],
+  qq: [{ field: 'appId', labelKey: 'appId' }, { field: 'clientSecret', labelKey: 'clientSecret' }],
+};
+
+const getCredentialErrors = (chId: string, cfg: any, es: any): string[] => {
+  const reqs = REQUIRED_CREDENTIALS[chId];
+  if (!reqs) return [];
+  return reqs
+    .filter(r => !cfg?.[r.field] || (typeof cfg[r.field] === 'string' && !cfg[r.field].trim()))
+    .map(r => (es[r.labelKey] || r.field));
+};
+
+const getAccessWarnings = (chId: string, cfg: any, es: any): string[] => {
+  const warnings: string[] = [];
+  const dm = cfg?.dmPolicy || 'pairing';
+  const gp = cfg?.groupPolicy;
+  const allowFrom = cfg?.allowFrom;
+  const groupAllowFrom = cfg?.groupAllowFrom;
+
+  if (dm === 'allowlist' && (!Array.isArray(allowFrom) || allowFrom.length === 0)) {
+    warnings.push(es.wizWarnDmAllowlistEmpty || 'DM policy is "allowlist" but Allow From is empty — all DMs will be dropped');
+  }
+  if (gp === 'allowlist' && (!Array.isArray(groupAllowFrom) || groupAllowFrom.length === 0) && (!Array.isArray(allowFrom) || allowFrom.length === 0)) {
+    warnings.push(es.wizWarnGroupAllowlistEmpty || 'Group policy is "allowlist" but group allow list is empty — all group messages will be dropped');
+  }
+  return warnings;
+};
+
+// ============================================================================
 // 组件
 // ============================================================================
 
@@ -449,6 +493,13 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
   }, []);
 
   const handleFinishWizard = useCallback(async (chId: string) => {
+    const cfg = channels[chId] || {};
+    const credErrors = getCredentialErrors(chId, cfg, es);
+    if (credErrors.length > 0) {
+      toast('error', (es.wizCredentialRequired || 'Required fields missing') + ': ' + credErrors.join(', '));
+      setWizardStep(2);
+      return;
+    }
     const dmPolicy = getField(['channels', chId, 'dmPolicy']) || 'pairing';
     const requiresPairing = chId !== 'yuanbao' && dmPolicy === 'pairing';
     setRestarting(true);
@@ -471,7 +522,7 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
     } else {
       resetWizard();
     }
-  }, [getField, resetWizard, save]);
+  }, [getField, resetWizard, save, channels, es, toast]);
 
   const handleApprovePairing = useCallback(async (chId: string) => {
     if (!pairingCode.trim()) return;
@@ -1800,13 +1851,34 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
                       </div>
                     </div>
                   )}
+                  {/* Credential validation errors */}
+                  {(() => {
+                    const credErrors = getCredentialErrors(chId, cfg, es);
+                    return credErrors.length > 0 ? (
+                      <div className="mt-3 px-3 py-2.5 rounded-xl bg-red-50 dark:bg-red-500/5 border border-red-200 dark:border-red-500/20 flex items-start gap-2">
+                        <span className="material-symbols-outlined text-[14px] text-red-500 mt-0.5 shrink-0">error</span>
+                        <div className="text-[10px] text-red-600 dark:text-red-400">
+                          <span className="font-bold">{es.wizCredentialRequired || 'Required fields missing'}:</span>{' '}
+                          {credErrors.join(', ')}
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
                   <div className="flex justify-between mt-3 pt-3 border-t border-slate-100 dark:border-white/[0.04]">
                     <button onClick={() => setWizardStep(1)}
                       className="px-4 py-1.5 text-[11px] font-bold text-slate-500 hover:text-slate-700 dark:hover:text-white/70 flex items-center gap-1">
                       <span className="material-symbols-outlined text-[14px]">arrow_back</span> {cw.back}
                     </button>
-                    <button onClick={() => setWizardStep(3)}
-                      className="px-4 py-1.5 bg-primary hover:bg-primary/90 text-white text-[11px] font-bold rounded-lg transition-colors flex items-center gap-1">
+                    <button
+                      onClick={() => {
+                        const credErrors = getCredentialErrors(chId, cfg, es);
+                        if (credErrors.length > 0) {
+                          toast('error', (es.wizCredentialRequired || 'Required fields missing') + ': ' + credErrors.join(', '));
+                          return;
+                        }
+                        setWizardStep(3);
+                      }}
+                      className={`px-4 py-1.5 text-[11px] font-bold rounded-lg transition-colors flex items-center gap-1 ${getCredentialErrors(chId, cfg, es).length > 0 ? 'bg-slate-300 dark:bg-white/10 text-slate-500 dark:text-white/40 cursor-not-allowed' : 'bg-primary hover:bg-primary/90 text-white'}`}>
                       {cw.next || es.done} <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
                     </button>
                   </div>
@@ -1856,6 +1928,18 @@ export const ChannelsSection: React.FC<SectionProps> = ({ config, setField, getF
                       <ArrayField label="" value={getField(['channels', chId, 'allowFrom']) || []} onChange={v => setField(['channels', chId, 'allowFrom'], v)} placeholder={es.tipAllowFromPh} />
                     </div>
                   </div>
+                  {/* Access control warnings */}
+                  {(() => {
+                    const accessWarns = getAccessWarnings(chId, cfg, es);
+                    return accessWarns.length > 0 ? (
+                      <div className="mt-3 px-3 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20 flex items-start gap-2">
+                        <span className="material-symbols-outlined text-[14px] text-amber-500 mt-0.5 shrink-0">warning</span>
+                        <div className="text-[10px] text-amber-700 dark:text-amber-400 space-y-1">
+                          {accessWarns.map((w, i) => <p key={i}>{w}</p>)}
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
                   <div className="flex justify-between mt-3 pt-3 border-t border-slate-100 dark:border-white/[0.04]">
                     <button onClick={() => setWizardStep(2)}
                       className="px-4 py-1.5 text-[11px] font-bold text-slate-500 hover:text-slate-700 dark:hover:text-white/70 flex items-center gap-1">

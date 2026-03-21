@@ -1359,5 +1359,8 @@
   "tipWecomConn": "Long connection mode requires no public IP (recommended); Webhook mode needs public callback URL",
   "tipYuanbaoAppSecret": "Yuanbao Party AppSecret (from Yuanbao App linking page)",
   "tipYuanbaoAppKey": "Yuanbao Party App ID (from Yuanbao App linking page)",
-  "appKey": "App Key"
+  "appKey": "App Key",
+  "wizCredentialRequired": "Обязательные поля не заполнены",
+  "wizWarnDmAllowlistEmpty": "Политика ЛС — \"Список разрешённых\", но Allow From пуст — все ЛС будут молча отброшены",
+  "wizWarnGroupAllowlistEmpty": "Групповая политика — \"Список разрешённых\", но Allow From / Group Allow From пусты — все групповые сообщения будут молча отброшены"
 }

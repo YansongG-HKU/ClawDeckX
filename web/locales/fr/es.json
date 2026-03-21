@@ -1359,5 +1359,8 @@
   "tipWecomConn": "Long connection mode requires no public IP (recommended); Webhook mode needs public callback URL",
   "tipYuanbaoAppSecret": "Yuanbao Party AppSecret (from Yuanbao App linking page)",
   "tipYuanbaoAppKey": "Yuanbao Party App ID (from Yuanbao App linking page)",
-  "appKey": "App Key"
+  "appKey": "App Key",
+  "wizCredentialRequired": "Champs obligatoires manquants",
+  "wizWarnDmAllowlistEmpty": "La politique DM est \"Liste autorisée\" mais Allow From est vide — tous les DMs seront ignorés",
+  "wizWarnGroupAllowlistEmpty": "La politique de groupe est \"Liste autorisée\" mais Allow From / Group Allow From sont vides — tous les messages de groupe seront ignorés"
 }
