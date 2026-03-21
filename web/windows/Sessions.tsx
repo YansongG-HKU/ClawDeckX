@@ -1186,6 +1186,37 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
     return () => clearInterval(timer);
   }, [runPhase]);
 
+  // Auto-reset from 'error' phase: the error message is already displayed in chat,
+  // so reset the run phase to 'idle' after a brief delay to restore the send button.
+  useEffect(() => {
+    if (runPhase !== 'error') return;
+    const timer = setTimeout(() => {
+      setRunPhase('idle');
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [runPhase]);
+
+  // Stuck 'running' phase recovery: if runPhase is 'running' (tool execution) for over
+  // 120s without any new events, assume the gateway failed to send a terminal event.
+  // Recover by reloading history and resetting to idle.
+  useEffect(() => {
+    if (runPhase !== 'running') return;
+    const timer = setInterval(() => {
+      const pending = pendingRunRef.current;
+      if (pending && Date.now() - pending.startedAt > 120000) {
+        console.warn('[sessions] running phase stuck (120s), recovering via history reload');
+        if (streamRafRef.current !== null) { clearTimeout(streamRafRef.current); streamRafRef.current = null; }
+        streamTextRef.current = '';
+        setStream(null);
+        setRunId(null);
+        setRunPhase('idle');
+        pendingRunRef.current = null;
+        loadHistoryRef.current?.({ silent: true });
+      }
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [runPhase]);
+
   // Track whether the user is near the bottom of the chat (within 300px)
   const nearBottomRef = useRef(true);
 
