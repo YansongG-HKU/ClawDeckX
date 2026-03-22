@@ -1580,7 +1580,24 @@ if check_installed; then
     esac
 fi
 
-# 0. Check root user
+# Offer installation mode choice (Binary vs Docker) unless inside a container
+if ! is_inside_docker; then
+    echo -e "${YELLOW}Choose installation mode / 选择安装模式：${NC}"
+    echo "  1) Binary - Direct binary install / 直接安装二进制文件"
+    echo "  2) Docker - Run in Docker container / 在 Docker 容器中运行"
+    echo ""
+    echo -n "Enter your choice [1-2] / 输入选择 [1-2]: "
+    read -n 1 -r INSTALL_MODE </dev/tty
+    echo
+
+    if [ "$INSTALL_MODE" = "2" ]; then
+        docker_install
+        # docker_install calls exit 0 on success
+    fi
+    echo ""
+fi
+
+# 0. Check root user (Binary install only — Docker does not need a dedicated user)
 if [ "$(id -u)" = "0" ]; then
     echo ""
     echo -e "${RED}⚠  Warning: Running as root is not recommended"
@@ -1687,23 +1704,6 @@ if [ "$(id -u)" = "0" ]; then
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         exit 0
     fi
-fi
-
-# Offer installation mode choice (Binary vs Docker) unless inside a container
-if ! is_inside_docker; then
-    echo -e "${YELLOW}Choose installation mode / 选择安装模式：${NC}"
-    echo "  1) Binary - Direct binary install / 直接安装二进制文件"
-    echo "  2) Docker - Run in Docker container / 在 Docker 容器中运行"
-    echo ""
-    echo -n "Enter your choice [1-2] / 输入选择 [1-2]: "
-    read -n 1 -r INSTALL_MODE </dev/tty
-    echo
-
-    if [ "$INSTALL_MODE" = "2" ]; then
-        docker_install
-        # docker_install calls exit 0 on success
-    fi
-    echo ""
 fi
 
 # 1. Detect OS and Arch
