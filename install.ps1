@@ -878,10 +878,18 @@ function Install-DockerClawDeckX {
     Write-C "Access ClawDeckX at / 访问 ClawDeckX：" Cyan
     Write-C "  http://localhost:$($script:PORT)" Green
     Write-Host ""
-    Write-C "🔐 First-time login / 首次登录：" Yellow
+    Write-C "� Data volumes / 数据卷：" Cyan
+    Write-Host "  ClawDeckX data: /data/clawdeckx  -> volume: clawdeckx-data" -ForegroundColor Green
+    Write-Host "  OpenClaw data:  /data/openclaw   -> volume: openclaw-data" -ForegroundColor Green
+    Write-Host "  Runtime:        /data/runtime    -> volume: clawdeckx-runtime" -ForegroundColor Green
+    Write-Host ""
+    Write-C "�🔐 First-time login / 首次登录：" Yellow
     Write-Host "  View initial admin credentials in container logs:"
     Write-Host "  查看容器日志中的初始管理员账户信息："
-    Write-C "  $COMPOSE_CMD logs --tail 50" Green
+    Write-Host ""
+    Write-Host "────────────────────────────────────────"
+    Invoke-Expression "$COMPOSE_CMD logs --tail 50"
+    Write-Host "────────────────────────────────────────"
     Write-Host ""
     Show-DockerCommands
 }

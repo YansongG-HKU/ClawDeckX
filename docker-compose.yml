@@ -54,6 +54,7 @@ services:
 
 networks:
   clawdeckx-net:
+    name: clawdeckx-net
     driver: bridge
 
 volumes:
