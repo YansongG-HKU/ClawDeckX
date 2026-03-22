@@ -2441,9 +2441,6 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
 
                 <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mb-5 border border-primary/10 shadow-lg shadow-primary/5">
                   <span className="material-symbols-outlined text-[36px] text-primary">chat</span>
-                  <div className="absolute -bottom-1 -end-1 w-5 h-5 rounded-full bg-mac-green border-2 border-white dark:border-[#0d1117] flex items-center justify-center">
-                    <span className="material-symbols-outlined text-[10px] text-white">check</span>
-                  </div>
                 </div>
                 <p className="text-base font-bold text-slate-700 dark:text-white/60 mb-1">{c.welcome}</p>
                 <p className="text-[11px] text-slate-400 dark:text-white/25 mb-7">{c.slashHint}</p>
