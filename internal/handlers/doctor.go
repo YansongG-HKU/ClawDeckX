@@ -16,6 +16,7 @@ import (
 
 	"ClawDeckX/internal/constants"
 	"ClawDeckX/internal/database"
+	"ClawDeckX/internal/executil"
 	"ClawDeckX/internal/logger"
 	"ClawDeckX/internal/openclaw"
 	"ClawDeckX/internal/service"
@@ -1439,7 +1440,9 @@ func (h *DoctorHandler) runFix(item CheckItem) fixItemResult {
 		if runtime.GOOS == "windows" {
 			// Windows: os.Chmod is a no-op for ACLs; use icacls to restrict permissions
 			// Step 1: remove inheritance and wipe existing ACEs
-			if out, err := exec.Command("icacls", targetPath, "/inheritance:r").CombinedOutput(); err != nil {
+			icaclsCmd1 := exec.Command("icacls", targetPath, "/inheritance:r")
+			executil.HideWindow(icaclsCmd1)
+			if out, err := icaclsCmd1.CombinedOutput(); err != nil {
 				return fixItemResult{ID: item.ID, Code: item.Code, Name: item.Name, Status: "failed", Message: "icacls inheritance:r: " + string(out)}
 			}
 			// Step 2: grant current user full control only
@@ -1448,7 +1451,9 @@ func (h *DoctorHandler) runFix(item CheckItem) fixItemResult {
 				currentUser = domain + "\\" + currentUser
 			}
 			if currentUser == "" {
-				if who, err := exec.Command("whoami").Output(); err == nil {
+				whoamiCmd := exec.Command("whoami")
+				executil.HideWindow(whoamiCmd)
+				if who, err := whoamiCmd.Output(); err == nil {
 					currentUser = strings.TrimSpace(string(who))
 				}
 			}
@@ -1456,7 +1461,9 @@ func (h *DoctorHandler) runFix(item CheckItem) fixItemResult {
 				return fixItemResult{ID: item.ID, Code: item.Code, Name: item.Name, Status: "failed", Message: "cannot determine current user for ACL fix"}
 			}
 			grant := "(OI)(CI)(F)" // full control, inheritable to children if directory
-			if out, err := exec.Command("icacls", targetPath, "/grant:r", currentUser+":"+grant).CombinedOutput(); err != nil {
+			icaclsCmd2 := exec.Command("icacls", targetPath, "/grant:r", currentUser+":"+grant)
+			executil.HideWindow(icaclsCmd2)
+			if out, err := icaclsCmd2.CombinedOutput(); err != nil {
 				return fixItemResult{ID: item.ID, Code: item.Code, Name: item.Name, Status: "failed", Message: "icacls grant: " + string(out)}
 			}
 			return fixItemResult{ID: item.ID, Code: item.Code, Name: item.Name, Status: "success", Message: fmt.Sprintf("fixed ACL permissions for %s (owner-only)", targetPath)}

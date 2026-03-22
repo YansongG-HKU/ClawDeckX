@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"ClawDeckX/internal/executil"
 	"ClawDeckX/internal/logger"
 	"ClawDeckX/internal/web"
 )
@@ -109,6 +110,7 @@ func (h *SkillHubHandler) CLIStatus(w http.ResponseWriter, r *http.Request) {
 	} else {
 		cmd = exec.Command(bin, "--version")
 	}
+	executil.HideWindow(cmd)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -208,6 +210,7 @@ bash "$INSTALLER" "$@"
 
 	// Execute install script
 	cmd := exec.Command("bash", scriptPath)
+	executil.HideWindow(cmd)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -294,6 +297,7 @@ func (h *SkillHubHandler) InstallSkill(w http.ResponseWriter, r *http.Request) {
 	} else {
 		cmd = exec.Command(bin, "--dir", skillsDir, "install", req.Slug)
 	}
+	executil.HideWindow(cmd)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -476,6 +480,7 @@ func (h *SkillHubHandler) GetInstalledSkills(w http.ResponseWriter, r *http.Requ
 		} else {
 			cmd = exec.Command(bin, "--dir", skillsDir, "list")
 		}
+		executil.HideWindow(cmd)
 		var stdout bytes.Buffer
 		cmd.Stdout = &stdout
 

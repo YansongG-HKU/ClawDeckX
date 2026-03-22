@@ -10,15 +10,16 @@ import (
 	"sync"
 	"time"
 
+	"ClawDeckX/internal/executil"
 	"ClawDeckX/internal/logger"
 )
 
 // npmVersionCache caches the latest version from npm registry.
 type npmVersionCache struct {
-	mu        sync.RWMutex
-	versions  map[string]*npmCacheEntry
-	client    *http.Client
-	cacheTTL  time.Duration
+	mu       sync.RWMutex
+	versions map[string]*npmCacheEntry
+	client   *http.Client
+	cacheTTL time.Duration
 }
 
 type npmCacheEntry struct {
@@ -122,6 +123,7 @@ func UpgradeNpmCLI(packageName string) (string, error) {
 	} else {
 		cmd = exec.Command("npm", "install", "-g", packageName+"@latest")
 	}
+	executil.HideWindow(cmd)
 
 	output, err := cmd.CombinedOutput()
 	result := strings.TrimSpace(string(output))

@@ -154,7 +154,8 @@ function Install-ScheduledTask {
     param([string]$BinaryPath)
 
     $workDir = Split-Path $BinaryPath -Parent
-    $action = New-ScheduledTaskAction -Execute $BinaryPath -WorkingDirectory $workDir
+    # Wrap in powershell -WindowStyle Hidden to prevent a visible console window at logon
+    $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-WindowStyle Hidden -Command `"Start-Process -FilePath '$BinaryPath' -WorkingDirectory '$workDir' -WindowStyle Hidden`"" -WorkingDirectory $workDir
     $trigger = New-ScheduledTaskTrigger -AtLogOn
     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit ([TimeSpan]::Zero)
 

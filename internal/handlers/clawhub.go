@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"ClawDeckX/internal/executil"
 	"ClawDeckX/internal/logger"
 	"ClawDeckX/internal/openclaw"
 	"ClawDeckX/internal/web"
@@ -673,6 +674,7 @@ func (h *ClawHubHandler) runClawHub(args []string) (string, error) {
 
 	// try running directly
 	cmd := exec.Command(cmdName, cmdArgs...)
+	executil.HideWindow(cmd)
 	cmd.Env = append(os.Environ(), "CLAWHUB_DISABLE_TELEMETRY=1")
 
 	// set working directory to ~/.openclaw/skills
@@ -688,6 +690,7 @@ func (h *ClawHubHandler) runClawHub(args []string) (string, error) {
 			strings.Contains(err.Error(), "executable file not found") {
 			npxArgs := append([]string{"clawhub"}, cmdArgs...)
 			cmd2 := exec.Command("npx", npxArgs...)
+			executil.HideWindow(cmd2)
 			cmd2.Env = append(os.Environ(), "CLAWHUB_DISABLE_TELEMETRY=1")
 			cmd2.Dir = skillsDir
 			output2, err2 := cmd2.CombinedOutput()
@@ -794,6 +797,7 @@ func (h *ClawHubHandler) CLIStatus(w http.ResponseWriter, r *http.Request) {
 	} else {
 		cmd = exec.Command(bin, "--cli-version")
 	}
+	executil.HideWindow(cmd)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout

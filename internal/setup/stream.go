@@ -1,6 +1,7 @@
 ﻿package setup
 
 import (
+	"ClawDeckX/internal/executil"
 	"ClawDeckX/internal/i18n"
 	"bufio"
 	"context"
@@ -182,6 +183,7 @@ func NewStreamCommandWithSudo(emitter *EventEmitter, phase, step, sudoPassword s
 
 func (sc *StreamCommand) Run(ctx context.Context, name string, args ...string) error {
 	cmd := exec.CommandContext(ctx, name, args...)
+	executil.HideWindow(cmd)
 
 	if isWindows() {
 		cmd.Env = append(os.Environ(), "LANG=en_US.UTF-8", "PYTHONIOENCODING=utf-8")
@@ -255,6 +257,7 @@ func (sc *StreamCommand) RunShell(ctx context.Context, command string) error {
 	} else {
 		cmd = exec.CommandContext(ctx, "sh", "-c", command)
 	}
+	executil.HideWindow(cmd)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {

@@ -1,6 +1,7 @@
 package openclaw
 
 import (
+	"ClawDeckX/internal/executil"
 	"ClawDeckX/internal/i18n"
 	"context"
 	"encoding/json"
@@ -33,6 +34,7 @@ func RunCLI(ctx context.Context, args ...string) (string, error) {
 		return "", fmt.Errorf("%s", i18n.T(i18n.MsgErrOpenclawNotInstalled))
 	}
 	c := exec.CommandContext(ctx, cmd, args...)
+	executil.HideWindow(c)
 	out, err := c.CombinedOutput()
 	if err != nil {
 		return strings.TrimSpace(string(out)), fmt.Errorf("%s %s: %s", cmd, strings.Join(args, " "), strings.TrimSpace(string(out)))
@@ -151,6 +153,7 @@ func ConfigValidate(config map[string]interface{}) (*ConfigValidateResult, error
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, cmdName, "doctor", "--json")
+	executil.HideWindow(cmd)
 	cmd.Env = append(os.Environ(),
 		"OPENCLAW_STATE_DIR="+stateDir,
 		"OPENCLAW_CONFIG_PATH="+cfgPath,
@@ -295,6 +298,7 @@ func NpmUninstallGlobal(ctx context.Context, pkg string) (string, error) {
 		}
 		c = exec.CommandContext(ctx, "sh", "-c", cmdStr)
 	}
+	executil.HideWindow(c)
 	out, err := c.CombinedOutput()
 	if err != nil {
 		return strings.TrimSpace(string(out)), fmt.Errorf("npm uninstall -g %s: %s", pkg, strings.TrimSpace(string(out)))
@@ -347,6 +351,7 @@ func resolveNpmGlobalDir() string {
 	} else {
 		c = exec.CommandContext(ctx, "npm", "config", "get", "prefix")
 	}
+	executil.HideWindow(c)
 	out, err := c.Output()
 	if err != nil {
 		return ""

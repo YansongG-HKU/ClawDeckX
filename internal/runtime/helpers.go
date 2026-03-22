@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"ClawDeckX/internal/executil"
 	"ClawDeckX/internal/version"
 )
 
@@ -52,7 +53,9 @@ func imageOpenClawVersion() string {
 
 // currentOpenClawVersion returns the currently active OpenClaw version.
 func currentOpenClawVersion() string {
-	out, err := exec.Command("openclaw", "--version").CombinedOutput()
+	cmd := exec.Command("openclaw", "--version")
+	executil.HideWindow(cmd)
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return ""
 	}

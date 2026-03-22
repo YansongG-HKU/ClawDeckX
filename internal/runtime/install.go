@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"ClawDeckX/internal/executil"
 	"ClawDeckX/internal/logger"
 	"ClawDeckX/internal/updater"
 )
@@ -168,6 +169,7 @@ func (m *Manager) InstallOpenClaw(ctx context.Context, progressFn func(updater.A
 
 	cmd := exec.CommandContext(ctx, "npm", "install", "-g", "openclaw@latest",
 		"--prefix", npmPrefix)
+	executil.HideWindow(cmd)
 	cmd.Env = append(os.Environ(), "NPM_CONFIG_PREFIX="+npmPrefix)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -210,7 +212,9 @@ func detectBinaryVersion(binPath string) string {
 	defer cancel()
 
 	// Try "serve --version" first (ClawDeckX pattern)
-	out, err := exec.CommandContext(ctx, binPath, "version").CombinedOutput()
+	vCmd := exec.CommandContext(ctx, binPath, "version")
+	executil.HideWindow(vCmd)
+	out, err := vCmd.CombinedOutput()
 	if err == nil {
 		v := parseVersionOutput(string(out))
 		if v != "" {
@@ -219,7 +223,9 @@ func detectBinaryVersion(binPath string) string {
 	}
 
 	// Try "--version"
-	out, err = exec.CommandContext(ctx, binPath, "--version").CombinedOutput()
+	vCmd2 := exec.CommandContext(ctx, binPath, "--version")
+	executil.HideWindow(vCmd2)
+	out, err = vCmd2.CombinedOutput()
 	if err == nil {
 		v := parseVersionOutput(string(out))
 		if v != "" {

@@ -1,6 +1,7 @@
 ﻿package setup
 
 import (
+	"ClawDeckX/internal/executil"
 	"ClawDeckX/internal/i18n"
 	"context"
 	"fmt"
@@ -121,6 +122,7 @@ func (v *Verifier) runDoctor(ctx context.Context) *DoctorResult {
 	result := &DoctorResult{}
 
 	cmd := exec.CommandContext(ctx, "openclaw", "doctor")
+	executil.HideWindow(cmd)
 	output, err := cmd.CombinedOutput()
 
 	result.Output = string(output)

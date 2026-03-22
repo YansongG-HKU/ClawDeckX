@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"ClawDeckX/internal/executil"
 	"ClawDeckX/internal/logger"
 )
 
@@ -116,6 +117,7 @@ func (h *ClawHubHandler) InstallStreamSSE(w http.ResponseWriter, r *http.Request
 	os.MkdirAll(skillsDir, 0755)
 
 	cmd := exec.Command(cmdName, args...)
+	executil.HideWindow(cmd)
 	cmd.Env = append(os.Environ(), "CLAWHUB_DISABLE_TELEMETRY=1")
 	cmd.Dir = skillsDir
 
@@ -180,6 +182,7 @@ func (h *ClawHubHandler) InstallStreamSSE(w http.ResponseWriter, r *http.Request
 func (h *ClawHubHandler) installStreamViaNpx(w http.ResponseWriter, flusher http.Flusher, sendSSE func(string, map[string]interface{}), args []string, skillsDir string, slug string) {
 	npxArgs := append([]string{"clawhub"}, args...)
 	cmd := exec.Command("npx", npxArgs...)
+	executil.HideWindow(cmd)
 	cmd.Env = append(os.Environ(), "CLAWHUB_DISABLE_TELEMETRY=1")
 	cmd.Dir = skillsDir
 

@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"ClawDeckX/internal/executil"
 	"ClawDeckX/internal/logger"
 	"ClawDeckX/internal/openclaw"
 	"ClawDeckX/internal/web"
@@ -287,6 +288,7 @@ func (h *PluginInstallHandler) Install(w http.ResponseWriter, r *http.Request) {
 	} else {
 		cmd = exec.Command("openclaw", "plugins", "install", spec)
 	}
+	executil.HideWindow(cmd)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -674,6 +676,7 @@ func (h *PluginInstallHandler) Uninstall(w http.ResponseWriter, r *http.Request)
 	} else {
 		cmd = exec.Command("openclaw", "plugins", "uninstall", pluginId, "--force")
 	}
+	executil.HideWindow(cmd)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -763,6 +766,7 @@ func (h *PluginInstallHandler) Update(w http.ResponseWriter, r *http.Request) {
 	} else {
 		cmd = exec.Command("openclaw", args...)
 	}
+	executil.HideWindow(cmd)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -813,6 +817,7 @@ func (h *PluginInstallHandler) Update(w http.ResponseWriter, r *http.Request) {
 				} else {
 					retryCmd = exec.Command("openclaw", retryArgs...)
 				}
+				executil.HideWindow(retryCmd)
 				var retryStdout, retryStderr bytes.Buffer
 				retryCmd.Stdout = &retryStdout
 				retryCmd.Stderr = &retryStderr

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"ClawDeckX/internal/executil"
 	"ClawDeckX/internal/logger"
 	"ClawDeckX/internal/openclaw"
 	"ClawDeckX/internal/web"
@@ -484,6 +485,7 @@ func (h *LLMHealthHandler) execLocal(w http.ResponseWriter, r *http.Request, req
 
 	start := time.Now()
 	c := exec.CommandContext(ctx, cmdPath, req.Args...)
+	executil.HideWindow(c)
 	stdout, err := c.Output()
 	durationMs := time.Since(start).Milliseconds()
 

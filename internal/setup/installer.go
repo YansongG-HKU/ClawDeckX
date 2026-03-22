@@ -1,6 +1,7 @@
 package setup
 
 import (
+	"ClawDeckX/internal/executil"
 	"ClawDeckX/internal/i18n"
 	"ClawDeckX/internal/netutil"
 	"ClawDeckX/internal/openclaw"
@@ -765,9 +766,13 @@ func resolveOpenClawFullPath(cmdName string) string {
 func getNpmGlobalBin() string {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	out, err := exec.CommandContext(ctx, "npm", "bin", "-g").Output()
+	vCmd := exec.CommandContext(ctx, "npm", "bin", "-g")
+	executil.HideWindow(vCmd)
+	out, err := vCmd.CombinedOutput()
 	if err != nil {
-		out, err = exec.CommandContext(ctx, "npm", "prefix", "-g").Output()
+		vCmd2 := exec.CommandContext(ctx, "npm", "prefix", "-g")
+		executil.HideWindow(vCmd2)
+		out, err = vCmd2.CombinedOutput()
 		if err != nil {
 			return ""
 		}
@@ -784,6 +789,7 @@ func (i *Installer) RunDoctor(ctx context.Context) (*DoctorResult, error) {
 	i.emitter.EmitStep("verify", "doctor", i18n.T(i18n.MsgInstallerRunningDoctor), 90)
 
 	cmd := exec.CommandContext(ctx, "openclaw", "doctor")
+	executil.HideWindow(cmd)
 	output, err := cmd.CombinedOutput()
 
 	result := &DoctorResult{

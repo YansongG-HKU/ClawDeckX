@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+
+	"ClawDeckX/internal/executil"
 )
 
 func IsInstalled() bool {
@@ -16,7 +18,9 @@ func IsInstalled() bool {
 	case "darwin":
 		return fileExists(filepath.Join(os.Getenv("HOME"), "Library/LaunchAgents/ai.clawdeckx.plist"))
 	case "windows":
-		out, _ := exec.Command("schtasks", "/Query", "/TN", "ClawDeckX").Output()
+		cmd := exec.Command("schtasks", "/Query", "/TN", "ClawDeckX")
+		executil.HideWindow(cmd)
+		out, _ := cmd.Output()
 		return len(out) > 0
 	}
 	return false
@@ -149,7 +153,9 @@ func installWindows(port int) error {
 	}
 
 	// Remove existing task if present
-	exec.Command("schtasks", "/Delete", "/F", "/TN", "ClawDeckX").Run()
+	delCmd := exec.Command("schtasks", "/Delete", "/F", "/TN", "ClawDeckX")
+	executil.HideWindow(delCmd)
+	delCmd.Run()
 
 	// Determine which script to register
 	taskTarget := scriptPath
@@ -163,6 +169,7 @@ func installWindows(port int) error {
 		"/RL", "LIMITED",
 		"/TN", "ClawDeckX",
 		"/TR", fmt.Sprintf(`"%s"`, taskTarget))
+	executil.HideWindow(cmd)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("create scheduled task: %s: %w", string(out), err)
@@ -206,8 +213,12 @@ func uninstallWindows() error {
 	stateDir := filepath.Dir(absExe)
 
 	// Stop and delete the scheduled task
-	exec.Command("schtasks", "/End", "/TN", "ClawDeckX").Run()
-	exec.Command("schtasks", "/Delete", "/F", "/TN", "ClawDeckX").Run()
+	endCmd := exec.Command("schtasks", "/End", "/TN", "ClawDeckX")
+	executil.HideWindow(endCmd)
+	endCmd.Run()
+	delCmd := exec.Command("schtasks", "/Delete", "/F", "/TN", "ClawDeckX")
+	executil.HideWindow(delCmd)
+	delCmd.Run()
 
 	// Clean up task scripts
 	os.Remove(filepath.Join(stateDir, "clawdeckx-service.cmd"))

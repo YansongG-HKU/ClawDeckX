@@ -1,6 +1,7 @@
 ﻿package openclaw
 
 import (
+	"ClawDeckX/internal/executil"
 	"ClawDeckX/internal/i18n"
 	"encoding/json"
 	"fmt"
@@ -119,7 +120,9 @@ func checkOpenClawInstalled() DiagnoseItem {
 		LabelEn: "OpenClaw Installed",
 	}
 
-	out, err := exec.Command("openclaw", "--version").CombinedOutput()
+	cmd := exec.Command("openclaw", "--version")
+	executil.HideWindow(cmd)
+	out, err := cmd.CombinedOutput()
 	if err == nil {
 		version := strings.TrimSpace(string(out))
 		item.Status = DiagnosePass
@@ -127,7 +130,9 @@ func checkOpenClawInstalled() DiagnoseItem {
 		return item
 	}
 
-	out, err = exec.Command("openclaw-cn", "--version").CombinedOutput()
+	cmd2 := exec.Command("openclaw-cn", "--version")
+	executil.HideWindow(cmd2)
+	out, err = cmd2.CombinedOutput()
 	if err == nil {
 		version := strings.TrimSpace(string(out))
 		item.Status = DiagnosePass

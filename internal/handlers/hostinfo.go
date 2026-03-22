@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"ClawDeckX/internal/executil"
 	"ClawDeckX/internal/openclaw"
 	"ClawDeckX/internal/web"
 )
@@ -409,7 +410,9 @@ func (h *HostInfoHandler) getStaticInfo() HostInfoResponse {
 	resp.DiskUsage = collectDiskUsage(home)
 
 	// Node version is static and costly to spawn repeatedly.
-	if out, err := exec.Command("node", "--version").Output(); err == nil {
+	nodeCmd := exec.Command("node", "--version")
+	executil.HideWindow(nodeCmd)
+	if out, err := nodeCmd.Output(); err == nil {
 		resp.NodeVersion = strings.TrimSpace(string(out))
 	}
 

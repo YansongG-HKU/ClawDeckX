@@ -1,6 +1,7 @@
 ﻿package setup
 
 import (
+	"ClawDeckX/internal/executil"
 	"ClawDeckX/internal/i18n"
 	"ClawDeckX/internal/openclaw"
 	"context"
@@ -308,13 +309,17 @@ func detectDistro() (name, version string) {
 
 func detectKernel() string {
 	if runtime.GOOS == "windows" {
-		out, err := exec.Command("cmd", "/c", "ver").Output()
+		verCmd := exec.Command("cmd", "/c", "ver")
+		executil.HideWindow(verCmd)
+		out, err := verCmd.Output()
 		if err == nil {
 			return strings.TrimSpace(string(out))
 		}
 		return ""
 	}
-	out, err := exec.Command("uname", "-r").Output()
+	unameCmd := exec.Command("uname", "-r")
+	executil.HideWindow(unameCmd)
+	out, err := unameCmd.Output()
 	if err == nil {
 		return strings.TrimSpace(string(out))
 	}
@@ -358,6 +363,7 @@ func detectSudo() bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, "sudo", "-n", "true")
+	executil.HideWindow(cmd)
 	return cmd.Run() == nil
 }
 
@@ -428,6 +434,7 @@ func detectTool(name string, versionArg string) ToolInfo {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, name, versionArg)
+	executil.HideWindow(cmd)
 	out, err := cmd.Output()
 	if err == nil {
 		version := strings.TrimSpace(string(out))
@@ -444,6 +451,7 @@ func detectXcodeCLI() ToolInfo {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, "xcode-select", "-p")
+	executil.HideWindow(cmd)
 	out, err := cmd.Output()
 	if err != nil {
 		return ToolInfo{Installed: false}
@@ -456,6 +464,7 @@ func detectXcodeCLI() ToolInfo {
 	ctx2, cancel2 := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel2()
 	cmd2 := exec.CommandContext(ctx2, "pkgutil", "--pkg-info=com.apple.pkg.CLTools_Executables")
+	executil.HideWindow(cmd2)
 	out2, _ := cmd2.Output()
 	version := ""
 	for _, line := range strings.Split(string(out2), "\n") {
@@ -653,6 +662,7 @@ func detectToolByPath(path string, versionArg string) ToolInfo {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, path, versionArg)
+	executil.HideWindow(cmd)
 	out, err := cmd.Output()
 	if err == nil {
 		version := strings.TrimSpace(string(out))
@@ -672,6 +682,7 @@ func detectNodeViaShell() ToolInfo {
 	for _, shellCmd := range shells {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		cmd := exec.CommandContext(ctx, "sh", "-c", shellCmd)
+		executil.HideWindow(cmd)
 		out, err := cmd.Output()
 		cancel()
 		if err == nil {
@@ -736,6 +747,7 @@ func detectNpmRegistry() (registry string, latency int) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, "npm", "config", "get", "registry")
+	executil.HideWindow(cmd)
 	out, err := cmd.Output()
 	if err == nil {
 		registry = strings.TrimSpace(string(out))
@@ -782,6 +794,7 @@ func getDiskFreeGB() float64 {
 			drive = "C:"
 		}
 		cmd := exec.Command("wmic", "logicaldisk", "where", fmt.Sprintf("DeviceID='%s'", drive), "get", "FreeSpace", "/format:value")
+		executil.HideWindow(cmd)
 		out, err := cmd.Output()
 		if err != nil {
 			return 0
@@ -797,6 +810,7 @@ func getDiskFreeGB() float64 {
 		}
 	default:
 		cmd := exec.Command("df", "-k", home)
+		executil.HideWindow(cmd)
 		out, err := cmd.Output()
 		if err != nil {
 			return 0
@@ -1116,6 +1130,7 @@ func detectBrowserVersion(browserPath string) string {
 		defer cancel()
 		ps := fmt.Sprintf(`(Get-Item '%s').VersionInfo.ProductVersion`, browserPath)
 		cmd := exec.CommandContext(ctx, "powershell", "-NoProfile", "-Command", ps)
+		executil.HideWindow(cmd)
 		out, err := cmd.Output()
 		if err != nil {
 			return ""
@@ -1126,6 +1141,7 @@ func detectBrowserVersion(browserPath string) string {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, browserPath, "--version")
+	executil.HideWindow(cmd)
 	out, err := cmd.Output()
 	if err != nil {
 		return ""
@@ -1351,6 +1367,7 @@ func fetchLatestVersion() string {
 
 	// Using npm view to get the latest version
 	cmd := exec.CommandContext(ctx, "npm", "view", "openclaw", "version")
+	executil.HideWindow(cmd)
 	out, err := cmd.Output()
 	if err == nil {
 		return strings.TrimSpace(string(out))
