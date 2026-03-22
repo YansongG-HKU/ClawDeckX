@@ -990,7 +990,7 @@ uninstall() {
             # Quick uninstall - remove everything
             echo ""
             echo -e "${CYAN}Quick uninstall will remove: / 快速卸载将删除：${NC}"
-            echo "  - $INSTALLED_LOCATION (binary / 二进制文件)"
+            echo "  - $INSTALLED_LOCATION (ClawDeckX)"
             
             SYSTEMD_UNINSTALL=false
             if check_systemd_service; then
@@ -1071,7 +1071,7 @@ uninstall() {
             
             echo ""
             echo -e "${YELLOW}Summary / 摘要：${NC}"
-            echo "  - Binary / 二进制文件：${RED}will be removed / 将被删除${NC}"
+            echo "  - ClawDeckX：${RED}will be removed / 将被删除${NC}"
             if [ "$SYSTEMD_UNINSTALL" = true ]; then
                 echo "  - Systemd service / systemd 服务：${RED}will be removed / 将被删除${NC}"
             fi
@@ -1148,7 +1148,7 @@ perform_uninstall() {
     else
         rm -f "$INSTALLED_LOCATION"
     fi
-    echo -e "${GREEN}✓ Removed binary / 已删除二进制文件${NC}"
+    echo -e "${GREEN}✓ Removed ClawDeckX / 已删除 ClawDeckX${NC}"
     
     # Remove config if requested
     if [ "$REMOVE_CONFIG" = true ]; then
@@ -1263,7 +1263,7 @@ start_clawdeckx() {
         if [ "$SYSTEMD_SERVICE_TYPE" = "user" ] && ! can_use_systemctl_user; then
             echo -e "${YELLOW}⚠ Cannot use systemctl --user (no user session bus, likely su session)"
             echo -e "  无法使用 systemctl --user（无用户会话总线，可能是 su 会话）${NC}"
-            echo -e "${CYAN}Falling back to direct binary start... / 回退到直接启动二进制文件...${NC}"
+            echo -e "${CYAN}Falling back to direct start... / 回退到直接启动...${NC}"
         else
             echo -e "${BLUE}Starting systemd service... / 正在启动 systemd 服务...${NC}"
             if [ "$SYSTEMD_SERVICE_TYPE" = "user" ]; then
@@ -1290,7 +1290,7 @@ start_clawdeckx() {
     
     # Fallback: start binary directly
     local err_file="/tmp/.clawdeckx-start-err.log"
-    echo -e "${BLUE}Starting binary... / 正在启动二进制文件...${NC}"
+    echo -e "${BLUE}Starting ClawDeckX... / 正在启动 ClawDeckX...${NC}"
     "$INSTALLED_LOCATION" > /dev/null 2>"$err_file" &
     sleep 2
     
@@ -1487,9 +1487,9 @@ if [ "$HAS_DOCKER" = true ] || [ "$HAS_BINARY" = true ]; then
                     BINARY_SERVICE_STATUS="${YELLOW}Stopped / 已停止${NC}"
                 fi
             fi
-            echo -e "  📦 Binary: ${GREEN}v${CURRENT_VERSION}${NC} ($BINARY_SERVICE_STATUS) at $INSTALLED_LOCATION"
+            echo -e "  📦 ClawDeckX: ${GREEN}v${CURRENT_VERSION}${NC} ($BINARY_SERVICE_STATUS) at $INSTALLED_LOCATION"
         else
-            echo -e "  📦 Binary: ${GREEN}v${CURRENT_VERSION}${NC} at $INSTALLED_LOCATION"
+            echo -e "  📦 ClawDeckX: ${GREEN}v${CURRENT_VERSION}${NC} at $INSTALLED_LOCATION"
         fi
     fi
 
@@ -1506,12 +1506,12 @@ if [ "$HAS_DOCKER" = true ]; then
 fi
 
 if [ "$HAS_BINARY" = true ]; then
-    N=$((N + 1)); MENU_ITEMS+=("$N) Manage binary installation / 管理本机安装"); MENU_ACTIONS+=("manage_binary")
+    N=$((N + 1)); MENU_ITEMS+=("$N) Manage local ClawDeckX / 管理本机 ClawDeckX"); MENU_ACTIONS+=("manage_binary")
 fi
 
 if [ "$IS_CONTAINER" = false ]; then
     if [ "$HAS_BINARY" = false ]; then
-        N=$((N + 1)); MENU_ITEMS+=("$N) Install: Binary / 安装：本机二进制"); MENU_ACTIONS+=("install_binary")
+        N=$((N + 1)); MENU_ITEMS+=("$N) Install ClawDeckX locally / 在本机安装 ClawDeckX"); MENU_ACTIONS+=("install_binary")
     fi
     if [ "$HAS_DOCKER" = false ]; then
         N=$((N + 1)); MENU_ITEMS+=("$N) Install: Docker / 安装：Docker 整合包"); MENU_ACTIONS+=("install_docker")
@@ -1547,7 +1547,7 @@ case "$SELECTED_ACTION" in
     manage_binary)
         # --- Binary management sub-menu ---
         echo ""
-        echo -e "${GREEN}✓ Binary Installation / 本机安装${NC}"
+        echo -e "${GREEN}✓ Local ClawDeckX / 本机 ClawDeckX${NC}"
         echo -e "${CYAN}Location / 位置：${NC} $INSTALLED_LOCATION"
         echo -e "${CYAN}Current version / 当前版本：${NC} $CURRENT_VERSION"
         echo -e "${CYAN}Latest version / 最新版本：${NC} $LATEST_VERSION"
@@ -1827,7 +1827,7 @@ echo -e "${GREEN}═════════════════════
 echo -e "${GREEN}✅ Installation complete! / 安装完成！${NC}"
 echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
 echo ""
-echo -e "${CYAN}Binary location / 二进制文件位置：${NC} $INSTALLED_BINARY"
+echo -e "${CYAN}ClawDeckX location / ClawDeckX 位置：${NC} $INSTALLED_BINARY"
 echo -e "${CYAN}Config & Data directory / 配置和数据目录：${NC} $(dirname "$INSTALLED_BINARY")/data"
 echo ""
 echo -e "${GREEN}✓ Installed in current directory / 已安装在当前目录${NC}"

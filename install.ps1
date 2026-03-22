@@ -370,7 +370,7 @@ function Uninstall-ClawDeckX {
     if ($mode -eq 1) {
         Write-Host ""
         Write-C "Quick uninstall will remove: / 快速卸载将删除：" Cyan
-        Write-Host "  - $($script:INSTALLED_LOCATION) (二进制文件)"
+        Write-Host "  - $($script:INSTALLED_LOCATION) (ClawDeckX)"
 
         $removeService = $false
         if (Test-AutoStartInstalled) {
@@ -421,7 +421,7 @@ function Uninstall-ClawDeckX {
 
         Write-Host ""
         Write-C "Summary: / 摘要：" Yellow
-        Write-Host "  - Binary / 二进制文件: " -NoNewline; Write-C "will be removed / 将被删除" Red
+        Write-Host "  - ClawDeckX: " -NoNewline; Write-C "will be removed / 将被删除" Red
         if ($removeService) {
             Write-Host "  - Scheduled Task / 计划任务: " -NoNewline; Write-C "will be removed / 将被删除" Red
         }
@@ -458,7 +458,7 @@ function Invoke-Uninstall {
 
     if (Test-Path $script:INSTALLED_LOCATION) {
         Remove-Item -Path $script:INSTALLED_LOCATION -Force
-        Write-C "✓ Removed binary / 二进制文件已删除" Green
+        Write-C "✓ Removed ClawDeckX / 已删除 ClawDeckX" Green
     }
 
     if ($RemoveConfig -and $script:CONFIG_DIR -and (Test-Path $script:CONFIG_DIR)) {
@@ -1139,13 +1139,13 @@ if ($HAS_DOCKER -or $HAS_BINARY) {
             if (Test-ProcessRunning) {
                 $binaryServiceRunning = $true
                 $binaryStatus = "Running / 运行中"
-                Write-Host "  📦 Binary: " -NoNewline; Write-Host "v$($script:CURRENT_VERSION)" -ForegroundColor Green -NoNewline; Write-Host " (" -NoNewline; Write-Host $binaryStatus -ForegroundColor Green -NoNewline; Write-Host ") at $($script:INSTALLED_LOCATION)"
+                Write-Host "  📦 ClawDeckX: " -NoNewline; Write-Host "v$($script:CURRENT_VERSION)" -ForegroundColor Green -NoNewline; Write-Host " (" -NoNewline; Write-Host $binaryStatus -ForegroundColor Green -NoNewline; Write-Host ") at $($script:INSTALLED_LOCATION)"
             } else {
                 $binaryStatus = "Stopped / 已停止"
-                Write-Host "  📦 Binary: " -NoNewline; Write-Host "v$($script:CURRENT_VERSION)" -ForegroundColor Green -NoNewline; Write-Host " (" -NoNewline; Write-Host $binaryStatus -ForegroundColor Yellow -NoNewline; Write-Host ") at $($script:INSTALLED_LOCATION)"
+                Write-Host "  📦 ClawDeckX: " -NoNewline; Write-Host "v$($script:CURRENT_VERSION)" -ForegroundColor Green -NoNewline; Write-Host " (" -NoNewline; Write-Host $binaryStatus -ForegroundColor Yellow -NoNewline; Write-Host ") at $($script:INSTALLED_LOCATION)"
             }
         } else {
-            Write-Host "  📦 Binary: " -NoNewline; Write-Host "v$($script:CURRENT_VERSION)" -ForegroundColor Green -NoNewline; Write-Host " at $($script:INSTALLED_LOCATION)"
+            Write-Host "  📦 ClawDeckX: " -NoNewline; Write-Host "v$($script:CURRENT_VERSION)" -ForegroundColor Green -NoNewline; Write-Host " at $($script:INSTALLED_LOCATION)"
         }
     }
 
@@ -1161,10 +1161,10 @@ if ($HAS_DOCKER) {
     $n++; $menuItems += "$n) Manage Docker deployment / 管理 Docker 部署"; $menuActions += "manage_docker"
 }
 if ($HAS_BINARY) {
-    $n++; $menuItems += "$n) Manage binary installation / 管理本机安装"; $menuActions += "manage_binary"
+    $n++; $menuItems += "$n) Manage local ClawDeckX / 管理本机 ClawDeckX"; $menuActions += "manage_binary"
 }
 if (-not $HAS_BINARY) {
-    $n++; $menuItems += "$n) Install: Binary / 安装：本机二进制"; $menuActions += "install_binary"
+    $n++; $menuItems += "$n) Install ClawDeckX locally / 在本机安装 ClawDeckX"; $menuActions += "install_binary"
 }
 if (-not $HAS_DOCKER) {
     $n++; $menuItems += "$n) Install: Docker / 安装：Docker 整合包"; $menuActions += "install_docker"
@@ -1188,7 +1188,7 @@ switch ($selectedAction) {
     "manage_binary" {
         # --- Binary management sub-menu ---
         Write-Host ""
-        Write-C "✓ Binary Installation / 本机安装" Green
+        Write-C "✓ Local ClawDeckX / 本机 ClawDeckX" Green
         Write-C "Location / 位置：        $($script:INSTALLED_LOCATION)" Cyan
         Write-C "Current version / 当前版本： $($script:CURRENT_VERSION)" Cyan
         Write-C "Latest version / 最新版本：  $LATEST_VERSION" Cyan
@@ -1321,7 +1321,7 @@ Write-Host "=======================================================" -Foreground
 Write-C "✅ Installation complete! / 安装完成！" Green
 Write-Host "=======================================================" -ForegroundColor Green
 Write-Host ""
-Write-C "Binary location / 二进制文件位置：        $($script:INSTALLED_BINARY)" Cyan
+Write-C "ClawDeckX location / ClawDeckX 位置：        $($script:INSTALLED_BINARY)" Cyan
 Write-C "Config & Data directory / 配置和数据目录： $(Join-Path (Split-Path $script:INSTALLED_BINARY -Parent) 'data')" Cyan
 Write-Host ""
 Write-C "✓ Installed in current directory / 已安装在当前目录" Green

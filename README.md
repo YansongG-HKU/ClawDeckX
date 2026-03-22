@@ -134,9 +134,9 @@ curl -fsSL https://raw.githubusercontent.com/ClawDeckX/ClawDeckX/main/install.sh
 irm https://raw.githubusercontent.com/ClawDeckX/ClawDeckX/main/install.ps1 | iex
 ```
 
-### Manual Binary Download
+### Manual Download
 
-Download the binary from [Releases](https://github.com/ClawDeckX/ClawDeckX/releases). No dependencies. Just run.
+Download from [Releases](https://github.com/ClawDeckX/ClawDeckX/releases). Single file, no dependencies. Just run.
 
 ```bash
 # Run with default settings (localhost:18800)
