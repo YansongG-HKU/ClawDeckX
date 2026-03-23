@@ -443,6 +443,7 @@ export const ModelsSection: React.FC<SectionProps> = ({ config, setField, getFie
   ], [es]);
 
   // 向导状态
+  const wizardRef = useRef<HTMLDivElement>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState(0);
   const [selectedProvider, setSelectedProvider] = useState('');
@@ -781,6 +782,13 @@ export const ModelsSection: React.FC<SectionProps> = ({ config, setField, getFie
   ], [preset, selectedPresetDisplayName, wizApiKey, wizModels, es]);
 
   useEffect(() => {
+    if (!wizardOpen || !wizardRef.current) return;
+    requestAnimationFrame(() => {
+      wizardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  }, [wizardStep, wizardOpen]);
+
+  useEffect(() => {
     if (wizardStep !== 2 || !selectedProvider) return;
     if ((preset?.models?.length || 0) > 0) return;
     if (discoveredModels.length > 0 || discoveringModels) return;
@@ -941,7 +949,7 @@ export const ModelsSection: React.FC<SectionProps> = ({ config, setField, getFie
           {es.addProviderWizard}
         </button>
       ) : (
-        <div className="space-y-2">
+        <div ref={wizardRef} className="space-y-2">
           <div className="flex items-center justify-between mb-1">
             <h3 className="text-xs font-bold text-[var(--color-text)] dark:text-white/80 flex items-center gap-1.5">
               <span className="material-symbols-outlined text-sm text-primary">auto_fix_high</span>
