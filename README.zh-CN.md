@@ -157,6 +157,7 @@ irm https://raw.githubusercontent.com/ClawDeckX/ClawDeckX/main/install.ps1 | iex
 
 > [!TIP]
 > 忘记登录凭据时，可运行 `ClawDeckX list-users` 查看用户名，然后使用 `ClawDeckX reset-password <用户名> <新密码>` 重置密码。
+> 若密码含特殊符号（如 `!`, `$`, `#`, `&` 等），请用**单引号**包裹以避免被 shell 解释，例如：`ClawDeckX reset-password admin 'P@ss!w0rd#$'`。
 
 > [!WARNING]
 > 连续输错密码 **5 次**，账户将被自动锁定 **15 分钟**。锁定期间即使输入正确密码也无法登录。如需立即解锁，可运行 `ClawDeckX unlock <用户名>`。
