@@ -23,6 +23,9 @@ export const AgentsSection: React.FC<SectionProps> = ({ config, setField, getFie
   const HUMAN_DELAY_OPTIONS = useMemo(() => [{ value: 'off', label: es.optOff }, { value: 'natural', label: es.optNatural }, { value: 'fixed', label: es.optFixed }], [es]);
   const SANDBOX_MODE_OPTIONS = useMemo(() => [{ value: 'off', label: es.optOff }, { value: 'non-main', label: es.optNonMain || 'Non-main' }, { value: 'all', label: es.optAll || 'All' }], [es]);
   const SANDBOX_BACKEND_OPTIONS = useMemo(() => [{ value: 'docker', label: 'Docker' }, { value: 'openshell', label: 'OpenShell' }, { value: 'ssh', label: 'SSH' }], [es]);
+  const SANDBOX_ACCESS_OPTIONS = useMemo(() => [{ value: 'none', label: es.optNone || 'None' }, { value: 'ro', label: es.optReadOnly || 'Read Only' }, { value: 'rw', label: es.optReadWrite || 'Read/Write' }], [es]);
+  const SANDBOX_SCOPE_OPTIONS = useMemo(() => [{ value: 'session', label: es.optSession || 'Session' }, { value: 'agent', label: es.optAgent || 'Agent' }, { value: 'shared', label: es.optShared || 'Shared' }], [es]);
+  const CTX_PRUNING_MODE_OPTIONS = useMemo(() => [{ value: 'off', label: es.optOff }, { value: 'cache-ttl', label: es.optCacheTtl || 'Cache TTL' }], [es]);
 
   const rawAgentList = getField(['agents', 'list']);
   const agentList: any[] = Array.isArray(rawAgentList) ? rawAgentList : [];
@@ -33,7 +36,14 @@ export const AgentsSection: React.FC<SectionProps> = ({ config, setField, getFie
       <ConfigSection title={es.defaults} icon="tune" iconColor="text-purple-500">
         <NumberField label={es.maxConcurrent} desc={es.maxConcurrentDesc} tooltip={tip('agents.defaults.maxConcurrent')} value={d(['maxConcurrent'])} onChange={v => sd(['maxConcurrent'], v)} min={1} max={64} />
         <NumberField label={es.subagentConcurrent} tooltip={tip('agents.defaults.subagents.maxConcurrent')} value={d(['subagents', 'maxConcurrent'])} onChange={v => sd(['subagents', 'maxConcurrent'], v)} min={1} max={32} />
+        <NumberField label={es.subagentMaxSpawnDepth || 'Max Spawn Depth'} tooltip={tip('agents.defaults.subagents.maxSpawnDepth')} value={d(['subagents', 'maxSpawnDepth'])} onChange={v => sd(['subagents', 'maxSpawnDepth'], v)} min={1} max={10} />
+        <NumberField label={es.subagentMaxChildren || 'Max Children/Agent'} tooltip={tip('agents.defaults.subagents.maxChildrenPerAgent')} value={d(['subagents', 'maxChildrenPerAgent'])} onChange={v => sd(['subagents', 'maxChildrenPerAgent'], v)} min={1} max={50} />
+        <NumberField label={es.subagentArchiveMin || 'Archive After (min)'} tooltip={tip('agents.defaults.subagents.archiveAfterMinutes')} value={d(['subagents', 'archiveAfterMinutes'])} onChange={v => sd(['subagents', 'archiveAfterMinutes'], v)} min={0} />
         <TextField label={es.workspace} tooltip={tip('agents.defaults.workspace')} value={d(['workspace']) || ''} onChange={v => sd(['workspace'], v)} placeholder={es.phWorkspacePath} />
+        <TextField label={es.imageGenerationModel || 'Image Generation Model'} tooltip={tip('agents.defaults.imageGenerationModel')} value={typeof d(['imageGenerationModel']) === 'string' ? d(['imageGenerationModel']) : d(['imageGenerationModel'])?.primary || ''} onChange={v => sd(['imageGenerationModel'], v)} placeholder={es.phProviderModelId} />
+        <TextField label={es.pdfModel || 'PDF Model'} tooltip={tip('agents.defaults.pdfModel')} value={typeof d(['pdfModel']) === 'string' ? d(['pdfModel']) : d(['pdfModel'])?.primary || ''} onChange={v => sd(['pdfModel'], v)} placeholder={es.phProviderModelId} />
+        <NumberField label={es.pdfMaxBytesMb || 'PDF Max Size (MB)'} tooltip={tip('agents.defaults.pdfMaxBytesMb')} value={d(['pdfMaxBytesMb'])} onChange={v => sd(['pdfMaxBytesMb'], v)} min={1} />
+        <NumberField label={es.pdfMaxPages || 'PDF Max Pages'} tooltip={tip('agents.defaults.pdfMaxPages')} value={d(['pdfMaxPages'])} onChange={v => sd(['pdfMaxPages'], v)} min={1} />
         <NumberField label={es.timeoutS} tooltip={tip('agents.defaults.timeoutSeconds')} value={d(['timeoutSeconds'])} onChange={v => sd(['timeoutSeconds'], v)} min={0} />
         <NumberField label={es.mediaMaxMb} tooltip={tip('agents.defaults.mediaMaxMb')} value={d(['mediaMaxMb'])} onChange={v => sd(['mediaMaxMb'], v)} min={0} />
       </ConfigSection>
@@ -50,6 +60,8 @@ export const AgentsSection: React.FC<SectionProps> = ({ config, setField, getFie
         <SelectField label={es.elevatedDefault} tooltip={tip('agents.defaults.elevatedDefault')} value={d(['elevatedDefault']) || 'off'} onChange={v => sd(['elevatedDefault'], v)} options={ELEVATED_OPTIONS} />
         <SelectField label={es.typingMode} value={d(['typingMode']) || 'never'} onChange={v => sd(['typingMode'], v)} options={TYPING_OPTIONS} />
         <SelectField label={es.compactionMode} tooltip={tip('agents.defaults.compaction.mode')} value={d(['compaction', 'mode']) || 'default'} onChange={v => sd(['compaction', 'mode'], v)} options={COMPACTION_OPTIONS} />
+        <TextField label={es.compactionModel || 'Compaction Model'} tooltip={tip('agents.defaults.compaction.model')} value={d(['compaction', 'model']) || ''} onChange={v => sd(['compaction', 'model'], v)} placeholder={es.phProviderModelId} />
+        <SwitchField label={es.truncateAfterCompaction || 'Truncate After Compaction'} tooltip={tip('agents.defaults.compaction.truncateAfterCompaction')} value={d(['compaction', 'truncateAfterCompaction']) === true} onChange={v => sd(['compaction', 'truncateAfterCompaction'], v)} />
         <SwitchField label={es.bootstrapTruncationWarning || 'Bootstrap Truncation Warning'} tooltip={tip('agents.defaults.bootstrapTruncationWarning')} value={d(['bootstrapTruncationWarning']) !== false} onChange={v => sd(['bootstrapTruncationWarning'], v)} />
       </ConfigSection>
 
@@ -70,9 +82,8 @@ export const AgentsSection: React.FC<SectionProps> = ({ config, setField, getFie
       </ConfigSection>
 
       <ConfigSection title={es.contextPruning} icon="content_cut" iconColor="text-orange-500" defaultOpen={false}>
-        <SwitchField label={es.enabled} tooltip={tip('agents.defaults.contextPruning.enabled')} value={d(['contextPruning', 'enabled']) === true} onChange={v => sd(['contextPruning', 'enabled'], v)} />
-        <NumberField label={es.maxMessages} tooltip={tip('agents.defaults.contextPruning.maxMessages')} value={d(['contextPruning', 'maxMessages'])} onChange={v => sd(['contextPruning', 'maxMessages'], v)} min={1} />
-        <NumberField label={es.maxTokens} tooltip={tip('agents.defaults.contextPruning.maxTokens')} value={d(['contextPruning', 'maxTokens'])} onChange={v => sd(['contextPruning', 'maxTokens'], v)} min={1000} />
+        <SelectField label={es.mode} tooltip={tip('agents.defaults.contextPruning.mode')} value={d(['contextPruning', 'mode']) || 'off'} onChange={v => sd(['contextPruning', 'mode'], v)} options={CTX_PRUNING_MODE_OPTIONS} />
+        <TextField label={es.ctxPruningTtl || 'Cache TTL'} tooltip={tip('agents.defaults.contextPruning.ttl')} value={d(['contextPruning', 'ttl']) || ''} onChange={v => sd(['contextPruning', 'ttl'], v)} placeholder="30m" />
       </ConfigSection>
 
       <ConfigSection title={es.memorySearch} icon="search" iconColor="text-sky-500" defaultOpen={false}>
@@ -83,9 +94,12 @@ export const AgentsSection: React.FC<SectionProps> = ({ config, setField, getFie
       <ConfigSection title={es.sandbox} icon="shield" iconColor="text-emerald-500" defaultOpen={false}>
         <SelectField label={es.sandboxMode || 'Sandbox Mode'} tooltip={tip('agents.defaults.sandbox.mode')} value={d(['sandbox', 'mode']) || 'off'} onChange={v => sd(['sandbox', 'mode'], v)} options={SANDBOX_MODE_OPTIONS} />
         <SelectField label={es.sandboxBackend || 'Sandbox Backend'} tooltip={tip('agents.defaults.sandbox.backend')} value={d(['sandbox', 'backend']) || 'docker'} onChange={v => sd(['sandbox', 'backend'], v)} options={SANDBOX_BACKEND_OPTIONS} />
+        <SelectField label={es.sandboxAccess || 'Workspace Access'} tooltip={tip('agents.defaults.sandbox.workspaceAccess')} value={d(['sandbox', 'workspaceAccess']) || 'none'} onChange={v => sd(['sandbox', 'workspaceAccess'], v)} options={SANDBOX_ACCESS_OPTIONS} />
+        <SelectField label={es.sandboxScope || 'Scope'} tooltip={tip('agents.defaults.sandbox.scope')} value={d(['sandbox', 'scope']) || 'session'} onChange={v => sd(['sandbox', 'scope'], v)} options={SANDBOX_SCOPE_OPTIONS} />
         <SwitchField label={es.dockerEnabled} tooltip={tip('agents.defaults.sandbox.docker.enabled')} value={d(['sandbox', 'docker', 'enabled']) === true} onChange={v => sd(['sandbox', 'docker', 'enabled'], v)} />
         <TextField label={es.image} tooltip={tip('agents.defaults.sandbox.docker.image')} value={d(['sandbox', 'docker', 'image']) || ''} onChange={v => sd(['sandbox', 'docker', 'image'], v)} placeholder={es.phDockerImage} />
         <TextField label={es.network} tooltip={tip('agents.defaults.sandbox.docker.network')} value={d(['sandbox', 'docker', 'network']) || ''} onChange={v => sd(['sandbox', 'docker', 'network'], v)} placeholder={es.phHost} />
+        <TextField label={es.sshTarget || 'SSH Target'} tooltip={tip('agents.defaults.sandbox.ssh.target')} value={d(['sandbox', 'ssh', 'target']) || ''} onChange={v => sd(['sandbox', 'ssh', 'target'], v)} placeholder="user@host:22" />
       </ConfigSection>
 
       <ConfigSection

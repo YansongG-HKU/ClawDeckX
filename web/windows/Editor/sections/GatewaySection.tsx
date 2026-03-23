@@ -70,6 +70,9 @@ const GatewaySection: React.FC<SectionProps> = ({ setField, getField, language }
           <TextField label={es.customBindHost} tooltip={tip('gateway.customBindHost')} value={g(['customBindHost']) || ''} onChange={v => s(['customBindHost'], v)} placeholder="0.0.0.0" />
         )}
         <NumberField label={es.channelHealthCheckMin} tooltip={tip('gateway.channelHealthCheckMinutes')} value={g(['channelHealthCheckMinutes'])} onChange={v => s(['channelHealthCheckMinutes'], v)} min={0} />
+        <NumberField label={es.channelStaleThreshold || 'Stale Event Threshold (min)'} tooltip={tip('gateway.channelStaleEventThresholdMinutes')} value={g(['channelStaleEventThresholdMinutes'])} onChange={v => s(['channelStaleEventThresholdMinutes'], v)} min={0} />
+        <NumberField label={es.channelMaxRestarts || 'Max Restarts/Hour'} tooltip={tip('gateway.channelMaxRestartsPerHour')} value={g(['channelMaxRestartsPerHour'])} onChange={v => s(['channelMaxRestartsPerHour'], v)} min={0} />
+        <SwitchField label={es.controlUiEnabled || 'Control UI'} tooltip={tip('gateway.controlUi.enabled')} value={g(['controlUi', 'enabled']) !== false} onChange={v => s(['controlUi', 'enabled'], v)} />
       </ConfigSection>
 
       <ConfigSection title={es.authentication} icon="lock" iconColor="text-red-500">
@@ -142,6 +145,7 @@ const GatewaySection: React.FC<SectionProps> = ({ setField, getField, language }
       <ConfigSection title={es.reload} icon="refresh" iconColor="text-amber-500" defaultOpen={false}>
         <SelectField label={es.reloadMode} tooltip={tip('gateway.reload.mode')} value={g(['reload', 'mode']) || 'hybrid'} onChange={v => s(['reload', 'mode'], v)} options={reloadModeOptions} />
         <NumberField label={es.debounceMs} tooltip={tip('gateway.reload.debounceMs')} value={g(['reload', 'debounceMs'])} onChange={v => s(['reload', 'debounceMs'], v)} min={0} step={100} />
+        <NumberField label={es.deferralTimeoutMs || 'Deferral Timeout (ms)'} tooltip={tip('gateway.reload.deferralTimeoutMs')} value={g(['reload', 'deferralTimeoutMs'])} onChange={v => s(['reload', 'deferralTimeoutMs'], v)} min={0} step={1000} />
       </ConfigSection>
 
       <ConfigSection title={es.httpConfig} icon="http" iconColor="text-sky-500" defaultOpen={false}>

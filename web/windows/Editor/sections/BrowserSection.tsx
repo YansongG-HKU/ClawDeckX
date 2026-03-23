@@ -54,6 +54,8 @@ export const BrowserSection: React.FC<SectionProps> = ({ setField, getField, lan
         <SwitchField label={es.brNoSandbox} tooltip={tip('browser.noSandbox')} value={g(['noSandbox']) === true} onChange={v => s(['noSandbox'], v)} />
         <SwitchField label={es.brAttachOnly} tooltip={tip('browser.attachOnly')} value={g(['attachOnly']) === true} onChange={v => s(['attachOnly'], v)} />
         <TextField label={es.brDefaultProfile} tooltip={tip('browser.defaultProfile')} value={g(['defaultProfile']) || ''} onChange={v => s(['defaultProfile'], v)} />
+        <NumberField label={es.brCdpPortRangeStart || 'CDP Port Range Start'} tooltip={tip('browser.cdpPortRangeStart')} value={g(['cdpPortRangeStart'])} onChange={v => s(['cdpPortRangeStart'], v)} min={1} max={65535} />
+        <ArrayField label={es.brExtraArgs || 'Extra Chrome Args'} tooltip={tip('browser.extraArgs')} value={g(['extraArgs']) || []} onChange={v => s(['extraArgs'], v)} placeholder="--window-size=1920,1080" />
       </ConfigSection>
 
       <ConfigSection title={es.brSsrfPolicy} icon="shield" iconColor="text-red-500" defaultOpen={false}>
