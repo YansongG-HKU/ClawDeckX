@@ -908,15 +908,6 @@ func RunServe(args []string) int {
 		printBi(i18n.MsgServeChangePasswordWarning)
 		printBi(i18n.MsgServeChangePasswordHint)
 		hasWarning = true
-
-		// Also emit credentials to stderr so they are clearly visible in Docker logs
-		// (the banner box above goes to stdout which can be buried in verbose output).
-		fmt.Fprintln(os.Stderr)
-		fmt.Fprintf(os.Stderr, "🔐 Auto-created admin account / 已自动创建管理员账户:\n")
-		fmt.Fprintf(os.Stderr, "   Username / 用户名: %s\n", generatedUsername)
-		fmt.Fprintf(os.Stderr, "   Password / 密码:   %s\n", generatedPassword)
-		fmt.Fprintf(os.Stderr, "   ⚠️  Please change password after login! / 请登录后立即修改密码！\n")
-		fmt.Fprintln(os.Stderr)
 	}
 
 	if hasWarning {
