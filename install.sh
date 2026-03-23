@@ -107,6 +107,12 @@ print_access_urls() {
     if [ -n "$pub_ip" ]; then
         echo -e "  ${GREEN}http://${pub_ip}:${port}${NC}  (Public / 公网)"
     fi
+    # Firewall reminder when remote access is relevant
+    if [ -n "$pub_ip" ] || [ -n "$lan_ips" ]; then
+        echo ""
+        echo -e "  ${YELLOW}🔒 Remember to open port ${port} in your firewall for remote access${NC}"
+        echo -e "  ${YELLOW}   请确保服务器防火墙已放行端口 ${port}，否则外网无法访问${NC}"
+    fi
 }
 
 # Check if a specific port is available (not in use)

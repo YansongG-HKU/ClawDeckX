@@ -67,6 +67,12 @@ function Print-AccessUrls {
             Write-C "  http://${pubIP}:${Port}  (Public / 公网)" Green
         }
     } catch { }
+    # Firewall reminder when remote access is relevant
+    if ($lanIPs -or $pubIP) {
+        Write-Host ""
+        Write-C "  🔒 Remember to open port ${Port} in your firewall for remote access" Yellow
+        Write-C "     请确保服务器防火墙已放行端口 ${Port}，否则外网无法访问" Yellow
+    }
 }
 
 function Write-Banner {
