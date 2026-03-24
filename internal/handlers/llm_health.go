@@ -378,8 +378,7 @@ func (h *LLMHealthHandler) Exec(w http.ResponseWriter, r *http.Request) {
 
 	// Security: only allow openclaw commands
 	allowedCommands := map[string]bool{
-		"openclaw":    true,
-		"openclaw-cn": true,
+		"openclaw": true,
 	}
 	baseCmd := strings.TrimSpace(req.Command)
 	if !allowedCommands[baseCmd] {

@@ -130,16 +130,6 @@ func checkOpenClawInstalled() DiagnoseItem {
 		return item
 	}
 
-	cmd2 := exec.Command("openclaw-cn", "--version")
-	executil.HideWindow(cmd2)
-	out, err = cmd2.CombinedOutput()
-	if err == nil {
-		version := strings.TrimSpace(string(out))
-		item.Status = DiagnosePass
-		item.Detail = "openclaw-cn " + version
-		return item
-	}
-
 	item.Status = DiagnoseFail
 	item.Detail = i18n.T(i18n.MsgDiagnoseOpenclawNotDetected)
 	item.Suggestion = i18n.T(i18n.MsgDiagnoseOpenclawInstallSuggestion)

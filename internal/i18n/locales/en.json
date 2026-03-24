@@ -382,7 +382,7 @@
   "diagnose.gateway_has_warnings": "Gateway has warnings, please check",
   "diagnose.gateway_has_errors": "Gateway has errors, please fix according to suggestions",
   "diagnose.openclaw_installed": "OpenClaw Installed",
-  "diagnose.openclaw_not_detected": "openclaw or openclaw-cn not detected",
+  "diagnose.openclaw_not_detected": "openclaw not detected",
   "diagnose.openclaw_install_suggestion": "Please install OpenClaw first, via install wizard or npm install -g openclaw",
   "diagnose.config_exists": "Config File Exists",
   "diagnose.config_path_unknown": "Cannot determine config file path",

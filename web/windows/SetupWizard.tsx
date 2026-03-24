@@ -42,8 +42,6 @@ interface EnvironmentReport {
   openClawInstalled: boolean;
   openClawConfigured: boolean;
   openClawVersion?: string;
-  openClawCnInstalled: boolean;
-  openClawCnVersion?: string;
   openClawStateDir?: string;
   openClawConfigPath?: string;
   openClawGatewayLog?: string;

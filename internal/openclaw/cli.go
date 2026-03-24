@@ -18,9 +18,6 @@ func ResolveOpenClawCmd() string {
 	if _, err := exec.LookPath("openclaw"); err == nil {
 		return "openclaw"
 	}
-	if _, err := exec.LookPath("openclaw-cn"); err == nil {
-		return "openclaw-cn"
-	}
 	return ""
 }
 
@@ -282,7 +279,11 @@ func DetectOpenClawBinary() (cmd string, version string, installed bool) {
 	defer cancel()
 	out, err := RunCLI(ctx, "--version")
 	if err != nil {
-		return cmd, "", true
+		return cmd, "", false
+	}
+	out = strings.TrimSpace(out)
+	if out == "" {
+		return cmd, "", false
 	}
 	return cmd, out, true
 }

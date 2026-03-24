@@ -20,6 +20,15 @@ import (
 	"time"
 )
 
+func requiresSuccessfulVersionCheck(name string) bool {
+	switch strings.ToLower(name) {
+	case "openclaw":
+		return true
+	default:
+		return false
+	}
+}
+
 type ToolInfo struct {
 	Installed bool   `json:"installed"`
 	Version   string `json:"version,omitempty"`
@@ -64,18 +73,16 @@ type EnvironmentReport struct {
 	HomeDirWritable bool    `json:"homeDirWritable"`
 	DiskFreeGB      float64 `json:"diskFreeGb,omitempty"`
 
-	OpenClawInstalled   bool   `json:"openClawInstalled"`
-	OpenClawConfigured  bool   `json:"openClawConfigured"`
-	OpenClawVersion     string `json:"openClawVersion,omitempty"`
-	OpenClawCnInstalled bool   `json:"openClawCnInstalled"`
-	OpenClawCnVersion   string `json:"openClawCnVersion,omitempty"`
-	OpenClawStateDir    string `json:"openClawStateDir,omitempty"`
-	OpenClawConfigPath  string `json:"openClawConfigPath,omitempty"`
-	OpenClawGatewayLog  string `json:"openClawGatewayLog,omitempty"`
-	OpenClawInstallLog  string `json:"openClawInstallLog,omitempty"`
-	OpenClawDoctorLog   string `json:"openClawDoctorLog,omitempty"`
-	GatewayRunning      bool   `json:"gatewayRunning"`
-	GatewayPort         int    `json:"gatewayPort,omitempty"`
+	OpenClawInstalled  bool   `json:"openClawInstalled"`
+	OpenClawConfigured bool   `json:"openClawConfigured"`
+	OpenClawVersion    string `json:"openClawVersion,omitempty"`
+	OpenClawStateDir   string `json:"openClawStateDir,omitempty"`
+	OpenClawConfigPath string `json:"openClawConfigPath,omitempty"`
+	OpenClawGatewayLog string `json:"openClawGatewayLog,omitempty"`
+	OpenClawInstallLog string `json:"openClawInstallLog,omitempty"`
+	OpenClawDoctorLog  string `json:"openClawDoctorLog,omitempty"`
+	GatewayRunning     bool   `json:"gatewayRunning"`
+	GatewayPort        int    `json:"gatewayPort,omitempty"`
 
 	RecommendedMethod string   `json:"recommendedMethod"` // "installer-script" | "npm" | "docker"
 	RecommendedSteps  []Step   `json:"recommendedSteps"`
@@ -125,12 +132,6 @@ func Scan() (*EnvironmentReport, error) {
 
 	report.OpenClawInstalled = report.Tools["openclaw"].Installed
 	report.OpenClawVersion = report.Tools["openclaw"].Version
-	report.OpenClawCnInstalled = report.Tools["openclaw-cn"].Installed
-	report.OpenClawCnVersion = report.Tools["openclaw-cn"].Version
-	if !report.OpenClawInstalled && report.OpenClawCnInstalled {
-		report.OpenClawInstalled = true
-		report.OpenClawVersion = report.OpenClawCnVersion
-	}
 	report.OpenClawStateDir = ResolveStateDir()
 	report.OpenClawConfigPath = GetOpenClawConfigPath()
 	report.OpenClawGatewayLog = GetOpenClawGatewayLogPath()
@@ -395,9 +396,6 @@ func detectTools() map[string]ToolInfo {
 	// ClawHub CLI
 	tools["clawhub"] = detectTool("clawhub", "--version")
 
-	// OpenClaw CN
-	tools["openclaw-cn"] = detectTool("openclaw-cn", "--version")
-
 	// Docker
 	tools["docker"] = detectTool("docker", "--version")
 
@@ -436,11 +434,19 @@ func detectTool(name string, versionArg string) ToolInfo {
 	cmd := exec.CommandContext(ctx, name, versionArg)
 	executil.HideWindow(cmd)
 	out, err := cmd.Output()
-	if err == nil {
-		version := strings.TrimSpace(string(out))
-		version = extractVersion(version)
-		info.Version = version
+	if err != nil {
+		if requiresSuccessfulVersionCheck(name) {
+			return ToolInfo{Installed: false}
+		}
+		return info
 	}
+
+	version := strings.TrimSpace(string(out))
+	version = extractVersion(version)
+	if version == "" && requiresSuccessfulVersionCheck(name) {
+		return ToolInfo{Installed: false}
+	}
+	info.Version = version
 
 	return info
 }
@@ -654,6 +660,7 @@ func getNpmPaths() []string {
 }
 
 func detectToolByPath(path string, versionArg string) ToolInfo {
+	name := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 	info := ToolInfo{
 		Installed: true,
 		Path:      path,
@@ -664,11 +671,19 @@ func detectToolByPath(path string, versionArg string) ToolInfo {
 	cmd := exec.CommandContext(ctx, path, versionArg)
 	executil.HideWindow(cmd)
 	out, err := cmd.Output()
-	if err == nil {
-		version := strings.TrimSpace(string(out))
-		version = extractVersion(version)
-		info.Version = version
+	if err != nil {
+		if requiresSuccessfulVersionCheck(name) {
+			return ToolInfo{Installed: false}
+		}
+		return info
 	}
+
+	version := strings.TrimSpace(string(out))
+	version = extractVersion(version)
+	if version == "" && requiresSuccessfulVersionCheck(name) {
+		return ToolInfo{Installed: false}
+	}
+	info.Version = version
 
 	return info
 }

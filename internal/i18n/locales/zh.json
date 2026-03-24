@@ -382,7 +382,7 @@
   "diagnose.gateway_has_warnings": "Gateway 存在警告项，建议检查",
   "diagnose.gateway_has_errors": "Gateway 存在异常，请根据建议修复",
   "diagnose.openclaw_installed": "OpenClaw 已安装",
-  "diagnose.openclaw_not_detected": "未检测到 openclaw 或 openclaw-cn",
+  "diagnose.openclaw_not_detected": "未检测到 openclaw",
   "diagnose.openclaw_install_suggestion": "请先安装 OpenClaw，可通过安装向导或 npm install -g openclaw 安装",
   "diagnose.config_exists": "配置文件存在",
   "diagnose.config_path_unknown": "无法确定配置文件路径",
