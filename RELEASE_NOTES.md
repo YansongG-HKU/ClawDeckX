@@ -13,6 +13,9 @@
 
 ### 🐛 Bug Fixes / 修复
 
+- decouple docker install version from compat
+- add builder diagnostics for prebuilt image
+- remove openclaw-cn compat and harden binary detection
 - move QR login to post-save step in wizard flow
 - align editor sections with upstream openclaw config schema
 - bypass GitHub API rate limit with direct URL download

@@ -170,11 +170,11 @@ jobs:
           echo "BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
           COMPAT=$(node -p "require('./web/package.json').openclawCompat" 2>/dev/null || echo "")
           echo "OPENCLAW_COMPAT=${COMPAT}" >> $GITHUB_OUTPUT
-          MIN_VER=$(node -e "const compat = process.argv[1] || ''; const match = compat.match(/\d+\.\d+\.\d+(?:[-+._A-Za-z0-9]*)?/); process.stdout.write(match ? match[0] : '')" "$COMPAT")
-          if [ -z "$MIN_VER" ]; then
+          DOCKER_VER=$(node -p "require('./web/package.json').openclawDockerVersion || ''" 2>/dev/null || echo "")
+          if [ -z "$DOCKER_VER" ]; then
             echo "OPENCLAW_VERSION=latest" >> $GITHUB_OUTPUT
           else
-            echo "OPENCLAW_VERSION=${MIN_VER}" >> $GITHUB_OUTPUT
+            echo "OPENCLAW_VERSION=${DOCKER_VER}" >> $GITHUB_OUTPUT
           fi
 
       - name: Download linux/amd64 binary
