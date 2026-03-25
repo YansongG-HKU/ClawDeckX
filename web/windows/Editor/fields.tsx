@@ -259,20 +259,62 @@ interface ArrayFieldProps {
   value: string[];
   onChange: (v: string[]) => void;
   placeholder?: string;
+  suggestions?: string[];
 }
 
-export const ArrayField: React.FC<ArrayFieldProps> = ({ label, desc, tooltip, value, onChange, placeholder }) => {
+export const ArrayField: React.FC<ArrayFieldProps> = ({ label, desc, tooltip, value, onChange, placeholder, suggestions }) => {
   const [input, setInput] = useState('');
+  const [showSugg, setShowSugg] = useState(false);
+  const [hlIdx, setHlIdx] = useState(-1);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const ed = useEditorFieldsI18n();
   const items = Array.isArray(value) ? value : [];
 
-  const add = useCallback(() => {
-    const v = input.trim();
-    if (v && !items.includes(v)) {
-      onChange([...items, v]);
+  const filtered = useMemo(() => {
+    if (!suggestions || suggestions.length === 0) return [];
+    const q = input.trim().toLowerCase();
+    return suggestions.filter(s => !items.includes(s) && (!q || s.toLowerCase().includes(q)));
+  }, [suggestions, items, input]);
+
+  const add = useCallback((v?: string) => {
+    const val = (v ?? input).trim();
+    if (val && !items.includes(val)) {
+      onChange([...items, val]);
       setInput('');
+      setShowSugg(false);
+      setHlIdx(-1);
     }
   }, [input, items, onChange]);
+
+  // close dropdown on outside click
+  useEffect(() => {
+    if (!showSugg) return;
+    const handler = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setShowSugg(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showSugg]);
+
+  // scroll highlighted item into view
+  useEffect(() => {
+    if (!showSugg || hlIdx < 0 || !listRef.current) return;
+    const el = listRef.current.children[hlIdx] as HTMLElement | undefined;
+    el?.scrollIntoView({ block: 'nearest' });
+  }, [hlIdx, showSugg]);
+
+  const handleKey = useCallback((e: React.KeyboardEvent) => {
+    if (showSugg && filtered.length > 0) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); setHlIdx(h => Math.min(h + 1, filtered.length - 1)); return; }
+      if (e.key === 'ArrowUp') { e.preventDefault(); setHlIdx(h => Math.max(h - 1, 0)); return; }
+      if (e.key === 'Enter' && hlIdx >= 0 && hlIdx < filtered.length) { e.preventDefault(); add(filtered[hlIdx]); return; }
+      if (e.key === 'Escape') { e.preventDefault(); setShowSugg(false); return; }
+    }
+    if (e.key === 'Enter') { e.preventDefault(); add(); }
+  }, [showSugg, filtered, hlIdx, add]);
+
+  const hasSugg = suggestions && suggestions.length > 0;
 
   return (
     <ConfigField label={label} desc={desc} tooltip={tooltip} inline={true}>
@@ -289,16 +331,39 @@ export const ArrayField: React.FC<ArrayFieldProps> = ({ label, desc, tooltip, va
             ))}
           </div>
         )}
-        <div className="flex gap-1.5">
-          <input
-            type="text"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
-            placeholder={placeholder || ed.enterToAdd}
-            className={`${inputBase} flex-1`}
-          />
-          <button onClick={add} className="h-9 md:h-8 px-2.5 bg-primary/10 text-primary text-[11px] md:text-[10px] font-bold rounded-md hover:bg-primary/20 transition-colors">+</button>
+        <div className="flex gap-1.5" ref={wrapRef}>
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={input}
+              onChange={e => { setInput(e.target.value); if (hasSugg) { setShowSugg(true); setHlIdx(-1); } }}
+              onFocus={() => { if (hasSugg) setShowSugg(true); }}
+              onKeyDown={handleKey}
+              placeholder={placeholder || ed.enterToAdd}
+              className={`${inputBase} w-full`}
+            />
+            {hasSugg && (
+              <button type="button" onClick={() => setShowSugg(!showSugg)} className="absolute end-2 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/40 hover:text-slate-600 dark:hover:text-white/60 transition-colors">
+                <span className={`material-symbols-outlined text-[14px] transition-transform ${showSugg ? 'rotate-180' : ''}`}>expand_more</span>
+              </button>
+            )}
+            {showSugg && filtered.length > 0 && (
+              <div ref={listRef} className="absolute z-[100] start-0 end-0 mt-1 max-h-44 overflow-y-auto rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1e2028] shadow-xl shadow-black/10 dark:shadow-black/40 py-1">
+                {filtered.map((s, idx) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onMouseEnter={() => setHlIdx(idx)}
+                    onClick={() => add(s)}
+                    className={`w-full text-start px-3 py-1.5 text-[11px] font-mono transition-colors truncate ${idx === hlIdx ? 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-white' : 'text-slate-600 dark:text-white/70 hover:bg-slate-50 dark:hover:bg-white/[0.06]'}`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button onClick={() => add()} className="h-9 md:h-8 px-2.5 bg-primary/10 text-primary text-[11px] md:text-[10px] font-bold rounded-md hover:bg-primary/20 transition-colors shrink-0">+</button>
         </div>
       </div>
     </ConfigField>
