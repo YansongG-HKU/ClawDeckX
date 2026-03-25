@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 
 interface Option {
     value: string;
@@ -26,14 +27,39 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     const [hl, setHl] = useState(-1);
     const ref = useRef<HTMLDivElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
+    const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
 
     const selected = options.find(o => o.value === value);
+
+    // 计算下拉面板位置（portal 模式需要绝对坐标）
+    useEffect(() => {
+        if (!open || !ref.current) return;
+        const update = () => {
+            const rect = ref.current!.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const dropH = Math.min(options.length * 30 + 8, 208); // max-h-52 = 208px
+            const above = spaceBelow < dropH && rect.top > spaceBelow;
+            setPos({
+                top: above ? rect.top + window.scrollY - dropH - 4 : rect.bottom + window.scrollY + 4,
+                left: rect.left + window.scrollX,
+                width: rect.width,
+            });
+        };
+        update();
+        window.addEventListener('scroll', update, true);
+        window.addEventListener('resize', update);
+        return () => {
+            window.removeEventListener('scroll', update, true);
+            window.removeEventListener('resize', update);
+        };
+    }, [open, options.length]);
 
     // 点击外部关闭
     useEffect(() => {
         if (!open) return;
         const handler = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+            if (ref.current && !ref.current.contains(e.target as Node) &&
+                listRef.current && !listRef.current.contains(e.target as Node)) setOpen(false);
         };
         document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
@@ -104,12 +130,12 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                 </span>
             </button>
 
-            {/* 下拉面板 */}
-            {open && (
+            {/* 下拉面板 (portal to body to escape overflow clipping) */}
+            {open && pos && createPortal(
                 <div
                     ref={listRef}
-                    className="absolute z-[100] start-0 mt-1 max-h-52 overflow-y-auto rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1e2028] shadow-xl shadow-black/10 dark:shadow-black/40 py-1 min-w-full w-full"
-                    style={{ colorScheme: 'light dark' }}
+                    className="fixed z-[9999] max-h-52 overflow-y-auto rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1e2028] shadow-xl shadow-black/10 dark:shadow-black/40 py-1"
+                    style={{ top: pos.top, left: pos.left, width: pos.width, colorScheme: 'light dark' }}
                 >
                     {options.map((o, idx) => (
                         <button
@@ -128,7 +154,8 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                             {o.label}
                         </button>
                     ))}
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
