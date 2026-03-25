@@ -119,29 +119,42 @@ const TIP_KEYS: Record<string, string> = {
 
 // ============================================================================
 // Required credential fields per channel (used for wizard validation)
+// 'when' is an optional predicate: the field is required only when when(cfg) returns true.
 // ============================================================================
-export const REQUIRED_CREDENTIALS: Record<string, { field: string; labelKey: string }[]> = {
+interface RequiredField { field: string; labelKey: string; when?: (cfg: any) => boolean; }
+export const REQUIRED_CREDENTIALS: Record<string, RequiredField[]> = {
   telegram: [{ field: 'botToken', labelKey: 'botToken' }],
   discord: [{ field: 'token', labelKey: 'chToken' }],
   slack: [{ field: 'botToken', labelKey: 'botToken' }, { field: 'appToken', labelKey: 'appToken' }],
   signal: [{ field: 'account', labelKey: 'chAccount' }],
   feishu: [{ field: 'appId', labelKey: 'appId' }, { field: 'appSecret', labelKey: 'appSecret' }],
-  wecom: [{ field: 'token', labelKey: 'chToken' }, { field: 'encodingAESKey', labelKey: 'encodingAESKey' }],
-  wecom_kf: [{ field: 'corpId', labelKey: 'corpId' }, { field: 'corpSecret', labelKey: 'corpSecret' }, { field: 'token', labelKey: 'chToken' }],
+  wecom: [
+    { field: 'botId', labelKey: 'botId' },
+    { field: 'secret', labelKey: 'appSecret' },
+    { field: 'token', labelKey: 'chToken', when: c => c?.connectionMode === 'webhook' },
+    { field: 'encodingAESKey', labelKey: 'encodingAESKey', when: c => c?.connectionMode === 'webhook' },
+  ],
+  wecom_kf: [{ field: 'corpId', labelKey: 'corpId' }, { field: 'corpSecret', labelKey: 'corpSecret' }, { field: 'token', labelKey: 'chToken' }, { field: 'encodingAESKey', labelKey: 'encodingAESKey' }],
+  wechat: [{ field: 'appId', labelKey: 'appId' }, { field: 'appSecret', labelKey: 'appSecret' }, { field: 'token', labelKey: 'chToken' }, { field: 'encodingAesKey', labelKey: 'encodingAESKey' }],
   dingtalk: [{ field: 'clientId', labelKey: 'clientId' }, { field: 'clientSecret', labelKey: 'clientSecret' }],
+  doubao: [{ field: 'appId', labelKey: 'appId' }, { field: 'appSecret', labelKey: 'appSecret' }],
   msteams: [{ field: 'appId', labelKey: 'appId' }, { field: 'appPassword', labelKey: 'appPassword' }],
   matrix: [{ field: 'homeserver', labelKey: 'homeserver' }],
   yuanbao: [{ field: 'appKey', labelKey: 'appKey' }, { field: 'appSecret', labelKey: 'appSecret' }],
   mattermost: [{ field: 'botToken', labelKey: 'botToken' }, { field: 'baseUrl', labelKey: 'baseUrl' }],
   bluebubbles: [{ field: 'serverUrl', labelKey: 'serverUrl' }, { field: 'password', labelKey: 'password' }],
   qq: [{ field: 'appId', labelKey: 'appId' }, { field: 'clientSecret', labelKey: 'clientSecret' }],
+  zalo: [{ field: 'botToken', labelKey: 'botToken' }],
 };
 
 export const getCredentialErrors = (chId: string, cfg: any, es: any): string[] => {
   const reqs = REQUIRED_CREDENTIALS[chId];
   if (!reqs) return [];
   return reqs
-    .filter(r => !cfg?.[r.field] || (typeof cfg[r.field] === 'string' && !cfg[r.field].trim()))
+    .filter(r => {
+      if (r.when && !r.when(cfg)) return false;
+      return !cfg?.[r.field] || (typeof cfg[r.field] === 'string' && !cfg[r.field].trim());
+    })
     .map(r => (es[r.labelKey] || r.field));
 };
 
