@@ -1622,15 +1622,6 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
     }).catch(() => {});
   }, []);
 
-  // TTS speak assistant message
-  const handleSpeak = useCallback((text: string) => {
-    if (!gwReady || !text) return;
-    // Truncate very long messages to avoid overloading TTS
-    const truncated = text.length > 2000 ? text.slice(0, 2000) + '…' : text;
-    gwApi.talkSpeak(truncated, { sessionKey }).catch(() => {
-      toast('warning', cRef.current.ttsError || 'TTS unavailable');
-    });
-  }, [gwReady, sessionKey, toast]);
 
   // Inject system message (via REST proxy)
   const handleInject = useCallback(async () => {
@@ -2737,13 +2728,6 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
                           className="flex items-center gap-0.5 text-[11px] text-slate-400 hover:text-primary transition-colors">
                           <span className="material-symbols-outlined text-[12px]">{copiedIdx === idx ? 'check' : 'content_copy'}</span>
                           {copiedIdx === idx ? c.copied : c.copy}
-                        </button>
-                      )}
-                      {!isUser && text && (
-                        <button onClick={() => handleSpeak(text)}
-                          className="flex items-center gap-0.5 text-[11px] text-slate-400 hover:text-sky-500 transition-colors"
-                          title={c.ttsSpeak || 'Speak'}>
-                          <span className="material-symbols-outlined text-[12px]">volume_up</span>
                         </button>
                       )}
                       {/* Resend for user messages */}
