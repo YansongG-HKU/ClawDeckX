@@ -136,6 +136,15 @@
     "toolCallsLabel": "Werkzeuge",
     "errors": "Fehler",
     "latencyStats": "Latenz",
-    "topConsumers": "Top-Verbraucher"
+    "topConsumers": "Top-Verbraucher",
+    "totalCost": "Gesamtkosten",
+    "cacheLabel": "Cache",
+    "cacheRead": "Cache-Lesen",
+    "cacheWrite": "Cache-Schreiben",
+    "providers": "Anbieter",
+    "agents": "Agenten",
+    "latencyTrendKpi": "Latenztrend",
+    "dailyTokens": "Tägliche Token",
+    "remaining": "übrig"
   }
 }

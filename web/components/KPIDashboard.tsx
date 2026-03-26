@@ -1,5 +1,5 @@
 import React from 'react';
-import { MiniDonut, MiniGauge, MiniSparkline } from './MiniChart';
+import { MiniDonut, MiniGauge, MiniSparkline, MiniBarChart } from './MiniChart';
 
 interface KPIDashboardProps {
   stats: {
@@ -10,6 +10,7 @@ interface KPIDashboardProps {
   labels: Record<string, string>;
   costTrend?: Array<{ date: string; totalCost: number }>;
   usageAggregates?: any;
+  usageTotals?: any;
 }
 
 const fmtTok = (n: number) => {
@@ -17,13 +18,25 @@ const fmtTok = (n: number) => {
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return String(n);
 };
+const fmtCost = (n: number) => n >= 1 ? `$${n.toFixed(2)}` : n > 0 ? `$${n.toFixed(4)}` : '$0';
 
 const MSG_COLORS = { user: '#3b82f6', assistant: '#10b981', tools: '#a855f7', errors: '#ef4444' };
 const CHANNEL_COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#6366f1'];
 const kpiCard = 'rounded-2xl p-3 shadow-sm sci-card';
 const kpiLabel = 'text-[11px] font-bold text-slate-400 dark:text-white/30 uppercase mb-1.5';
 
-export const KPIDashboard: React.FC<KPIDashboardProps> = ({ stats, sessions, labels: a, costTrend, usageAggregates: agg }) => {
+/* ── Horizontal bar row ── */
+const HBar: React.FC<{ pct: number; label: string; count: string; gradient: string }> = ({ pct, label, count, gradient }) => (
+  <div className="flex items-center gap-1.5">
+    <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-white/5 overflow-hidden">
+      <div className={`h-full rounded-full ${gradient} transition-all`} style={{ width: `${pct}%` }} />
+    </div>
+    <span className="text-[9px] text-slate-400 dark:text-white/25 font-mono truncate max-w-[55px]" title={label}>{label}</span>
+    <span className="text-[9px] font-bold tabular-nums shrink-0 text-slate-500 dark:text-white/35">{count}</span>
+  </div>
+);
+
+export const KPIDashboard: React.FC<KPIDashboardProps> = ({ stats, sessions, labels: a, costTrend, usageAggregates: agg, usageTotals: totals }) => {
   // Channel distribution
   const channelCounts: Record<string, number> = {};
   sessions.forEach(s => {
@@ -40,6 +53,13 @@ export const KPIDashboard: React.FC<KPIDashboardProps> = ({ stats, sessions, lab
     return sessions.filter(s => s.updatedAt >= dayStart && s.updatedAt < dayEnd).length;
   });
 
+  // Total cost from API totals
+  const totalCost = totals?.totalCost || 0;
+  const inputCost = totals?.inputCost || 0;
+  const outputCost = totals?.outputCost || 0;
+  const cacheRead = totals?.cacheRead || 0;
+  const cacheWrite = totals?.cacheWrite || 0;
+
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 mb-4">
       {/* Token Distribution */}
@@ -49,15 +69,34 @@ export const KPIDashboard: React.FC<KPIDashboardProps> = ({ stats, sessions, lab
           <MiniDonut size={44} slices={[
             { value: stats.totalIn, color: '#3b82f6' },
             { value: stats.totalOut, color: '#f59e0b' },
+            ...(cacheRead > 0 ? [{ value: cacheRead, color: '#8b5cf6' }] : []),
           ]} innerRadius={0.5} />
           <div>
             <div className="text-base font-extrabold text-slate-800 dark:text-white/85 tabular-nums leading-none text-glow-cyan">{fmtTok(stats.totalTok)}</div>
             <div className="text-[10px] text-slate-400 dark:text-white/25">
               <span className="text-blue-500">●</span> {a.input || 'In'} <span className="text-amber-500">●</span> {a.output || 'Out'}
+              {cacheRead > 0 && <> <span className="text-purple-500">●</span> {a.cacheLabel || 'Cache'}</>}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Total Cost */}
+      {totalCost > 0 && (
+        <div className={kpiCard}>
+          <div className={kpiLabel}>{a.totalCost || 'Total Cost'}</div>
+          <div className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums leading-none text-glow-green">{fmtCost(totalCost)}</div>
+          <div className="text-[10px] text-slate-400 dark:text-white/25 mt-1">
+            {a.input || 'In'}: {fmtCost(inputCost)} · {a.output || 'Out'}: {fmtCost(outputCost)}
+          </div>
+          {(totals?.cacheReadCost > 0 || totals?.cacheWriteCost > 0) && (
+            <div className="text-[9px] text-slate-400 dark:text-white/20 mt-0.5">
+              {totals.cacheReadCost > 0 && <>{a.cacheRead || 'Cache R'}: {fmtCost(totals.cacheReadCost)} </>}
+              {totals.cacheWriteCost > 0 && <>{a.cacheWrite || 'Cache W'}: {fmtCost(totals.cacheWriteCost)}</>}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 24h Active */}
       <div className={kpiCard}>
@@ -115,13 +154,8 @@ export const KPIDashboard: React.FC<KPIDashboardProps> = ({ stats, sessions, lab
             </div>
             <div className="space-y-1">
               {topTools.map((t: any) => (
-                <div key={t.name} className="flex items-center gap-1.5">
-                  <div className="flex-1 h-2 rounded-full bg-slate-100 dark:bg-white/5 overflow-hidden">
-                    <div className="h-full rounded-full bg-gradient-to-r from-purple-500/80 to-violet-400/60 transition-all" style={{ width: `${(t.count / maxCalls) * 100}%` }} />
-                  </div>
-                  <span className="text-[9px] text-slate-400 dark:text-white/25 font-mono truncate max-w-[55px]" title={t.name}>{t.name}</span>
-                  <span className="text-[9px] text-purple-500 dark:text-purple-400 font-bold tabular-nums shrink-0">{t.count}×</span>
-                </div>
+                <HBar key={t.name} pct={(t.count / maxCalls) * 100} label={t.name} count={`${t.count}×`}
+                  gradient="bg-gradient-to-r from-purple-500/80 to-violet-400/60" />
               ))}
             </div>
           </div>
@@ -134,7 +168,6 @@ export const KPIDashboard: React.FC<KPIDashboardProps> = ({ stats, sessions, lab
         const p95 = agg.latency.p95Ms;
         const maxMs = agg.latency.maxMs;
         const minMs = agg.latency.minMs;
-        // Gauge: percentage of p95 vs a 10s reference (clamped)
         const gaugePct = Math.min((avg / 10000) * 100, 100);
         return (
           <div className={kpiCard}>
@@ -142,7 +175,6 @@ export const KPIDashboard: React.FC<KPIDashboardProps> = ({ stats, sessions, lab
             <div className="flex items-center gap-2.5">
               <MiniGauge size={44} percent={gaugePct} strokeWidth={4} label={`${(avg / 1000).toFixed(1)}s`} />
               <div className="flex-1 min-w-0">
-                {/* Range bar: min → avg → p95 → max */}
                 <div className="h-2 rounded-full bg-slate-100 dark:bg-white/5 overflow-hidden relative mb-1">
                   {maxMs > 0 && (
                     <>
@@ -163,20 +195,46 @@ export const KPIDashboard: React.FC<KPIDashboardProps> = ({ stats, sessions, lab
         );
       })()}
 
-      {/* Channel Distribution */}
-      {channelEntries.length > 1 && (
-        <div className={kpiCard}>
-          <div className={kpiLabel}>{a.channels || 'Channels'}</div>
-          <div className="flex items-center gap-2">
-            <MiniDonut size={40} slices={channelEntries.map(([, v], i) => ({
-              value: v, color: CHANNEL_COLORS[i % CHANNEL_COLORS.length],
-            }))} innerRadius={0.5} />
-            <div className="text-[10px] text-slate-400 dark:text-white/25 leading-tight">
-              {channelEntries.slice(0, 3).map(([name, count]) => <div key={name}>{name}: {count}</div>)}
+      {/* Channel Distribution — enhanced with token/cost from byChannel */}
+      {(() => {
+        const byChannel = agg?.byChannel;
+        if (byChannel && byChannel.length > 0) {
+          const maxTok = byChannel[0]?.totals?.totalTokens || 1;
+          return (
+            <div className={kpiCard}>
+              <div className={kpiLabel}>{a.channels || 'Channels'}</div>
+              <div className="space-y-1">
+                {byChannel.slice(0, 4).map((ch: any, i: number) => (
+                  <div key={ch.channel} className="flex items-center gap-1.5">
+                    <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-white/5 overflow-hidden">
+                      <div className="h-full rounded-full transition-all" style={{ width: `${(ch.totals.totalTokens / maxTok) * 100}%`, backgroundColor: CHANNEL_COLORS[i % CHANNEL_COLORS.length] }} />
+                    </div>
+                    <span className="text-[9px] text-slate-400 dark:text-white/25 truncate max-w-[45px]" title={ch.channel}>{ch.channel}</span>
+                    <span className="text-[9px] font-bold tabular-nums text-slate-500 dark:text-white/35">{fmtTok(ch.totals.totalTokens)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          );
+        }
+        // Fallback to session count distribution
+        if (channelEntries.length > 1) {
+          return (
+            <div className={kpiCard}>
+              <div className={kpiLabel}>{a.channels || 'Channels'}</div>
+              <div className="flex items-center gap-2">
+                <MiniDonut size={40} slices={channelEntries.map(([, v], i) => ({
+                  value: v, color: CHANNEL_COLORS[i % CHANNEL_COLORS.length],
+                }))} innerRadius={0.5} />
+                <div className="text-[10px] text-slate-400 dark:text-white/25 leading-tight">
+                  {channelEntries.slice(0, 3).map(([name, count]) => <div key={name}>{name}: {count}</div>)}
+                </div>
+              </div>
+            </div>
+          );
+        }
+        return null;
+      })()}
 
       {/* Cost Trend (7-day) */}
       {costTrend && costTrend.length > 0 && costTrend.some(d => d.totalCost > 0) && (
@@ -201,13 +259,8 @@ export const KPIDashboard: React.FC<KPIDashboardProps> = ({ stats, sessions, lab
             <div className={kpiLabel}>{a.modelDist || 'Models'}</div>
             <div className="space-y-1">
               {modelEntries.map(([name, count]) => (
-                <div key={name} className="flex items-center gap-1.5">
-                  <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-white/5 overflow-hidden">
-                    <div className="h-full rounded-full bg-gradient-to-r from-purple-500/80 to-purple-400/60 transition-all" style={{ width: `${(count / maxCount) * 100}%` }} />
-                  </div>
-                  <span className="text-[9px] text-slate-400 dark:text-white/25 font-mono truncate max-w-[60px]" title={name}>{name.split('/').pop()}</span>
-                  <span className="text-[9px] text-slate-500 dark:text-white/35 font-bold tabular-nums">{count}</span>
-                </div>
+                <HBar key={name} pct={(count / maxCount) * 100} label={name.split('/').pop() || name} count={`${count}`}
+                  gradient="bg-gradient-to-r from-purple-500/80 to-purple-400/60" />
               ))}
             </div>
           </div>
@@ -228,18 +281,73 @@ export const KPIDashboard: React.FC<KPIDashboardProps> = ({ stats, sessions, lab
             <div className={kpiLabel}>{a.topConsumers || 'Top Consumers'}</div>
             <div className="space-y-1">
               {topSessions.map(s => (
-                <div key={s.key} className="flex items-center gap-1.5">
-                  <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-white/5 overflow-hidden">
-                    <div className="h-full rounded-full bg-gradient-to-r from-blue-500/80 to-cyan-400/60 transition-all" style={{ width: `${(s.tokens / maxTok) * 100}%` }} />
-                  </div>
-                  <span className="text-[9px] text-slate-400 dark:text-white/25 font-mono truncate max-w-[60px]" title={s.name}>{s.name.length > 10 ? s.name.slice(0, 8) + '..' : s.name}</span>
-                  <span className="text-[9px] text-slate-500 dark:text-white/35 font-bold tabular-nums">{fmtTok(s.tokens)}</span>
-                </div>
+                <HBar key={s.key} pct={(s.tokens / maxTok) * 100} label={s.name.length > 10 ? s.name.slice(0, 8) + '..' : s.name} count={fmtTok(s.tokens)}
+                  gradient="bg-gradient-to-r from-blue-500/80 to-cyan-400/60" />
               ))}
             </div>
           </div>
         );
       })()}
+
+      {/* Provider Breakdown */}
+      {agg?.byProvider && agg.byProvider.length > 1 && (() => {
+        const providers = agg.byProvider.slice(0, 4);
+        const maxTok = providers[0]?.totals?.totalTokens || 1;
+        return (
+          <div className={kpiCard}>
+            <div className={kpiLabel}>{a.providers || 'Providers'}</div>
+            <div className="space-y-1">
+              {providers.map((p: any) => (
+                <HBar key={p.provider} pct={(p.totals.totalTokens / maxTok) * 100} label={p.provider || 'unknown'}
+                  count={`${fmtTok(p.totals.totalTokens)} · ${fmtCost(p.totals.totalCost)}`}
+                  gradient="bg-gradient-to-r from-indigo-500/80 to-blue-400/60" />
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Agent Breakdown */}
+      {agg?.byAgent && agg.byAgent.length > 1 && (() => {
+        const agents = agg.byAgent.slice(0, 4);
+        const maxTok = agents[0]?.totals?.totalTokens || 1;
+        return (
+          <div className={kpiCard}>
+            <div className={kpiLabel}>{a.agents || 'Agents'}</div>
+            <div className="space-y-1">
+              {agents.map((ag: any) => (
+                <HBar key={ag.agentId} pct={(ag.totals.totalTokens / maxTok) * 100} label={ag.agentId}
+                  count={`${fmtTok(ag.totals.totalTokens)} · ${fmtCost(ag.totals.totalCost)}`}
+                  gradient="bg-gradient-to-r from-cyan-500/80 to-teal-400/60" />
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Daily Latency Trend */}
+      {agg?.dailyLatency && agg.dailyLatency.length > 1 && (
+        <div className={kpiCard}>
+          <div className={kpiLabel}>{a.latencyTrendKpi || 'Latency Trend'}</div>
+          <MiniSparkline values={agg.dailyLatency.slice(-7).map((d: any) => d.avgMs || 0)} height={32} color="#f97316" />
+          <div className="flex justify-between text-[8px] text-slate-400/60 dark:text-white/15 mt-0.5">
+            <span>{agg.dailyLatency[Math.max(0, agg.dailyLatency.length - 7)]?.date?.slice(5)}</span>
+            <span>{agg.dailyLatency[agg.dailyLatency.length - 1]?.date?.slice(5)}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Daily Aggregate Bar (tokens + messages) */}
+      {agg?.daily && agg.daily.length > 1 && (
+        <div className={kpiCard}>
+          <div className={kpiLabel}>{a.dailyTokens || 'Daily Tokens'}</div>
+          <MiniBarChart values={agg.daily.slice(-7).map((d: any) => d.tokens || 0)} height={32} color="#3b82f6" />
+          <div className="flex justify-between text-[8px] text-slate-400/60 dark:text-white/15 mt-0.5">
+            <span>{agg.daily[Math.max(0, agg.daily.length - 7)]?.date?.slice(5)}</span>
+            <span>{agg.daily[agg.daily.length - 1]?.date?.slice(5)}</span>
+          </div>
+        </div>
+      )}
 
       {/* Aborted */}
       {stats.abortedCount > 0 && (

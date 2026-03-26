@@ -136,6 +136,15 @@
     "toolCallsLabel": "ツール",
     "errors": "エラー",
     "latencyStats": "レイテンシ",
-    "topConsumers": "トップ消費"
+    "topConsumers": "消費トップ",
+    "totalCost": "総コスト",
+    "cacheLabel": "キャッシュ",
+    "cacheRead": "キャッシュ読取",
+    "cacheWrite": "キャッシュ書込",
+    "providers": "プロバイダー",
+    "agents": "エージェント",
+    "latencyTrendKpi": "レイテンシ推移",
+    "dailyTokens": "日別トークン",
+    "remaining": "残り"
   }
 }

@@ -83,13 +83,27 @@ export const SessionCard: React.FC<SessionCardProps> = ({
 
   const displayName = s.derivedTitle?.trim() || s.displayName?.trim() || s.label?.trim() || '';
   const chIcon = s.lastChannel ? (CHANNEL_ICONS[s.lastChannel] || '📡') : null;
-  const costStr = formatCost(s.responseUsage?.totalCost ?? s.responseUsage?.cost);
+  const costStr = formatCost(s.responseUsage?.totalCost ?? s.responseUsage?.cost ?? sessionUsage?.totalCost);
+
+  // Agent ID from session key
+  const agentMatch = s.key?.match?.(/^agent:([^:]+):/);
+  const agentId = agentMatch?.[1];
+
+  // Cache tokens
+  const cacheRead = sessionUsage?.cacheRead || 0;
+  const cacheWrite = sessionUsage?.cacheWrite || 0;
+  const hasCache = cacheRead > 0 || cacheWrite > 0;
+
+  // Context remaining
+  const ctxRemain = maxCtx > 0 ? Math.max(0, maxCtx - total) : 0;
 
   // Override pills
   const overrides: string[] = [];
   if (s.thinkingLevel) overrides.push(`🧠 ${s.thinkingLevel}`);
   if (s.reasoningLevel) overrides.push(`💡 ${s.reasoningLevel}`);
   if (s.sendPolicy && s.sendPolicy !== 'allow') overrides.push(`🚫 ${s.sendPolicy}`);
+  if (s.fastMode) overrides.push(`⚡ Fast`);
+  if (s.verboseLevel) overrides.push(`📝 ${s.verboseLevel}`);
 
   // Activity heat glow
   const age = s.updatedAt ? Date.now() - s.updatedAt : Infinity;
@@ -142,12 +156,17 @@ export const SessionCard: React.FC<SessionCardProps> = ({
           <span className={`w-2 h-2 rounded-full ${activeHeatClass(s.updatedAt)}`} title={relativeTime} />
         </div>
 
-        {/* Header: Kind + Channel + Key */}
-        <div className="flex items-center gap-2 mb-1.5">
+        {/* Header: Kind + Channel + Agent + Key */}
+        <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
           <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${KIND_COLORS[s.kind] || 'bg-slate-500/10 text-slate-500'}`}>
             {a[s.kind] || s.kind || a.unknown || 'unknown'}
           </span>
           {chIcon && <span className="text-[11px]" title={s.lastChannel}>{chIcon}</span>}
+          {agentId && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 truncate max-w-[120px]" title={agentId}>
+              {agentId}
+            </span>
+          )}
           <span className="text-[11px] font-mono text-slate-500 dark:text-white/40 truncate flex-1">{s.key}</span>
         </div>
         {displayName && (
@@ -210,6 +229,21 @@ export const SessionCard: React.FC<SessionCardProps> = ({
                 <span className="text-[10px] text-blue-500 font-bold tabular-nums">● {a.input || 'In'} {fmtTok(inp)}</span>
                 <span className="text-[10px] text-amber-500 font-bold tabular-nums">● {a.output || 'Out'} {fmtTok(out)}</span>
               </div>
+              {/* Context remaining */}
+              {maxCtx > 0 && (
+                <div className="flex items-center justify-between mt-0.5">
+                  <span className={`text-[9px] tabular-nums ${ctxPct > 90 ? 'text-red-400' : ctxPct > 70 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                    {ctxPct.toFixed(0)}% · {fmtTok(ctxRemain)} {a.remaining || 'left'}
+                  </span>
+                </div>
+              )}
+              {/* Cache tokens */}
+              {hasCache && (
+                <div className="flex items-center gap-2 mt-0.5 text-[9px]">
+                  {cacheRead > 0 && <span className="text-purple-400">● {a.cacheRead || 'Cache R'} {fmtTok(cacheRead)}</span>}
+                  {cacheWrite > 0 && <span className="text-cyan-400">● {a.cacheWrite || 'Cache W'} {fmtTok(cacheWrite)}</span>}
+                </div>
+              )}
             </div>
 
             {/* card-7: Message count + latency row */}

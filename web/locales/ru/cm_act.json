@@ -136,6 +136,15 @@
     "toolCallsLabel": "Инструменты",
     "errors": "Ошибки",
     "latencyStats": "Задержка",
-    "topConsumers": "Топ потребителей"
+    "topConsumers": "Топ потребителей",
+    "totalCost": "Общая стоимость",
+    "cacheLabel": "Кэш",
+    "cacheRead": "Чтение кэша",
+    "cacheWrite": "Запись кэша",
+    "providers": "Провайдеры",
+    "agents": "Агенты",
+    "latencyTrendKpi": "Тренд задержки",
+    "dailyTokens": "Ежедневные токены",
+    "remaining": "осталось"
   }
 }

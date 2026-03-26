@@ -136,6 +136,15 @@
     "toolCallsLabel": "الأدوات",
     "errors": "الأخطاء",
     "latencyStats": "زمن الاستجابة",
-    "topConsumers": "Top Consumers"
+    "topConsumers": "Top Consumers",
+    "totalCost": "التكلفة الإجمالية",
+    "cacheLabel": "التخزين المؤقت",
+    "cacheRead": "قراءة التخزين المؤقت",
+    "cacheWrite": "كتابة التخزين المؤقت",
+    "providers": "مزودون",
+    "agents": "وكلاء",
+    "latencyTrendKpi": "اتجاه التأخير",
+    "dailyTokens": "الرموز اليومية",
+    "remaining": "متبقي"
   }
 }

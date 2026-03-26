@@ -136,6 +136,15 @@
     "toolCallsLabel": "工具",
     "errors": "錯誤",
     "latencyStats": "延遲",
-    "topConsumers": "消耗排行"
+    "topConsumers": "消耗排行",
+    "totalCost": "總費用",
+    "cacheLabel": "快取",
+    "cacheRead": "快取讀取",
+    "cacheWrite": "快取寫入",
+    "providers": "提供商",
+    "agents": "代理",
+    "latencyTrendKpi": "延遲趨勢",
+    "dailyTokens": "每日 Token",
+    "remaining": "剩餘"
   }
 }

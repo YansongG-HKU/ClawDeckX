@@ -136,6 +136,15 @@
     "toolCallsLabel": "Alat",
     "errors": "Kesalahan",
     "latencyStats": "Latensi",
-    "topConsumers": "Top Consumers"
+    "topConsumers": "Top Consumers",
+    "totalCost": "Total Biaya",
+    "cacheLabel": "Cache",
+    "cacheRead": "Baca Cache",
+    "cacheWrite": "Tulis Cache",
+    "providers": "Penyedia",
+    "agents": "Agen",
+    "latencyTrendKpi": "Tren Latensi",
+    "dailyTokens": "Token Harian",
+    "remaining": "tersisa"
   }
 }

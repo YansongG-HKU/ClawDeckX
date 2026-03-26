@@ -136,6 +136,15 @@
     "toolCallsLabel": "도구",
     "errors": "오류",
     "latencyStats": "지연 시간",
-    "topConsumers": "상위 소비"
+    "topConsumers": "상위 소비",
+    "totalCost": "총 비용",
+    "cacheLabel": "캐시",
+    "cacheRead": "캐시 읽기",
+    "cacheWrite": "캐시 쓰기",
+    "providers": "제공업체",
+    "agents": "에이전트",
+    "latencyTrendKpi": "지연 추이",
+    "dailyTokens": "일별 토큰",
+    "remaining": "남음"
   }
 }
