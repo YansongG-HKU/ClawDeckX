@@ -198,16 +198,6 @@ export const UsagePanel: React.FC<UsagePanelProps> = ({ sessionKey, gwReady, loa
 
       <div className="p-3 space-y-3">
 
-        {/* ═══ Agent Info ═══ */}
-        {s?.agentId && (
-          <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-cyan-500/5 border border-cyan-500/10">
-            <span className="material-symbols-outlined text-[13px] text-cyan-500">smart_toy</span>
-            <div className="min-w-0 flex-1">
-              <div className="text-[11px] font-bold text-cyan-600 dark:text-cyan-400 truncate">{s.agentLabel || s.agentId}</div>
-            </div>
-          </div>
-        )}
-
         {/* ═══ Model Picker ═══ */}
         {s?.model && (
           <div ref={modelPickerRef} className="relative">
@@ -306,7 +296,6 @@ export const UsagePanel: React.FC<UsagePanelProps> = ({ sessionKey, gwReady, loa
               {s?.fastMode ? <Chip icon="bolt" label={a.fastMode || 'Fast'} value={a.fastMode || 'Fast'} cls="text-amber-500 dark:text-amber-400" /> : null}
               {s?.verboseLevel ? <Chip icon="subject" label={a.verbose || 'Verbose'} value={s.verboseLevel} /> : null}
               {s?.sendPolicy === 'deny' ? <Chip icon="block" label={a.sendDenied || 'Send denied'} value={a.sendDenied || 'Denied'} cls="text-red-500 dark:text-red-400" /> : null}
-              {s?.kind && s.kind !== 'direct' ? <Chip icon="group" label={a.sessionType || 'Type'} value={s.kind} /> : null}
               {(s?.childSessionCount ?? 0) > 0 ? <Chip icon="account_tree" label={a.childSessions || 'Sub-sessions'} value={`${s!.childSessionCount}`} cls="text-cyan-500 dark:text-cyan-400" /> : null}
               {(s?.runPhase === 'streaming' || s?.runPhase === 'sending') && s?.liveElapsed ? (
                 <Chip icon="timer" label={a.elapsed || 'Elapsed'} value={`${(s.liveElapsed / 1000).toFixed(1)}s`} cls="text-primary" />
