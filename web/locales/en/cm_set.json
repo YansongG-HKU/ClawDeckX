@@ -369,7 +369,7 @@
     "logoutDesc": "End the current session and return to the login screen. You will need to sign in again next time.",
     "on": "ON",
     "off": "OFF",
-    "ocBackupFull": "Full backup"
+    "ocBackupFull": "Standard backup"
   },
   "pref": {
     "title": "Preferences",

@@ -369,7 +369,7 @@
     "logoutDesc": "현재 세션을 종료하고 로그인 화면으로 돌아갑니다. 다음에 다시 로그인해야 합니다.",
     "on": "ON",
     "off": "OFF",
-    "ocBackupFull": "전체 백업"
+    "ocBackupFull": "표준 백업"
   },
   "pref": {
     "title": "기능 설정",

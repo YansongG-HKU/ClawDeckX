@@ -369,7 +369,7 @@
     "logoutDesc": "Terminer la session en cours et revenir à l'écran de connexion. Vous devrez vous reconnecter la prochaine fois.",
     "on": "ON",
     "off": "OFF",
-    "ocBackupFull": "Sauvegarde complète"
+    "ocBackupFull": "Sauvegarde standard"
   },
   "pref": {
     "title": "Préférences",

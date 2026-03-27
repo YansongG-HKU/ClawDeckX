@@ -369,7 +369,7 @@
     "logoutDesc": "現在のセッションを終了してログイン画面に戻ります。次回は再度サインインが必要です。",
     "on": "ON",
     "off": "OFF",
-    "ocBackupFull": "フルバックアップ"
+    "ocBackupFull": "標準バックアップ"
   },
   "pref": {
     "title": "機能設定",

@@ -369,7 +369,7 @@
     "logoutDesc": "Finalizar la sesión actual y volver a la pantalla de inicio de sesión. Deberá iniciar sesión de nuevo la próxima vez.",
     "on": "ON",
     "off": "OFF",
-    "ocBackupFull": "Copia completa"
+    "ocBackupFull": "Copia estándar"
   },
   "pref": {
     "title": "Preferencias",

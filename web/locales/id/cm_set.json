@@ -369,7 +369,7 @@
     "logoutDesc": "Akhiri sesi saat ini dan kembali ke layar masuk. Anda perlu masuk kembali lain kali.",
     "on": "ON",
     "off": "OFF",
-    "ocBackupFull": "Cadangan penuh"
+    "ocBackupFull": "Cadangan standar"
   },
   "pref": {
     "title": "Preferences",

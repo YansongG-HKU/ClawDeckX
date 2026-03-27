@@ -369,7 +369,7 @@
     "logoutDesc": "Encerrar a sessão atual e voltar à tela de login. Você precisará entrar novamente na próxima vez.",
     "on": "ON",
     "off": "OFF",
-    "ocBackupFull": "Backup completo"
+    "ocBackupFull": "Backup padrão"
   },
   "pref": {
     "title": "Preferências",

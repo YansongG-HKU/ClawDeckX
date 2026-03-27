@@ -494,7 +494,7 @@ const SnapshotTab: React.FC<SnapshotTabProps> = ({ s, inputCls, labelCls, rowCls
                   <label key={scope} className="flex items-center gap-1.5 cursor-pointer">
                     <input type="radio" name="oc-backup-scope" checked={ocBackupScope === scope} onChange={() => setOcBackupScope(scope)} className="accent-primary" />
                     <span className={`${ocBackupScope === scope ? 'text-slate-800 dark:text-white/80 font-medium' : 'text-slate-500 dark:text-white/50'}`}>
-                      {scope === 'full' ? (s.ocBackupFull || 'Full backup') : scope === 'workspace' ? (s.ocBackupIncludeWorkspace || 'Include workspace') : (s.ocBackupOnlyConfig || 'Config only')}
+                      {scope === 'full' ? (s.ocBackupFull || 'Standard backup') : scope === 'workspace' ? (s.ocBackupIncludeWorkspace || 'Include workspace') : (s.ocBackupOnlyConfig || 'Config only')}
                     </span>
                   </label>
                 ))}

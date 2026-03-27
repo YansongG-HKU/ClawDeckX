@@ -369,7 +369,7 @@
     "logoutDesc": "結束目前會話並返回登入頁。下次需要重新輸入使用者名稱和密碼。",
     "on": "開啟",
     "off": "關閉",
-    "ocBackupFull": "完整備份"
+    "ocBackupFull": "標準備份"
   },
   "pref": {
     "title": "功能設定",
