@@ -216,97 +216,97 @@ export const UsagePanel: React.FC<UsagePanelProps> = ({ sessionKey, gwReady, loa
 
       <div className="p-3 space-y-3">
 
-        {/* ═══ Model Picker ═══ */}
-        {s?.model && (
-          <div ref={modelPickerRef} className="relative">
-            <SH icon="memory" title={a.model || 'Model'} />
-            <button type="button" onClick={async () => {
-              if (modelPickerOpen) { setModelPickerOpen(false); return; }
-              if (loadModels && modelOptions.length === 0) {
-                setModelLoading(true);
-                try { setModelOptions(await loadModels()); } catch { /* ignore */ }
-                setModelLoading(false);
-              }
-              setModelPickerOpen(true);
-            }}
-              className="w-full text-start px-2 py-1.5 rounded-lg bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/10
-                         hover:from-purple-500/15 hover:to-blue-500/15 hover:border-purple-500/20 transition-all cursor-pointer group">
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <div className="text-[11px] font-bold text-purple-600 dark:text-purple-400 truncate">{s.model}</div>
-                  {s.modelProvider && <div className="text-[10px] text-slate-400 dark:text-white/25 mt-0.5">{s.modelProvider}</div>}
-                </div>
-                <span className={`material-symbols-outlined text-[12px] text-purple-400/50 group-hover:text-purple-400 transition shrink-0 ms-1 ${modelLoading ? 'animate-spin' : ''}`}>
-                  {modelLoading ? 'progress_activity' : 'swap_horiz'}
-                </span>
-              </div>
-            </button>
-            {modelPickerOpen && modelOptions.length > 0 && (
-              <div className="absolute z-[100] start-0 end-0 mt-1 max-h-52 overflow-y-auto rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1e2028] shadow-xl shadow-black/10 dark:shadow-black/40 py-1">
-                {modelOptions.map(o => (
-                  <button key={o.value} type="button"
-                    onClick={() => { onModelChange?.(o.value || null); setModelPickerOpen(false); }}
-                    className={`w-full text-start px-3 py-1.5 text-[11px] transition-colors truncate ${
-                      o.value === s.model || o.value === `${s.modelProvider}/${s.model}`
-                        ? 'text-primary font-bold bg-primary/5 dark:bg-primary/10'
-                        : 'text-slate-600 dark:text-white/70 hover:bg-slate-50 dark:hover:bg-white/[0.06]'
-                    }`}
-                    title={o.label}>
-                    {o.label}
-                  </button>
-                ))}
-              </div>
-            )}
+        {/* ═══ Security / Tool Policy ═══ */}
+        {sec && (sec.toolProfile || sec.sandboxMode || sec.execSecurity) && (
+          <div>
+            <div className={`flex items-center justify-between mb-1.5 ${onNavigateAgent ? 'cursor-pointer group' : ''}`} onClick={onNavigateAgent}>
+              <span className="text-[10px] font-bold text-slate-400 dark:text-white/30 uppercase flex items-center gap-1 group-hover:text-primary transition-colors">
+                <span className="material-symbols-outlined text-[11px]">security</span>
+                {a.secToolPolicy || 'Tool Policy'}
+              </span>
+              {onNavigateAgent && (
+                <span className="material-symbols-outlined text-[10px] text-slate-400 dark:text-white/20 opacity-0 group-hover:opacity-100 group-hover:text-primary transition-all">open_in_new</span>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {sec.toolProfile && (() => {
+                const p = sec.toolProfile;
+                const cls = p === 'full' ? 'text-amber-500 bg-amber-500/10 border-amber-500/15'
+                  : p === 'minimal' ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/15'
+                  : 'text-blue-500 bg-blue-500/10 border-blue-500/15';
+                return (
+                  <span className={`inline-flex items-center text-[9px] px-1.5 py-0.5 rounded-md border font-bold ${cls}`}>
+                    {a[`secProfile_${p}`] || p}
+                  </span>
+                );
+              })()}
+              {sec.sandboxMode && (() => {
+                const on = sec.sandboxMode !== 'Off' && sec.sandboxMode !== 'off';
+                const cls = on ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/15' : 'text-slate-400 bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10';
+                return (
+                  <span className={`inline-flex items-center text-[9px] px-1.5 py-0.5 rounded-md border font-bold ${cls}`}>
+                    {a.secSandbox || 'Sandbox'}: {sec.sandboxMode}
+                  </span>
+                );
+              })()}
+              {sec.execSecurity && (() => {
+                const v = sec.execSecurity;
+                const cls = v === 'sandbox' ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/15'
+                  : v === 'prompt' ? 'text-blue-500 bg-blue-500/10 border-blue-500/15'
+                  : 'text-amber-500 bg-amber-500/10 border-amber-500/15';
+                return (
+                  <span className={`inline-flex items-center text-[9px] px-1.5 py-0.5 rounded-md border font-bold ${cls}`}>
+                    {a.secExec || 'Exec'}: {v}
+                  </span>
+                );
+              })()}
+            </div>
           </div>
         )}
 
-        {/* ═══ Security / Tool Policy ═══ */}
-        {sec && (sec.toolProfile || sec.sandboxMode || sec.execSecurity) && (
+        {/* ═══ Model Picker ═══ */}
+        {s?.model && (
           <>
             <Div />
-            <div>
-              <div className={`flex items-center justify-between mb-1.5 ${onNavigateAgent ? 'cursor-pointer group' : ''}`} onClick={onNavigateAgent}>
-                <span className="text-[10px] font-bold text-slate-400 dark:text-white/30 uppercase flex items-center gap-1 group-hover:text-primary transition-colors">
-                  <span className="material-symbols-outlined text-[11px]">security</span>
-                  {a.secToolPolicy || 'Tool Policy'}
-                </span>
-                {onNavigateAgent && (
-                  <span className="material-symbols-outlined text-[10px] text-slate-400 dark:text-white/20 opacity-0 group-hover:opacity-100 group-hover:text-primary transition-all">open_in_new</span>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {sec.toolProfile && (() => {
-                  const p = sec.toolProfile;
-                  const cls = p === 'full' ? 'text-amber-500 bg-amber-500/10 border-amber-500/15'
-                    : p === 'minimal' ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/15'
-                    : 'text-blue-500 bg-blue-500/10 border-blue-500/15';
-                  return (
-                    <span className={`inline-flex items-center text-[9px] px-1.5 py-0.5 rounded-md border font-bold ${cls}`}>
-                      {a[`secProfile_${p}`] || p}
-                    </span>
-                  );
-                })()}
-                {sec.sandboxMode && (() => {
-                  const on = sec.sandboxMode !== 'Off' && sec.sandboxMode !== 'off';
-                  const cls = on ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/15' : 'text-slate-400 bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10';
-                  return (
-                    <span className={`inline-flex items-center text-[9px] px-1.5 py-0.5 rounded-md border font-bold ${cls}`}>
-                      {a.secSandbox || 'Sandbox'}: {sec.sandboxMode}
-                    </span>
-                  );
-                })()}
-                {sec.execSecurity && (() => {
-                  const v = sec.execSecurity;
-                  const cls = v === 'sandbox' ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/15'
-                    : v === 'prompt' ? 'text-blue-500 bg-blue-500/10 border-blue-500/15'
-                    : 'text-amber-500 bg-amber-500/10 border-amber-500/15';
-                  return (
-                    <span className={`inline-flex items-center text-[9px] px-1.5 py-0.5 rounded-md border font-bold ${cls}`}>
-                      {a.secExec || 'Exec'}: {v}
-                    </span>
-                  );
-                })()}
-              </div>
+            <div ref={modelPickerRef} className="relative">
+              <SH icon="memory" title={a.model || 'Model'} />
+              <button type="button" onClick={async () => {
+                if (modelPickerOpen) { setModelPickerOpen(false); return; }
+                if (loadModels && modelOptions.length === 0) {
+                  setModelLoading(true);
+                  try { setModelOptions(await loadModels()); } catch { /* ignore */ }
+                  setModelLoading(false);
+                }
+                setModelPickerOpen(true);
+              }}
+                className="w-full text-start px-2 py-1.5 rounded-lg bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/10
+                           hover:from-purple-500/15 hover:to-blue-500/15 hover:border-purple-500/20 transition-all cursor-pointer group">
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[11px] font-bold text-purple-600 dark:text-purple-400 truncate">{s.model}</div>
+                    {s.modelProvider && <div className="text-[10px] text-slate-400 dark:text-white/25 mt-0.5">{s.modelProvider}</div>}
+                  </div>
+                  <span className={`material-symbols-outlined text-[12px] text-purple-400/50 group-hover:text-purple-400 transition shrink-0 ms-1 ${modelLoading ? 'animate-spin' : ''}`}>
+                    {modelLoading ? 'progress_activity' : 'swap_horiz'}
+                  </span>
+                </div>
+              </button>
+              {modelPickerOpen && modelOptions.length > 0 && (
+                <div className="absolute z-[100] start-0 end-0 mt-1 max-h-52 overflow-y-auto rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1e2028] shadow-xl shadow-black/10 dark:shadow-black/40 py-1">
+                  {modelOptions.map(o => (
+                    <button key={o.value} type="button"
+                      onClick={() => { onModelChange?.(o.value || null); setModelPickerOpen(false); }}
+                      className={`w-full text-start px-3 py-1.5 text-[11px] transition-colors truncate ${
+                        o.value === s.model || o.value === `${s.modelProvider}/${s.model}`
+                          ? 'text-primary font-bold bg-primary/5 dark:bg-primary/10'
+                          : 'text-slate-600 dark:text-white/70 hover:bg-slate-50 dark:hover:bg-white/[0.06]'
+                      }`}
+                      title={o.label}>
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </>
         )}
