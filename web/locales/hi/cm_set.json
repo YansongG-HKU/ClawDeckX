@@ -442,7 +442,31 @@
     "startupAgents": "Agents",
     "wallpaperPreviewAlt": "Wallpaper preview",
     "wallpaperHistoryAlt": "Wallpaper history item",
-    "wallpaperFavoriteAlt": "Favorite wallpaper item"
+    "wallpaperFavoriteAlt": "Favorite wallpaper item",
+    "mirror": {
+      "title": "मिरर एक्सेलेरेशन और नेटवर्क",
+      "desc": "तेज़ एक्सेस के लिए npm, GitHub, Docker, pip, Go मिरर कॉन्फ़िगर करें",
+      "presetHint": "नेटवर्क प्रीसेट के बीच तुरंत स्विच करें, सभी अनुशंसित मिरर अपने आप भरें",
+      "presetCn": "चीन एक्सेलेरेशन",
+      "presetGlobal": "अंतर्राष्ट्रीय नेटवर्क",
+      "presetCnApplied": "चीन एक्सेलेरेशन प्रीसेट पर स्विच किया गया",
+      "presetGlobalApplied": "अंतर्राष्ट्रीय नेटवर्क प्रीसेट पर स्विच किया गया",
+      "detectHint": "सिस्टम स्तर पर वर्तमान मिरर कॉन्फ़िगरेशन का पता लगाएं",
+      "detectBtn": "सिस्टम कॉन्फ़िगरेशन का पता लगाएं",
+      "detecting": "पता लगाया जा रहा है...",
+      "detectFailed": "सिस्टम कॉन्फ़िगरेशन का पता लगाने में विफल",
+      "saveConfig": "कॉन्फ़िगरेशन सहेजें",
+      "saving": "सहेजा जा रहा है...",
+      "savedOk": "कॉन्फ़िगरेशन सहेजा गया",
+      "saveFailed": "सहेजने में विफल",
+      "applyAll": "सभी को सिस्टम पर लागू करें",
+      "applyingAll": "लागू किया जा रहा है...",
+      "applyAllOk": "सभी मिरर सेटिंग सिस्टम पर लागू की गईं",
+      "applyAllPartial": "कुछ सेटिंग लागू की गईं। विवरण के लिए अलग-अलग टूल जांचें।",
+      "applyFailed": "लागू करने में विफल",
+      "dockerRestartHint": "Docker मिरर परिवर्तन Docker daemon को पुनः प्रारंभ करने के बाद प्रभावी होते हैं।",
+      "scopeHint": "सिस्टम पर लागू करें = ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json लिखता है"
+    }
   },
   "hi": {
     "title": "होस्ट जानकारी",

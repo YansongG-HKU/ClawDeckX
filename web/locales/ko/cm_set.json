@@ -442,7 +442,31 @@
     "startupAgents": "에이전트",
     "wallpaperPreviewAlt": "배경화면 미리보기",
     "wallpaperHistoryAlt": "배경화면 기록 항목",
-    "wallpaperFavoriteAlt": "즐겨찾는 배경화면 항목"
+    "wallpaperFavoriteAlt": "즐겨찾는 배경화면 항목",
+    "mirror": {
+      "title": "미러 가속 & 네트워크",
+      "desc": "npm, GitHub, Docker, pip, Go 미러를 구성하여 더 빠른 접속",
+      "presetHint": "네트워크 프리셋을 빠르게 전환하고 권장 미러를 자동으로 채웁니다",
+      "presetCn": "중국 가속",
+      "presetGlobal": "국제 네트워크",
+      "presetCnApplied": "중국 가속 프리셋으로 전환됨",
+      "presetGlobalApplied": "국제 네트워크 프리셋으로 전환됨",
+      "detectHint": "시스템 수준의 현재 미러 구성 감지",
+      "detectBtn": "시스템 구성 감지",
+      "detecting": "감지 중...",
+      "detectFailed": "시스템 구성 감지 실패",
+      "saveConfig": "설정 저장",
+      "saving": "저장 중...",
+      "savedOk": "설정이 저장되었습니다",
+      "saveFailed": "저장 실패",
+      "applyAll": "전체 시스템에 적용",
+      "applyingAll": "적용 중...",
+      "applyAllOk": "모든 미러 설정이 시스템에 적용되었습니다",
+      "applyAllPartial": "일부 설정이 적용되었습니다. 자세한 내용은 개별 도구를 확인하세요.",
+      "applyFailed": "적용 실패",
+      "dockerRestartHint": "Docker 미러 변경 사항은 Docker 데몬 재시작 후 적용됩니다.",
+      "scopeHint": "시스템에 적용 = ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json 업데이트"
+    }
   },
   "hi": {
     "title": "호스트 정보",

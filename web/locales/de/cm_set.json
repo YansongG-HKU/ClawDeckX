@@ -442,7 +442,31 @@
     "startupAgents": "Agenten",
     "wallpaperPreviewAlt": "Wallpaper preview",
     "wallpaperHistoryAlt": "Wallpaper history item",
-    "wallpaperFavoriteAlt": "Favorite wallpaper item"
+    "wallpaperFavoriteAlt": "Favorite wallpaper item",
+    "mirror": {
+      "title": "Mirror-Beschleunigung & Netzwerk",
+      "desc": "npm, GitHub, Docker, pip, Go Mirror für schnelleren Zugriff konfigurieren",
+      "presetHint": "Schnell zwischen Netzwerk-Voreinstellungen wechseln, alle empfohlenen Mirror automatisch befüllen",
+      "presetCn": "China-Beschleunigung",
+      "presetGlobal": "Internationales Netzwerk",
+      "presetCnApplied": "Auf China-Beschleunigungsvoreinstellung gewechselt",
+      "presetGlobalApplied": "Auf internationale Netzwerkvoreinstellung gewechselt",
+      "detectHint": "Aktuelle Mirror-Konfiguration auf Systemebene erkennen",
+      "detectBtn": "Systemkonfiguration erkennen",
+      "detecting": "Erkennung läuft...",
+      "detectFailed": "Systemkonfiguration konnte nicht erkannt werden",
+      "saveConfig": "Konfiguration speichern",
+      "saving": "Wird gespeichert...",
+      "savedOk": "Konfiguration gespeichert",
+      "saveFailed": "Speichern fehlgeschlagen",
+      "applyAll": "Alle auf System anwenden",
+      "applyingAll": "Wird angewendet...",
+      "applyAllOk": "Alle Mirror-Einstellungen auf das System angewendet",
+      "applyAllPartial": "Einige Einstellungen angewendet. Details bei einzelnen Tools prüfen.",
+      "applyFailed": "Anwenden fehlgeschlagen",
+      "dockerRestartHint": "Docker Mirror-Änderungen werden nach dem Neustart des Docker Daemons wirksam.",
+      "scopeHint": "Auf System anwenden = schreibt ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json"
+    }
   },
   "hi": {
     "title": "Hostinformationen",

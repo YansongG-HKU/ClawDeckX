@@ -442,7 +442,31 @@
     "startupAgents": "エージェント",
     "wallpaperPreviewAlt": "壁紙のプレビュー",
     "wallpaperHistoryAlt": "壁紙履歴アイテム",
-    "wallpaperFavoriteAlt": "お気に入りの壁紙アイテム"
+    "wallpaperFavoriteAlt": "お気に入りの壁紙アイテム",
+    "mirror": {
+      "title": "ミラー高速化 & ネットワーク",
+      "desc": "npm、GitHub、Docker、pip、Go のミラーを設定して高速アクセス",
+      "presetHint": "ネットワークプリセットをワンクリックで切り替え、推奨ミラーを自動入力",
+      "presetCn": "中国向け高速化",
+      "presetGlobal": "国際ネットワーク",
+      "presetCnApplied": "中国向け高速化プリセットに切り替えました",
+      "presetGlobalApplied": "国際ネットワークプリセットに切り替えました",
+      "detectHint": "システムレベルの現在のミラー設定を検出",
+      "detectBtn": "システム設定を検出",
+      "detecting": "検出中...",
+      "detectFailed": "システム設定の検出に失敗しました",
+      "saveConfig": "設定を保存",
+      "saving": "保存中...",
+      "savedOk": "設定を保存しました",
+      "saveFailed": "保存に失敗しました",
+      "applyAll": "すべてシステムに適用",
+      "applyingAll": "適用中...",
+      "applyAllOk": "すべてのミラー設定をシステムに適用しました",
+      "applyAllPartial": "一部の設定を適用しました。詳細は各ツールを確認してください。",
+      "applyFailed": "適用に失敗しました",
+      "dockerRestartHint": "Docker ミラーの変更は Docker daemon の再起動後に有効になります。",
+      "scopeHint": "システムに適用 = ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json を更新"
+    }
   },
   "hi": {
     "title": "ホスト情報",

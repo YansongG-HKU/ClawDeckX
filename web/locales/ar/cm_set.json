@@ -442,7 +442,31 @@
     "startupAgents": "الوكلاء",
     "wallpaperPreviewAlt": "Wallpaper preview",
     "wallpaperHistoryAlt": "Wallpaper history item",
-    "wallpaperFavoriteAlt": "Favorite wallpaper item"
+    "wallpaperFavoriteAlt": "Favorite wallpaper item",
+    "mirror": {
+      "title": "تسريع المرايا والشبكة",
+      "desc": "تكوين مرايا npm و GitHub و Docker و pip و Go للوصول الأسرع",
+      "presetHint": "تبديل سريع بين إعدادات الشبكة مع ملء تلقائي لجميع المرايا الموصى بها",
+      "presetCn": "تسريع الصين",
+      "presetGlobal": "الشبكة الدولية",
+      "presetCnApplied": "تم التبديل إلى إعداد تسريع الصين",
+      "presetGlobalApplied": "تم التبديل إلى إعداد الشبكة الدولية",
+      "detectHint": "الكشف عن إعدادات المرايا الحالية على مستوى النظام",
+      "detectBtn": "الكشف عن إعداد النظام",
+      "detecting": "جارٍ الكشف...",
+      "detectFailed": "فشل الكشف عن إعداد النظام",
+      "saveConfig": "حفظ الإعداد",
+      "saving": "جارٍ الحفظ...",
+      "savedOk": "تم حفظ الإعداد",
+      "saveFailed": "فشل الحفظ",
+      "applyAll": "تطبيق الكل على النظام",
+      "applyingAll": "جارٍ التطبيق...",
+      "applyAllOk": "تم تطبيق جميع إعدادات المرايا على النظام",
+      "applyAllPartial": "تم تطبيق بعض الإعدادات. تحقق من الأدوات الفردية للتفاصيل.",
+      "applyFailed": "فشل التطبيق",
+      "dockerRestartHint": "تسري تغييرات مرايا Docker بعد إعادة تشغيل Docker daemon.",
+      "scopeHint": "التطبيق على النظام = كتابة ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json"
+    }
   },
   "hi": {
     "title": "معلومات المضيف",

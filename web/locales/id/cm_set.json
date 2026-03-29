@@ -442,7 +442,31 @@
     "startupAgents": "Agents",
     "wallpaperPreviewAlt": "Wallpaper preview",
     "wallpaperHistoryAlt": "Wallpaper history item",
-    "wallpaperFavoriteAlt": "Favorite wallpaper item"
+    "wallpaperFavoriteAlt": "Favorite wallpaper item",
+    "mirror": {
+      "title": "Akselerasi Mirror & Jaringan",
+      "desc": "Konfigurasi mirror npm, GitHub, Docker, pip, Go untuk akses lebih cepat",
+      "presetHint": "Beralih cepat antara preset jaringan, otomatis mengisi semua mirror yang direkomendasikan",
+      "presetCn": "Akselerasi China",
+      "presetGlobal": "Jaringan Internasional",
+      "presetCnApplied": "Beralih ke preset akselerasi China",
+      "presetGlobalApplied": "Beralih ke preset jaringan internasional",
+      "detectHint": "Deteksi konfigurasi mirror sistem saat ini",
+      "detectBtn": "Deteksi Konfigurasi Sistem",
+      "detecting": "Mendeteksi...",
+      "detectFailed": "Gagal mendeteksi konfigurasi sistem",
+      "saveConfig": "Simpan Konfigurasi",
+      "saving": "Menyimpan...",
+      "savedOk": "Konfigurasi tersimpan",
+      "saveFailed": "Gagal menyimpan",
+      "applyAll": "Terapkan Semua ke Sistem",
+      "applyingAll": "Menerapkan...",
+      "applyAllOk": "Semua pengaturan mirror diterapkan ke sistem",
+      "applyAllPartial": "Beberapa pengaturan diterapkan. Periksa alat individual untuk detail.",
+      "applyFailed": "Gagal menerapkan",
+      "dockerRestartHint": "Perubahan mirror Docker berlaku setelah memulai ulang daemon Docker.",
+      "scopeHint": "Terapkan ke sistem = menulis ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json"
+    }
   },
   "hi": {
     "title": "Info Host",

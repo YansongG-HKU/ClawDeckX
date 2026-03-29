@@ -442,7 +442,31 @@
     "startupAgents": "Agentes",
     "wallpaperPreviewAlt": "Wallpaper preview",
     "wallpaperHistoryAlt": "Wallpaper history item",
-    "wallpaperFavoriteAlt": "Favorite wallpaper item"
+    "wallpaperFavoriteAlt": "Favorite wallpaper item",
+    "mirror": {
+      "title": "Aceleración de mirrors y red",
+      "desc": "Configura mirrors de npm, GitHub, Docker, pip, Go para acceso más rápido",
+      "presetHint": "Cambia rápidamente entre ajustes de red, rellenando automáticamente todos los mirrors recomendados",
+      "presetCn": "Aceleración China",
+      "presetGlobal": "Red Internacional",
+      "presetCnApplied": "Cambiado al ajuste de aceleración China",
+      "presetGlobalApplied": "Cambiado al ajuste de red internacional",
+      "detectHint": "Detecta la configuración de mirrors actual a nivel del sistema",
+      "detectBtn": "Detectar configuración del sistema",
+      "detecting": "Detectando...",
+      "detectFailed": "No se pudo detectar la configuración del sistema",
+      "saveConfig": "Guardar configuración",
+      "saving": "Guardando...",
+      "savedOk": "Configuración guardada",
+      "saveFailed": "Error al guardar",
+      "applyAll": "Aplicar todo al sistema",
+      "applyingAll": "Aplicando...",
+      "applyAllOk": "Todos los ajustes de mirrors aplicados al sistema",
+      "applyAllPartial": "Algunos ajustes aplicados. Verifica las herramientas individuales para más detalles.",
+      "applyFailed": "Error al aplicar",
+      "dockerRestartHint": "Los cambios de mirror de Docker tienen efecto tras reiniciar el daemon de Docker.",
+      "scopeHint": "Aplicar al sistema = escribe ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json"
+    }
   },
   "hi": {
     "title": "Info del host",

@@ -442,7 +442,31 @@
     "startupAgents": "Agents",
     "wallpaperPreviewAlt": "Wallpaper preview",
     "wallpaperHistoryAlt": "Wallpaper history item",
-    "wallpaperFavoriteAlt": "Favorite wallpaper item"
+    "wallpaperFavoriteAlt": "Favorite wallpaper item",
+    "mirror": {
+      "title": "Accélération des miroirs & réseau",
+      "desc": "Configurer les miroirs npm, GitHub, Docker, pip, Go pour un accès plus rapide",
+      "presetHint": "Basculez rapidement entre les préréglages réseau en remplissant automatiquement tous les miroirs recommandés",
+      "presetCn": "Accélération Chine",
+      "presetGlobal": "Réseau international",
+      "presetCnApplied": "Basculé vers le préréglage d'accélération Chine",
+      "presetGlobalApplied": "Basculé vers le préréglage réseau international",
+      "detectHint": "Détecter la configuration actuelle des miroirs au niveau du système",
+      "detectBtn": "Détecter la configuration système",
+      "detecting": "Détection en cours...",
+      "detectFailed": "Échec de la détection de la configuration système",
+      "saveConfig": "Enregistrer la configuration",
+      "saving": "Enregistrement...",
+      "savedOk": "Configuration enregistrée",
+      "saveFailed": "Échec de l'enregistrement",
+      "applyAll": "Tout appliquer au système",
+      "applyingAll": "Application en cours...",
+      "applyAllOk": "Tous les paramètres de miroirs appliqués au système",
+      "applyAllPartial": "Certains paramètres appliqués. Vérifiez les outils individuels pour les détails.",
+      "applyFailed": "Échec de l'application",
+      "dockerRestartHint": "Les modifications du miroir Docker prennent effet après le redémarrage du daemon Docker.",
+      "scopeHint": "Appliquer au système = écrit ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json"
+    }
   },
   "hi": {
     "title": "Infos hôte",

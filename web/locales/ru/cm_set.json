@@ -442,7 +442,31 @@
     "startupAgents": "Агенты",
     "wallpaperPreviewAlt": "Wallpaper preview",
     "wallpaperHistoryAlt": "Wallpaper history item",
-    "wallpaperFavoriteAlt": "Favorite wallpaper item"
+    "wallpaperFavoriteAlt": "Favorite wallpaper item",
+    "mirror": {
+      "title": "Ускорение зеркал и сеть",
+      "desc": "Настройте зеркала npm, GitHub, Docker, pip, Go для более быстрого доступа",
+      "presetHint": "Быстро переключайтесь между сетевыми пресетами с автозаполнением рекомендуемых зеркал",
+      "presetCn": "Ускорение для Китая",
+      "presetGlobal": "Международная сеть",
+      "presetCnApplied": "Переключено на пресет ускорения для Китая",
+      "presetGlobalApplied": "Переключено на пресет международной сети",
+      "detectHint": "Определить текущую конфигурацию зеркал на уровне системы",
+      "detectBtn": "Определить конфигурацию системы",
+      "detecting": "Определение...",
+      "detectFailed": "Не удалось определить конфигурацию системы",
+      "saveConfig": "Сохранить конфигурацию",
+      "saving": "Сохранение...",
+      "savedOk": "Конфигурация сохранена",
+      "saveFailed": "Ошибка сохранения",
+      "applyAll": "Применить всё к системе",
+      "applyingAll": "Применение...",
+      "applyAllOk": "Все настройки зеркал применены к системе",
+      "applyAllPartial": "Некоторые настройки применены. Проверьте отдельные инструменты для деталей.",
+      "applyFailed": "Ошибка применения",
+      "dockerRestartHint": "Изменения зеркала Docker вступают в силу после перезапуска демона Docker.",
+      "scopeHint": "Применить к системе = записывает ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json"
+    }
   },
   "hi": {
     "title": "Информация о хосте",

@@ -442,7 +442,31 @@
     "startupAgents": "智慧體",
     "wallpaperPreviewAlt": "桌布預覽",
     "wallpaperHistoryAlt": "桌布歷史項目",
-    "wallpaperFavoriteAlt": "收藏桌布項目"
+    "wallpaperFavoriteAlt": "收藏桌布項目",
+    "mirror": {
+      "title": "鏡像加速 & 網路環境",
+      "desc": "配置 npm、GitHub、Docker、pip、Go 等工具的加速鏡像來源",
+      "presetHint": "一鍵切換網路預設，自動填入所有建議的鏡像設定",
+      "presetCn": "中國加速",
+      "presetGlobal": "國際網路",
+      "presetCnApplied": "已切換為中國加速設定",
+      "presetGlobalApplied": "已切換為國際網路設定",
+      "detectHint": "偵測各工具目前的系統層級鏡像設定",
+      "detectBtn": "偵測系統設定",
+      "detecting": "偵測中...",
+      "detectFailed": "偵測系統設定失敗",
+      "saveConfig": "儲存設定",
+      "saving": "儲存中...",
+      "savedOk": "設定已儲存",
+      "saveFailed": "儲存失敗",
+      "applyAll": "一鍵套用全部至系統",
+      "applyingAll": "套用中...",
+      "applyAllOk": "所有鏡像設定已套用至系統",
+      "applyAllPartial": "部分設定套用成功，請查看各工具詳情",
+      "applyFailed": "套用失敗",
+      "dockerRestartHint": "Docker 鏡像加速需重啟 Docker Daemon 後生效。請執行 `sudo systemctl restart docker` 或從 Docker Desktop 重啟。",
+      "scopeHint": "套用至系統 = 修改 ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json"
+    }
   },
   "hi": {
     "title": "宿主機資訊",
