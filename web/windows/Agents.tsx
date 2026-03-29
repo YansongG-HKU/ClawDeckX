@@ -635,8 +635,12 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
     const modelLabel = typeof model === 'string' ? model : (model?.primary || na);
     const fallbacks = typeof model === 'object' ? model?.fallbacks : null;
     const toolsCfg = config?.tools || config?.parsed?.tools || config?.config?.tools || null;
+    // runtimeModel: actual model used at runtime from agents.list (openclaw >=2026.3.28)
+    const runtimeEntry = agents.find((ag: any) => ag.id === agentId);
+    const runtimeModel: string | undefined = runtimeEntry?.runtimeModel || runtimeEntry?.activeModel || undefined;
     return {
       model: modelLabel + (Array.isArray(fallbacks) && fallbacks.length > 0 ? ` (+${fallbacks.length})` : ''),
+      runtimeModel,
       workspace: entry?.workspace || defaults?.workspace || a.workspaceDefault,
       skills: entry?.skills || null,
       tools: entry?.tools || toolsCfg,
@@ -1022,7 +1026,7 @@ const Agents: React.FC<AgentsProps> = ({ language }) => {
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {[
                         { label: a.workspace, value: cfg.workspace, icon: 'folder' },
-                        { label: a.model, value: cfg.model, icon: 'smart_toy' },
+                        { label: a.model, value: cfg.runtimeModel && cfg.runtimeModel !== cfg.model ? `${cfg.model} → ${cfg.runtimeModel}` : cfg.model, icon: 'smart_toy' },
                         { label: a.identity, value: ident?.name || selected.identity?.name || na, icon: 'person' },
                         { label: a.agentStatus, value: lastHeartbeat && (Date.now() - lastHeartbeat.ts < 120000) ? a.online : a.offline, icon: 'circle', statusColor: lastHeartbeat && (Date.now() - lastHeartbeat.ts < 120000) ? 'text-mac-green' : 'text-slate-400' },
                         { label: a.lastHeartbeat, value: lastHeartbeat ? fmtHeartbeatAgo(lastHeartbeat.ts, a.heartbeatAgo, a.heartbeatNever) : a.heartbeatNever, icon: 'favorite' },

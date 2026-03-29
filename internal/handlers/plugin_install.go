@@ -112,7 +112,12 @@ func enrichPluginUpdateInfo(ctx context.Context, plugins []interface{}) {
 			continue
 		}
 		installSource, _ := plugin["installSource"].(string)
+		// Only npm-installed plugins can be checked for updates via the registry.
+		// Bundled/local/cli plugins are managed by the gateway itself.
 		if installSource != "npm" {
+			if installSource == "bundled" || installSource == "local" || installSource == "cli" {
+				plugin["updateAvailable"] = false
+			}
 			continue
 		}
 		spec, _ := plugin["spec"].(string)

@@ -47,6 +47,8 @@ interface GwSession {
   isStreaming?: boolean;
   fastMode?: boolean;
   lastTo?: string;
+  parentKey?: string;
+  spawnedBy?: string;
 }
 
 interface ChatMsg {
@@ -255,7 +257,9 @@ function areSessionsEquivalent(a: GwSession[], b: GwSession[]): boolean {
       session.derivedTitle === next.derivedTitle &&
       session.maxContextTokens === next.maxContextTokens &&
       session.compacted === next.compacted &&
-      session.fastMode === next.fastMode;
+      session.fastMode === next.fastMode &&
+      session.parentKey === next.parentKey &&
+      session.spawnedBy === next.spawnedBy;
   });
 }
 
@@ -875,6 +879,21 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
           errMsg = `${errMsg}  (${hints[code]})`;
         }
       }
+      // Surface provider-specific rate limit details from gateway (openclaw >=2026.3.28)
+      // Gateway now returns structured messages like "Rate limited by <provider>: retry after <N>s"
+      if (typeof errMsg === 'string') {
+        const rlMatch = errMsg.match(/rate.?limit(?:ed)?(?:\s+by\s+([\w\s\-]+?))?(?:[:\s]+retry\s+after\s+(\d+)\s*s(?:ec(?:ond)?s?)?)?/i);
+        if (rlMatch) {
+          const provider = rlMatch[1]?.trim();
+          const retryAfter = rlMatch[2] ? Number(rlMatch[2]) : null;
+          const parts: string[] = [];
+          if (provider) parts.push(provider);
+          if (retryAfter !== null) parts.push(`retry in ${retryAfter}s`);
+          if (parts.length > 0 && !errMsg.includes('retry in') && !errMsg.includes(parts[0])) {
+            errMsg = `${errMsg}  (${parts.join(', ')})`;
+          }
+        }
+      }
       setError(errMsg);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1002,6 +1021,8 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
         compacted: !!s.compacted,
         fastMode: s.fastMode ?? undefined,
         lastTo: s.lastTo || s.deliveryContext?.to || '',
+        parentKey: s.parentKey || s.parentSessionKey || '',
+        spawnedBy: s.spawnedBy || s.ownerKey || '',
       }));
       // Clean up expired patch grace entries
       const nowMs = Date.now();
