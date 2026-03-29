@@ -182,7 +182,7 @@ const ConfigModal: React.FC<{
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <div className={`w-full mx-4 rounded-2xl shadow-2xl overflow-hidden theme-panel sci-card flex flex-col ${activeTab === 'skillmd' ? 'max-w-2xl' : 'max-w-md'}`} style={{ maxHeight: '80vh' }} onClick={e => e.stopPropagation()}>
+      <div className={`w-full mx-4 rounded-2xl shadow-2xl overflow-hidden theme-panel sci-card flex flex-col ${activeTab === 'skillmd' ? 'max-w-3xl' : 'max-w-md'}`} style={{ maxHeight: activeTab === 'skillmd' ? '92vh' : '80vh' }} onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="px-5 py-4 border-b border-slate-200 dark:border-white/5 flex items-center gap-3 shrink-0">
           <span className="text-xl">{skill.emoji || '⚙️'}</span>
@@ -294,7 +294,8 @@ const ConfigModal: React.FC<{
                     value={mdContent}
                     onChange={e => setMdContent(e.target.value)}
                     spellCheck={false}
-                    className="flex-1 w-full resize-none theme-field rounded-lg text-[11px] font-mono p-3 outline-none focus:border-primary sci-input leading-relaxed custom-scrollbar neon-scrollbar"
+                    style={{ minHeight: '320px' }}
+                    className="flex-1 w-full resize-y theme-field rounded-lg text-[11px] font-mono p-3 outline-none focus:border-primary sci-input leading-relaxed custom-scrollbar neon-scrollbar"
                     placeholder="# Skill name&#10;&#10;Describe what this skill does..."
                   />
                 </>

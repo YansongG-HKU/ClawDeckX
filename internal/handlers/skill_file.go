@@ -17,58 +17,20 @@ func NewSkillFileHandler() *SkillFileHandler {
 	return &SkillFileHandler{}
 }
 
-// allowedSkillsRoots returns the canonical paths of allowed skill directories.
-// Note: clawhub CLI ignores --dir parameter and always installs to ~/.openclaw/workspace,
-// so we must allow workspace directory for SKILL.md editing.
-// ~/.openclaw/skills is kept for legacy compatibility.
-func allowedSkillsRoots() ([]string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
-	}
-	return []string{
-		filepath.Clean(filepath.Join(home, ".openclaw", "workspace")),
-		filepath.Clean(filepath.Join(home, ".openclaw", "skills")),
-	}, nil
-}
-
 // validateSkillFilePath checks that the requested path:
-//  1. Is an absolute path.
-//  2. Resolves within ~/.openclaw/workspace/ or ~/.openclaw/skills/.
-//  3. Has exactly the filename "SKILL.md" (case-insensitive on Windows, exact on Unix).
+//  1. Is absolute (no relative traversal).
+//  2. Has exactly the filename "SKILL.md" (case-insensitive on Windows, exact on Unix).
+//
+// Any skill installed anywhere on disk is allowed, because the baseDir is provided
+// by the gateway's skills.status response and is already trusted.
 func validateSkillFilePath(rawPath string) (string, error) {
 	cleaned := filepath.Clean(rawPath)
-
-	roots, err := allowedSkillsRoots()
-	if err != nil {
-		return "", err
-	}
-
-	// Find which root this path belongs to
-	var matchedRoot string
-	for _, root := range roots {
-		if strings.HasPrefix(cleaned, root+string(os.PathSeparator)) || cleaned == root {
-			matchedRoot = root
-			break
-		}
-	}
-	if matchedRoot == "" {
+	if !filepath.IsAbs(cleaned) {
 		return "", os.ErrPermission
 	}
-
-	// Must be exactly one level deep (skillDir/SKILL.md)
-	rel, err := filepath.Rel(matchedRoot, cleaned)
-	if err != nil {
+	if !strings.EqualFold(filepath.Base(cleaned), "SKILL.md") {
 		return "", os.ErrPermission
 	}
-	parts := strings.Split(rel, string(os.PathSeparator))
-	if len(parts) != 2 {
-		return "", os.ErrPermission
-	}
-	if !strings.EqualFold(parts[1], "SKILL.md") {
-		return "", os.ErrPermission
-	}
-
 	return cleaned, nil
 }
 
