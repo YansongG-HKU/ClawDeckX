@@ -19,7 +19,7 @@ _2026-03-30_
 - replace softprops/action-gh-release with gh CLI
 
 ---
-**Full Changelog**: [v0.0.35...v0.0.36](https://ghproxy.com/https://github.com/ClawDeckX/ClawDeckX/compare/v0.0.35...v0.0.36)
+**Full Changelog**: [v0.0.35...v0.0.36](https://github.com/ClawDeckX/ClawDeckX/compare/v0.0.35...v0.0.36)
 
 
 
@@ -821,6 +821,7 @@ _2026-03-15_
 
 
 ---
+
 
 
 
