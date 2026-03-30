@@ -21,6 +21,7 @@ _2026-03-30_
 ### 🔧 Maintenance / 维护
 
 - untrack scripts/ (local-only)
+- untrack scripts/ (local-only)
 
 ---
 **Full Changelog**: [v0.0.35...v0.0.36](https://ghproxy.com/https://github.com/ClawDeckX/ClawDeckX/compare/v0.0.35...v0.0.36)
@@ -825,6 +826,7 @@ _2026-03-15_
 
 
 ---
+
 
 
 
