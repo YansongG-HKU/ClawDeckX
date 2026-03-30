@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 permissions:
   contents: write
 
@@ -90,7 +93,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           path: artifacts
 
@@ -178,13 +181,13 @@ jobs:
           fi
 
       - name: Download linux/amd64 binary
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: clawdeckx-linux-amd64
           path: dist/
 
       - name: Download linux/arm64 binary
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: clawdeckx-linux-arm64
           path: dist/
