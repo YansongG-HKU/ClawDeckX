@@ -1620,7 +1620,9 @@ export interface McpServerConfig {
   command?: string;
   args?: string[];
   url?: string;
+  baseUrl?: string;
   env?: Record<string, string>;
+  headers?: Record<string, string>;
   [key: string]: unknown;
 }
 

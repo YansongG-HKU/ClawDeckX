@@ -22,7 +22,7 @@ const TYPE_DEFAULTS: Record<ServerType, McpServerConfig> = {
 
 // Detect server type from config
 function detectType(cfg: McpServerConfig): ServerType {
-  if (cfg.type === 'sse' || cfg.url) return 'sse';
+  if (cfg.type === 'sse' || cfg.url || (cfg as any).baseUrl) return 'sse';
   return 'stdio';
 }
 
@@ -154,19 +154,21 @@ function parseMcpJson(raw: string): ParsedServer[] {
 
 function normalizeConfig(raw: any): McpServerConfig {
   const cfg: McpServerConfig = {};
-  // transport / type field
+  // transport / type field; baseUrl is an alias for url (used by some MCP configs)
   const transport = raw.transport ?? raw.type ?? '';
-  if (transport === 'http' || transport === 'sse' || raw.url) {
+  const resolvedUrl = raw.url ?? raw.baseUrl ?? '';
+  if (transport === 'http' || transport === 'sse' || resolvedUrl) {
     cfg.type = 'sse';
-    cfg.url = raw.url ?? '';
+    cfg.url = resolvedUrl;
   } else {
     cfg.type = 'stdio';
     cfg.command = raw.command ?? '';
     if (Array.isArray(raw.args)) cfg.args = raw.args;
   }
   if (raw.env && typeof raw.env === 'object') cfg.env = raw.env;
+  if (raw.headers && typeof raw.headers === 'object') cfg.headers = raw.headers;
   // preserve any extra fields
-  const known = new Set(['type', 'transport', 'command', 'args', 'url', 'env']);
+  const known = new Set(['type', 'transport', 'command', 'args', 'url', 'baseUrl', 'env', 'headers']);
   for (const [k, v] of Object.entries(raw)) {
     if (!known.has(k)) (cfg as any)[k] = v;
   }

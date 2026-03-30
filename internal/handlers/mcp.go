@@ -25,7 +25,9 @@ type McpServerConfig struct {
 	Command string            `json:"command,omitempty"`
 	Args    []string          `json:"args,omitempty"`
 	URL     string            `json:"url,omitempty"`
+	BaseUrl string            `json:"baseUrl,omitempty"` // alias for URL used by some MCP clients
 	Env     map[string]string `json:"env,omitempty"`
+	Headers map[string]string `json:"headers,omitempty"`
 }
 
 // McpHandler manages MCP server configuration in openclaw.json.
@@ -359,6 +361,10 @@ func finalizeHandshakeResult(result McpServerTestResult, resp *mcpJSONRPCRespons
 }
 
 func testMcpServer(ctx context.Context, name string, cfg McpServerConfig) McpServerTestResult {
+	// Normalize: baseUrl is an alias for url
+	if cfg.URL == "" && cfg.BaseUrl != "" {
+		cfg.URL = cfg.BaseUrl
+	}
 	typeName := strings.TrimSpace(cfg.Type)
 	if typeName == "" {
 		if strings.TrimSpace(cfg.URL) != "" {
@@ -402,6 +408,9 @@ func testHTTPMcpServer(ctx context.Context, name, typeName string, cfg McpServer
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json, text/event-stream")
+	for k, v := range cfg.Headers {
+		req.Header.Set(k, v)
+	}
 
 	client := &http.Client{Timeout: 6 * time.Second}
 	resp, err := client.Do(req)
