@@ -138,7 +138,7 @@ function parseMcpJson(raw: string): ParsedServer[] {
   }
 
   // Format 2: single server object { "command": ..., "args": ... } — name unknown
-  if (obj.command || obj.url || obj.transport) {
+  if (obj.command || obj.url || obj.baseUrl || obj.transport) {
     results.push({ name: '', config: normalizeConfig(obj) });
     return results;
   }
@@ -155,9 +155,9 @@ function parseMcpJson(raw: string): ParsedServer[] {
 function normalizeConfig(raw: any): McpServerConfig {
   const cfg: McpServerConfig = {};
   // transport / type field; baseUrl is an alias for url (used by some MCP configs)
-  const transport = raw.transport ?? raw.type ?? '';
+  const transport = (raw.transport ?? raw.type ?? '').toLowerCase();
   const resolvedUrl = raw.url ?? raw.baseUrl ?? '';
-  if (transport === 'http' || transport === 'sse' || resolvedUrl) {
+  if (transport === 'http' || transport === 'sse' || transport === 'streamable-http' || resolvedUrl) {
     cfg.type = 'sse';
     cfg.url = resolvedUrl;
   } else {
