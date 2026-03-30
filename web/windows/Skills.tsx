@@ -135,6 +135,7 @@ const ConfigModal: React.FC<{
   const [mdPath, setMdPath] = useState('');
   const [mdSaving, setMdSaving] = useState(false);
   const [mdError, setMdError] = useState('');
+  const [mdConfirming, setMdConfirming] = useState(false);
   const mdLoadedRef = useRef(false);
 
   useEffect(() => {
@@ -164,6 +165,11 @@ const ConfigModal: React.FC<{
   };
 
   const handleSaveMd = async () => {
+    if (!mdConfirming) {
+      setMdConfirming(true);
+      return;
+    }
+    setMdConfirming(false);
     setMdSaving(true);
     setMdError('');
     try {
@@ -304,10 +310,19 @@ const ConfigModal: React.FC<{
             <div className="px-5 py-3 border-t border-slate-200 dark:border-white/5 flex items-center justify-between shrink-0">
               <p className="text-[10px] theme-text-muted">{sk.skillMdHint || 'Changes take effect after gateway restart.'}</p>
               <div className="flex gap-2">
-                <button onClick={onClose} className="h-8 px-4 text-xs font-bold theme-text-secondary hover:text-[var(--color-text)] dark:hover:text-white">{sk.cancel}</button>
-                <button onClick={handleSaveMd} disabled={mdSaving || mdLoading} className="h-8 px-5 bg-primary text-white text-xs font-bold rounded-lg disabled:opacity-50 flex items-center gap-1.5">
+                <button
+                  onClick={() => { setMdConfirming(false); onClose(); }}
+                  className="h-8 px-4 text-xs font-bold theme-text-secondary hover:text-[var(--color-text)] dark:hover:text-white"
+                >{sk.cancel}</button>
+                {mdConfirming && (
+                  <button
+                    onClick={() => setMdConfirming(false)}
+                    className="h-8 px-4 text-xs font-bold rounded-lg border border-slate-300 dark:border-white/10 theme-text-secondary hover:bg-slate-100 dark:hover:bg-white/10"
+                  >{sk.cancelEdit || 'Cancel'}</button>
+                )}
+                <button onClick={handleSaveMd} disabled={mdSaving || mdLoading} className={`h-8 px-5 text-white text-xs font-bold rounded-lg disabled:opacity-50 flex items-center gap-1.5 transition-colors ${mdConfirming ? 'bg-mac-red hover:bg-mac-red/90' : 'bg-primary'}`}>
                   {mdSaving && <span className="material-symbols-outlined text-[13px] animate-spin">progress_activity</span>}
-                  {mdSaving ? (sk.skillMdSaving || 'Saving...') : sk.save}
+                  {mdSaving ? (sk.skillMdSaving || 'Saving...') : mdConfirming ? (sk.skillMdConfirmSave || 'Confirm Save') : sk.save}
                 </button>
               </div>
             </div>

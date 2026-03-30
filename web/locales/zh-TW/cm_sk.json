@@ -264,6 +264,8 @@
     "skillMdSaveFailed": "儲存 SKILL.md 失敗",
     "skillMdSaving": "儲存中...",
     "skillMdNew": "SKILL.md 尚不存在，儲存將自動建立。",
+    "skillMdConfirmSave": "確認儲存",
+    "cancelEdit": "返回",
     "skillMdHint": "修改將在閘道重啟後生效。",
     "mcpCenter": "MCP",
     "mcp": {

@@ -264,6 +264,8 @@
     "skillMdSaveFailed": "Impossible d'enregistrer SKILL.md",
     "skillMdSaving": "Enregistrement...",
     "skillMdNew": "SKILL.md n'existe pas encore — il sera créé lors de l'enregistrement.",
+    "skillMdConfirmSave": "Confirmer la sauvegarde",
+    "cancelEdit": "Retour",
     "skillMdHint": "Les modifications prendront effet après le redémarrage de la passerelle.",
     "mcpCenter": "MCP",
     "mcp": {

@@ -1,4 +1,4 @@
-{
+﻿{
   "sk": {
     "installed": "Installed",
     "available": "Available",
@@ -264,6 +264,8 @@
     "skillMdSaveFailed": "Failed to save SKILL.md",
     "skillMdSaving": "Saving...",
     "skillMdNew": "SKILL.md does not exist yet — saving will create it.",
+    "skillMdConfirmSave": "Confirm Save",
+    "cancelEdit": "Go Back",
     "skillMdHint": "Changes take effect after gateway restart.",
     "mcpCenter": "MCP",
     "mcp": {

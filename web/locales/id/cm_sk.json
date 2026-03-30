@@ -264,6 +264,8 @@
     "skillMdSaveFailed": "Gagal menyimpan SKILL.md",
     "skillMdSaving": "Menyimpan...",
     "skillMdNew": "SKILL.md belum ada — akan dibuat saat menyimpan.",
+    "skillMdConfirmSave": "Konfirmasi Simpan",
+    "cancelEdit": "Kembali",
     "skillMdHint": "Perubahan akan berlaku setelah gateway dimulai ulang.",
     "mcpCenter": "MCP",
     "mcp": {

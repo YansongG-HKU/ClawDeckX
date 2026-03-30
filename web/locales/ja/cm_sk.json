@@ -264,6 +264,8 @@
     "skillMdSaveFailed": "SKILL.mdの保存に失敗",
     "skillMdSaving": "保存中...",
     "skillMdNew": "SKILL.mdがまだ存在しません—保存時に作成されます。",
+    "skillMdConfirmSave": "保存を確認",
+    "cancelEdit": "戻る",
     "skillMdHint": "変更はゲートウェイ再起動後に反映されます。",
     "mcpCenter": "MCP",
     "mcp": {

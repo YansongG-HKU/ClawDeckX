@@ -264,6 +264,8 @@
     "skillMdSaveFailed": "SKILL.md सहेजने में विफल",
     "skillMdSaving": "सहेज रहे हैं...",
     "skillMdNew": "SKILL.md अभी मौजूद नहीं — सहेजने पर बनाया जाएगा।",
+    "skillMdConfirmSave": "सहेजने की पुष्टि करें",
+    "cancelEdit": "वापस जाएं",
     "skillMdHint": "बदलाव गेटवे रीस्टार्ट के बाद लागू होंगे।",
     "mcpCenter": "MCP",
     "mcp": {

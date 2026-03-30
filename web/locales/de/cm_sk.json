@@ -264,6 +264,8 @@
     "skillMdSaveFailed": "SKILL.md konnte nicht gespeichert werden",
     "skillMdSaving": "Speichert...",
     "skillMdNew": "SKILL.md existiert noch nicht — wird beim Speichern erstellt.",
+    "skillMdConfirmSave": "Speichern bestätigen",
+    "cancelEdit": "Zurück",
     "skillMdHint": "Änderungen werden nach einem Gateway-Neustart wirksam.",
     "mcpCenter": "MCP",
     "mcp": {

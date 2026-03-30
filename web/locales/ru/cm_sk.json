@@ -264,6 +264,8 @@
     "skillMdSaveFailed": "Не удалось сохранить SKILL.md",
     "skillMdSaving": "Сохранение...",
     "skillMdNew": "SKILL.md ещё не существует — будет создан при сохранении.",
+    "skillMdConfirmSave": "Подтвердить сохранение",
+    "cancelEdit": "Назад",
     "skillMdHint": "Изменения вступят в силу после перезапуска шлюза.",
     "mcpCenter": "MCP",
     "mcp": {

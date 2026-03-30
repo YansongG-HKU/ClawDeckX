@@ -264,6 +264,8 @@
     "skillMdSaveFailed": "فشل حفظ SKILL.md",
     "skillMdSaving": "جاري الحفظ...",
     "skillMdNew": "SKILL.md غير موجود بعد — سيتم إنشاؤه عند الحفظ.",
+    "skillMdConfirmSave": "تأكيد الحفظ",
+    "cancelEdit": "رجوع",
     "skillMdHint": "ستدخل التغييرات حيز التنفيذ بعد إعادة تشغيل البوابة.",
     "mcpCenter": "MCP",
     "mcp": {

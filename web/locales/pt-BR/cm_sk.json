@@ -264,6 +264,8 @@
     "skillMdSaveFailed": "Falha ao salvar SKILL.md",
     "skillMdSaving": "Salvando...",
     "skillMdNew": "SKILL.md ainda não existe — será criado ao salvar.",
+    "skillMdConfirmSave": "Confirmar salvamento",
+    "cancelEdit": "Voltar",
     "skillMdHint": "As alterações entrarão em vigor após reiniciar o gateway.",
     "mcpCenter": "MCP",
     "mcp": {

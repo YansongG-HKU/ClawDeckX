@@ -264,6 +264,8 @@
     "skillMdSaveFailed": "SKILL.md 저장 실패",
     "skillMdSaving": "저장 중...",
     "skillMdNew": "SKILL.md가 없습니다 — 저장 시 생성됩니다.",
+    "skillMdConfirmSave": "저장 확인",
+    "cancelEdit": "돌아가기",
     "skillMdHint": "변경 사항은 게이트웨이 재시작 후 적용됩니다.",
     "mcpCenter": "MCP",
     "mcp": {
