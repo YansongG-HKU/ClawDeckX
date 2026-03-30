@@ -273,6 +273,14 @@ async function getCachedConfig() {
   return data;
 }
 
+function getSessionModelKey(session?: { model?: string; modelProvider?: string } | null): string {
+  // Gateway sessions often split provider/model; config lookup uses provider/model.
+  const provider = session?.modelProvider?.trim();
+  const model = session?.model?.trim();
+  if (provider && model) return `${provider}/${model}`;
+  return model || provider || '';
+}
+
 const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSessionKeyConsumed }) => {
   const t = useMemo(() => getTranslation(language), [language]);
   const c = t.chat as any;
@@ -453,7 +461,7 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
   // Derive whether current model supports images
   const modelSupportsImages = useMemo(() => {
     const currentSession = sessions.find(s => s.key === sessionKey);
-    const modelPath = currentSession?.model;
+    const modelPath = getSessionModelKey(currentSession);
     if (!modelPath) return true;
     if (modelPath in modelImageMap) return modelImageMap[modelPath];
     return true;
@@ -626,7 +634,7 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const isStreaming = runPhase === 'streaming' || runPhase === 'running';
+  const isStreaming = runPhase === 'streaming' || runPhase === 'running' || runPhase === 'waiting' || runPhase === 'sending';
   const renderedMessages = useMemo(() => messages.slice(-200), [messages]);
   const omittedMessageCount = Math.max(0, messages.length - renderedMessages.length);
   const msgGroups = useMemo(() => groupMessages(renderedMessages), [renderedMessages]);
@@ -1009,7 +1017,6 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
         limit: 50,
         includeDerivedTitles: true,
         includeLastMessage: true,
-        includeSpawned: true,
       }) as any;
       if (sessionsRequestSeqRef.current !== requestSeq) {
         return;
@@ -1075,6 +1082,17 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
     }
   }, []);
 
+  // Stable callbacks for UsagePanel — must NOT be inline arrows in JSX or
+  // UsagePanel.loadData recreates on every render and fires repeated RPC calls.
+  const loadUsageData = useCallback(async (key: string) => {
+    const res = await gwApi.sessionsUsage({ key, limit: 1 }) as any;
+    const entry = res?.sessions?.[0];
+    return entry?.usage ?? null;
+  }, []);
+  const loadTimeseriesData = useCallback(async (key: string) => {
+    return await gwApi.sessionsUsageTimeseries(key) as any;
+  }, []);
+
   // Track message count via ref to avoid loadHistory dependency on messages array
   const messagesLenRef = useRef(0);
   messagesLenRef.current = messages.length;
@@ -1126,23 +1144,28 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
   }, []);
 
   // Load chat history — uses paginated endpoint for initial load, RPC for silent refresh
-  const loadHistory = useCallback(async (opts?: { silent?: boolean }) => {
+  const loadHistory = useCallback(async (opts?: { silent?: boolean; force?: boolean }) => {
     if (!gwReadyRef.current) return;
     const requestSeq = ++historyRequestSeqRef.current;
     const targetSessionKey = sessionKey;
     const showSpinner = !opts?.silent && messagesLenRef.current === 0;
     if (showSpinner) setChatLoading(true);
+    if (!opts?.silent) setError(null);
     try {
-      let mapped: ChatMsg[];
-      if (opts?.silent) {
-        // Silent refresh: use lightweight RPC (no pagination needed, just sync latest)
-        if (pendingRunRef.current && streamTextRef.current) return;
+      const loadViaRpc = async (): Promise<ChatMsg[] | null> => {
+        if (pendingRunRef.current && streamTextRef.current) return null;
         const res = await gwApi.proxy('chat.history', { sessionKey: targetSessionKey, limit: 200 }) as any;
-        if (historyRequestSeqRef.current !== requestSeq || sessionKeyRef.current !== targetSessionKey) return;
-        mapped = mapMessages(Array.isArray(res?.messages) ? res.messages : []);
-        // Don't reset pagination state on silent refresh
+        if (historyRequestSeqRef.current !== requestSeq || sessionKeyRef.current !== targetSessionKey) return null;
+        return mapMessages(Array.isArray(res?.messages) ? res.messages : []);
+      };
+
+      let mapped: ChatMsg[] | null = null;
+      if (opts?.silent || opts?.force) {
+        // Force refresh and silent reconciliation use the RPC history feed.
+        mapped = await loadViaRpc();
+        if (!mapped) return;
       } else {
-        // Initial load: use paginated endpoint for fast first render
+        // Initial load: use paginated endpoint for fast first render.
         const res = await gwApi.sessionsHistoryPaginated(targetSessionKey, 50) as any;
         if (historyRequestSeqRef.current !== requestSeq || sessionKeyRef.current !== targetSessionKey) return;
         const msgs = Array.isArray(res?.messages) ? res.messages : [];
@@ -1151,19 +1174,38 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
         const more = Boolean(res?.hasMore);
         setHasMoreHistory(more);
         nextCursorRef.current = more ? (res?.nextCursor || undefined) : undefined;
+
+        // If the paginated path returns nothing, fall back to RPC before we
+        // touch the current message list. This avoids blanking sessions that
+        // already have visible history in the sidebar.
+        if (mapped.length === 0) {
+          const rpcMapped = await loadViaRpc();
+          if (!rpcMapped) return;
+          if (rpcMapped.length > 0) {
+            mapped = rpcMapped;
+            setHasMoreHistory(false);
+            nextCursorRef.current = undefined;
+          }
+        }
       }
+
+      if (!mapped) return;
       // Preserve image data from optimistic user messages
       setMessages(prev => {
-        const result = restoreImages(prev, mapped);
+        const result = mapped.length === 0 && prev.length > 0 ? prev : restoreImages(prev, mapped);
         // Update session cache
         sessionCacheRef.current.set(targetSessionKey, { messages: result, hasMore: Boolean(nextCursorRef.current), cursor: nextCursorRef.current });
         return result;
       });
-    } catch {
+    } catch (err: any) {
       if (historyRequestSeqRef.current === requestSeq && sessionKeyRef.current === targetSessionKey) {
-        setMessages([]);
-        setHasMoreHistory(false);
-        nextCursorRef.current = undefined;
+        const errMsg = err?.message || cRef.current.error || 'Failed to load history';
+        if (showSpinner) {
+          setMessages([]);
+          setHasMoreHistory(false);
+          nextCursorRef.current = undefined;
+        }
+        setError(errMsg);
       }
     } finally {
       if (showSpinner && historyRequestSeqRef.current === requestSeq && sessionKeyRef.current === targetSessionKey) {
@@ -1421,13 +1463,13 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
   }, [runPhase]);
 
   // Stuck 'running' phase recovery: if runPhase is 'running' (tool execution) for over
-  // 120s without any new events, assume the gateway failed to send a terminal event.
+  // 60s without any new events, assume the gateway failed to send a terminal event.
   // Recover by reloading history and resetting to idle.
   useEffect(() => {
     if (runPhase !== 'running') return;
     const timer = setInterval(() => {
       const pending = pendingRunRef.current;
-      if (pending && Date.now() - pending.startedAt > 120000) {
+      if (pending && Date.now() - pending.startedAt > 60000) {
         console.warn('[sessions] running phase stuck (120s), recovering via history reload');
         if (streamRafRef.current !== null) { clearTimeout(streamRafRef.current); streamRafRef.current = null; }
         streamTextRef.current = '';
@@ -1797,18 +1839,22 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
   }, [input, sending, isStreaming, sessionKey, messages.length, pendingAttachments, ensureSessionPresent]);
 
   // Abort (via REST proxy)
+  // IMPORTANT: reset local state FIRST so the UI unlocks immediately even if
+  // the gateway is unreachable or the abort RPC hangs.
   const handleAbort = useCallback(async () => {
-    if (!gwReady) return;
-    try {
-      await gwApi.proxy('chat.abort', { sessionKey, runId: runId || undefined });
-    } catch { /* ignore */ }
+    const prevRunId = runId;
     setRunId(null);
     clearStream();
     setRunPhase('idle');
     setError(null);
+    setLiveToolCalls(new Map());
     pendingRunRef.current = null;
+    // Best-effort abort signal — don't await result, fire-and-forget
+    if (gwReady) {
+      gwApi.proxy('chat.abort', { sessionKey, runId: prevRunId || undefined }).catch(() => {});
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionKey, runId, clearStream]);
+  }, [sessionKey, runId, clearStream, gwReady]);
 
   // Copy message
   const handleCopy = useCallback((idx: number, text: string) => {
@@ -2598,7 +2644,7 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
               title={c.searchMessages || 'Search Messages'}>
               <span className="material-symbols-outlined text-[18px]">search</span>
             </button>
-            <button onClick={() => { loadSessions(); loadHistory(); }}
+            <button onClick={() => { loadSessions(); void loadHistory({ force: true }); }}
               className="p-2 text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg transition-colors"
               title={c.refresh || 'Refresh'}>
               <span className="material-symbols-outlined text-[18px]">refresh</span>
@@ -2870,6 +2916,21 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
                     <div className="h-28 rounded-2xl bg-slate-100/80 dark:bg-white/[0.03] border border-slate-200/40 dark:border-white/[0.04]" />
                   </div>
                 </div>
+              </div>
+            )}
+
+            {error && (
+              <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-[11px] text-red-400">
+                <div className="min-w-0">
+                  <div className="font-bold uppercase tracking-wide">{c.error || 'Error'}</div>
+                  <div className="truncate">{error}</div>
+                </div>
+                <button
+                  onClick={() => { loadSessions(); void loadHistory({ force: true }); }}
+                  className="shrink-0 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-[10px] font-bold text-red-300 hover:bg-red-500/15 transition-colors"
+                >
+                  {c.refresh || 'Refresh'}
+                </button>
               </div>
             )}
 
@@ -3296,8 +3357,8 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
         )}
 
         {/* Token context bar above input */}
-        {activeSession?.totalTokens && (activeSession?.maxContextTokens || modelCtxMap[activeSession?.model || '']) ? (() => {
-          const maxCtx = activeSession.maxContextTokens || modelCtxMap[activeSession.model || ''] || 0;
+        {activeSession?.totalTokens && (activeSession?.maxContextTokens || modelCtxMap[getSessionModelKey(activeSession)]) ? (() => {
+          const maxCtx = activeSession.maxContextTokens || modelCtxMap[getSessionModelKey(activeSession)] || 0;
           const pct = Math.min(100, (activeSession.totalTokens / maxCtx) * 100);
           const clr = pct > 90 ? 'bg-red-500' : pct > 70 ? 'bg-amber-500' : 'bg-emerald-500';
           return (
@@ -3433,14 +3494,8 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
       <UsagePanel
         sessionKey={sessionKey}
         gwReady={gwReady}
-        loadUsage={async (key) => {
-          const res = await gwApi.sessionsUsage({ key, limit: 1 }) as any;
-          const entry = res?.sessions?.[0];
-          return entry?.usage ?? null;
-        }}
-        loadTimeseries={async (key) => {
-          return await gwApi.sessionsUsageTimeseries(key) as any;
-        }}
+        loadUsage={loadUsageData}
+        loadTimeseries={loadTimeseriesData}
         labels={c}
         securityInfo={(() => {
           if (!securityCfg) return undefined;
@@ -3462,13 +3517,14 @@ const Sessions: React.FC<SessionsProps> = ({ language, pendingSessionKey, onSess
           const agentMatch = sessionKey.match(/^agent:([^:]+):/);
           const agentId = agentMatch?.[1];
           const agentObj = agentId ? agentsList.find(ag => ag.id === agentId) : undefined;
+          const maxContextTokens = activeSession?.maxContextTokens || modelCtxMap[getSessionModelKey(activeSession)] || 0;
           return {
             model: activeSession?.model,
             modelProvider: activeSession?.modelProvider,
             totalTokens: activeSession?.totalTokens,
             inputTokens: activeSession?.inputTokens,
             outputTokens: activeSession?.outputTokens,
-            maxContextTokens: activeSession?.maxContextTokens || modelCtxMap[activeSession?.model || ''] || 0,
+            maxContextTokens,
             compacted: activeSession?.compacted,
             thinkingLevel: activeSession?.thinkingLevel,
             reasoningLevel: activeSession?.reasoningLevel,

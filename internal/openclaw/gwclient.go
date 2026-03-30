@@ -110,6 +110,10 @@ type GWClient struct {
 	backoffMs      int
 	backoffCapMs   int
 
+	pairingAutoApprove bool          // true while auto-approve is running
+	pairingApprovingMu sync.Mutex    // prevents concurrent approve attempts
+	reconnectNowCh     chan struct{} // signals connectLoop to skip the backoff delay
+
 	lastSeq      *int          // last received event seq for gap detection
 	lastTick     time.Time     // last tick event time for silent disconnect detection
 	tickInterval time.Duration // expected tick interval from gateway (default 30s)
@@ -138,6 +142,7 @@ func NewGWClient(cfg GWClientConfig) *GWClient {
 		tickInterval:   30 * time.Second,
 		healthInterval: 30 * time.Second,
 		healthMaxFails: 3,
+		reconnectNowCh: make(chan struct{}, 1),
 	}
 }
 
@@ -427,6 +432,7 @@ func (c *GWClient) ConnectionStatus() map[string]interface{} {
 	reconnects := c.reconnectCount
 	backoff := c.backoffMs
 	lastErr := c.lastError
+	pairingAutoApprove := c.pairingAutoApprove
 	// Compute live gateway uptime: base from hello-ok + local elapsed time
 	gwUptimeMs := int64(0)
 	if c.gwUptimeMs > 0 && !c.gwConnectedAt.IsZero() {
@@ -461,23 +467,24 @@ func (c *GWClient) ConnectionStatus() map[string]interface{} {
 	c.healthMu.Unlock()
 
 	return map[string]interface{}{
-		"connected":         connected,
-		"host":              host,
-		"port":              port,
-		"reconnect_count":   reconnects,
-		"backoff_ms":        backoff,
-		"last_error":        lastErr,
-		"health_enabled":    healthEnabled,
-		"fail_count":        failCount,
-		"max_fails":         maxFails,
-		"interval_sec":      intervalSec,
-		"last_ok":           lastOK,
-		"grace_until":       graceStr,
-		"version":           c.gwVersion,
-		"gateway_uptime_ms": gwUptimeMs,
-		"last_seq":          lastSeq,
-		"last_tick_age":     lastTickAge,
-		"tick_interval_ms":  tickIntervalMs,
+		"connected":            connected,
+		"host":                 host,
+		"port":                 port,
+		"reconnect_count":      reconnects,
+		"backoff_ms":           backoff,
+		"last_error":           lastErr,
+		"pairing_auto_approve": pairingAutoApprove,
+		"health_enabled":       healthEnabled,
+		"fail_count":           failCount,
+		"max_fails":            maxFails,
+		"interval_sec":         intervalSec,
+		"last_ok":              lastOK,
+		"grace_until":          graceStr,
+		"version":              c.gwVersion,
+		"gateway_uptime_ms":    gwUptimeMs,
+		"last_seq":             lastSeq,
+		"last_tick_age":        lastTickAge,
+		"tick_interval_ms":     tickIntervalMs,
 	}
 }
 
@@ -535,6 +542,28 @@ func (c *GWClient) GetConfig() GWClientConfig {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.cfg
+}
+
+// RefreshTokenFromConfig reloads the gateway auth token from the OpenClaw config
+// path and reconnects if the token changed.
+func (c *GWClient) RefreshTokenFromConfig() bool {
+	token := readGatewayTokenFromConfig()
+	if token == "" {
+		return false
+	}
+
+	c.mu.Lock()
+	current := c.cfg
+	if current.Token == token {
+		c.mu.Unlock()
+		return false
+	}
+	current.Token = token
+	c.mu.Unlock()
+
+	logger.Log.Info().Int("tokenLen", len(token)).Msg("gateway token refreshed from config")
+	c.Reconnect(current)
+	return true
 }
 
 // IsLocalGateway returns true if the gateway is running on localhost/loopback.
@@ -620,12 +649,20 @@ func (c *GWClient) connectLoop() {
 		err := c.dial()
 		if err != nil {
 			c.mu.Lock()
-			c.lastError = err.Error()
+			// Don't overwrite lastError while auto-approve is showing progress
+			if !c.pairingAutoApprove {
+				c.lastError = err.Error()
+			}
 			c.mu.Unlock()
 			logger.Log.Warn().Err(err).
 				Str("host", c.cfg.Host).
 				Int("port", c.cfg.Port).
 				Msg(i18n.T(i18n.MsgLogGatewayWsConnectFailed))
+			// Close 1008 "pairing required" lands here when the server sends it
+			// before the JSON response can be delivered (close frame race).
+			if strings.Contains(err.Error(), "pairing required") && c.IsLocalGateway() {
+				go c.autoApprovePairing()
+			}
 		}
 
 		// Add ±20% jitter to prevent reconnect storms across instances
@@ -635,6 +672,8 @@ func (c *GWClient) connectLoop() {
 		select {
 		case <-c.stopCh:
 			return
+		case <-c.reconnectNowCh:
+			logger.Log.Debug().Msg("reconnect-now signal received, skipping backoff")
 		case <-time.After(delay):
 		}
 
@@ -976,6 +1015,9 @@ func (c *GWClient) sendConnect(conn *websocket.Conn, nonce string) {
 			c.mu.Unlock()
 			logger.Log.Error().Str("error", msg).Msg(i18n.T(i18n.MsgLogGatewayWsAuthFail))
 			conn.Close()
+			if strings.Contains(msg, "pairing required") && c.IsLocalGateway() {
+				go c.autoApprovePairing()
+			}
 		}
 	case <-time.After(10 * time.Second):
 		c.mu.Lock()
@@ -985,6 +1027,48 @@ func (c *GWClient) sendConnect(conn *websocket.Conn, nonce string) {
 		conn.Close()
 	case <-c.stopCh:
 		return
+	}
+}
+
+// autoApprovePairing runs `openclaw devices approve --latest` automatically
+// when a local gateway rejects the WS connection with "pairing required".
+// It is safe to call concurrently — only one run proceeds at a time.
+func (c *GWClient) autoApprovePairing() {
+	if !c.pairingApprovingMu.TryLock() {
+		return
+	}
+	defer c.pairingApprovingMu.Unlock()
+
+	c.mu.Lock()
+	c.pairingAutoApprove = true
+	c.lastError = "pairing required: auto-approving device..."
+	c.mu.Unlock()
+
+	logger.Log.Info().Msg("local gateway requires device pairing — running auto-approve")
+
+	// Brief wait to let the WS close frame complete before we write the approval file
+	time.Sleep(600 * time.Millisecond)
+
+	_, err := RunCLIWithTimeout("devices", "approve", "--latest")
+
+	c.mu.Lock()
+	c.pairingAutoApprove = false
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("device pairing auto-approve failed")
+		c.lastError = fmt.Sprintf("pairing auto-approve failed: %v", err)
+	} else {
+		logger.Log.Info().Msg("device pairing approved — triggering immediate reconnect")
+		c.lastError = ""
+		c.backoffMs = 1000
+	}
+	c.mu.Unlock()
+
+	if err == nil {
+		// Signal connectLoop to skip the current backoff sleep
+		select {
+		case c.reconnectNowCh <- struct{}{}:
+		default:
+		}
 	}
 }
 

@@ -465,7 +465,11 @@
       "applyAllPartial": "Некоторые настройки применены. Проверьте отдельные инструменты для деталей.",
       "applyFailed": "Ошибка применения",
       "dockerRestartHint": "Изменения зеркала Docker вступают в силу после перезапуска демона Docker.",
-      "scopeHint": "Применить к системе = записывает ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json"
+      "scopeHint": "Применить к системе = записывает ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json",
+      "speedTestBtn": "Тест скорости",
+      "speedTesting": "Тестирование...",
+      "speedTestDone": "Тест завершён, выбрано самое быстрое зеркало",
+      "fastest": "Быстрее всех"
     }
   },
   "hi": {

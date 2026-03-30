@@ -465,7 +465,11 @@
       "applyAllPartial": "تم تطبيق بعض الإعدادات. تحقق من الأدوات الفردية للتفاصيل.",
       "applyFailed": "فشل التطبيق",
       "dockerRestartHint": "تسري تغييرات مرايا Docker بعد إعادة تشغيل Docker daemon.",
-      "scopeHint": "التطبيق على النظام = كتابة ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json"
+      "scopeHint": "التطبيق على النظام = كتابة ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json",
+      "speedTestBtn": "اختبار السرعة",
+      "speedTesting": "جارٍ الاختبار...",
+      "speedTestDone": "اكتمل اختبار السرعة، تم اختيار المرآة الأسرع",
+      "fastest": "الأسرع"
     }
   },
   "hi": {

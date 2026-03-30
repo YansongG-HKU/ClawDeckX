@@ -155,6 +155,7 @@
   "svcWsReconnects": "Переподключений",
   "svcWsBackoff": "Задержка",
   "svcWsLastError": "Последняя ошибка",
+  "svcWsAutoApproving": "Автоматическое подтверждение сопряжения устройства...",
   "wdFailCount": "Ошибок",
   "wdInterval": "Интервал",
   "wdLastOk": "Последний успех",

@@ -465,7 +465,11 @@
       "applyAllPartial": "部分設定套用成功，請查看各工具詳情",
       "applyFailed": "套用失敗",
       "dockerRestartHint": "Docker 鏡像加速需重啟 Docker Daemon 後生效。請執行 `sudo systemctl restart docker` 或從 Docker Desktop 重啟。",
-      "scopeHint": "套用至系統 = 修改 ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json"
+      "scopeHint": "套用至系統 = 修改 ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json",
+      "speedTestBtn": "測速",
+      "speedTesting": "測速中...",
+      "speedTestDone": "測速完成，已自動選中最快鏡像",
+      "fastest": "最快"
     }
   },
   "hi": {

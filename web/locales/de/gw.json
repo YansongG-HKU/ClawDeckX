@@ -155,6 +155,7 @@
   "svcWsReconnects": "Neuverbindungen",
   "svcWsBackoff": "Wartezeit",
   "svcWsLastError": "Letzter Fehler",
+  "svcWsAutoApproving": "Geräte-Pairing wird automatisch genehmigt...",
   "wdFailCount": "Fehler",
   "wdInterval": "Intervall",
   "wdLastOk": "Letzter Erfolg",

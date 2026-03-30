@@ -88,13 +88,15 @@ interface ToolRowProps {
   systemValue?: string;
   applying?: boolean;
   applyResult?: MirrorApplyResult;
+  speedResults?: Record<string, number>; // presetValue → ms, Infinity = timeout
+  fastestLabel?: string;
   onValueChange: (v: string) => void;
   onApply: () => void;
 }
 
 const ToolRow: React.FC<ToolRowProps> = ({
   icon, iconColor, label, description, value, presets, systemValue,
-  applying, applyResult, onValueChange, onApply,
+  applying, applyResult, speedResults, fastestLabel, onValueChange, onApply,
 }) => {
   const [customMode, setCustomMode] = useState(false);
   const matchedPreset = presets.find(p => p.value === value);
@@ -103,6 +105,13 @@ const ToolRow: React.FC<ToolRowProps> = ({
     if (!matchedPreset && value) setCustomMode(true);
     else setCustomMode(false);
   }, [value, matchedPreset]);
+
+  const fastestValue = React.useMemo(() => {
+    if (!speedResults) return undefined;
+    const entries = Object.entries(speedResults).filter(([, ms]) => ms !== Infinity && ms > 0);
+    if (!entries.length) return undefined;
+    return entries.sort(([, a], [, b]) => a - b)[0]?.[0];
+  }, [speedResults]);
 
   return (
     <div className="rounded-xl border border-slate-200 dark:border-white/8 bg-slate-50 dark:bg-white/3 overflow-hidden">
@@ -125,20 +134,46 @@ const ToolRow: React.FC<ToolRowProps> = ({
       {/* Controls */}
       <div className="px-4 py-3 space-y-2">
         {/* Preset chips */}
-        <div className="flex flex-wrap gap-1.5">
-          {presets.map(p => (
-            <button
-              key={p.value}
-              onClick={() => { onValueChange(p.value); setCustomMode(false); }}
-              className={`h-6 px-2.5 rounded-full text-[10px] font-bold transition-all border ${
-                !customMode && value === p.value
-                  ? 'bg-primary/10 text-primary border-primary/30'
-                  : 'bg-white dark:bg-white/5 text-slate-500 dark:text-white/40 border-slate-200 dark:border-white/10 hover:border-primary/30 hover:text-primary'
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-1.5 pt-1">
+          {presets.map(p => {
+            const ms = speedResults?.[p.value];
+            const isFastest = fastestValue !== undefined && fastestValue === p.value;
+            const hasTested = ms !== undefined;
+            const failed = ms === Infinity;
+            const isSelected = !customMode && value === p.value;
+            return (
+              <div key={p.value} className="relative">
+                <button
+                  onClick={() => { onValueChange(p.value); setCustomMode(false); }}
+                  className={`h-6 px-2.5 rounded-full text-[10px] font-bold transition-all border flex items-center gap-1 ${
+                    isSelected
+                      ? isFastest
+                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-400/40'
+                        : 'bg-primary/10 text-primary border-primary/30'
+                      : isFastest
+                        ? 'bg-emerald-500/8 text-emerald-600 dark:text-emerald-500 border-emerald-400/30 hover:bg-emerald-500/15'
+                        : 'bg-white dark:bg-white/5 text-slate-500 dark:text-white/40 border-slate-200 dark:border-white/10 hover:border-primary/30 hover:text-primary'
+                  }`}
+                >
+                  {isFastest && <span className="material-symbols-outlined text-[9px]">bolt</span>}
+                  {p.label}
+                  {hasTested && !failed && (
+                    <span className={`text-[8px] font-mono opacity-70 ${
+                      isFastest ? 'text-emerald-500' : 'text-slate-400 dark:text-white/30'
+                    }`}>{ms}ms</span>
+                  )}
+                  {hasTested && failed && (
+                    <span className="text-[8px] text-red-400 opacity-60">✕</span>
+                  )}
+                </button>
+                {isFastest && (
+                  <span className="absolute -top-2 -end-1 px-1 rounded-full bg-emerald-500 text-white text-[6px] font-bold leading-[11px] pointer-events-none">
+                    {fastestLabel || '最快'}
+                  </span>
+                )}
+              </div>
+            );
+          })}
           <button
             onClick={() => setCustomMode(true)}
             className={`h-6 px-2.5 rounded-full text-[10px] font-bold transition-all border ${
@@ -197,6 +232,8 @@ const MirrorSettings: React.FC<MirrorSettingsProps> = ({ s, m }) => {
   const [applyingTool, setApplyingTool] = useState<string | null>(null);
   const [applyResults, setApplyResults] = useState<Record<string, MirrorApplyResult>>({});
   const [collapsed, setCollapsed] = useState(true);
+  const [speedResults, setSpeedResults] = useState<Record<string, Record<string, number>>>({});
+  const [speedTesting, setSpeedTesting] = useState(false);
 
   // Load saved config on mount
   useEffect(() => {
@@ -205,6 +242,63 @@ const MirrorSettings: React.FC<MirrorSettingsProps> = ({ s, m }) => {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  const probeUrl = useCallback(async (url: string, tool: string): Promise<number> => {
+    const base = url.split(',')[0].trim();
+    if (!base) return Infinity;
+    // Docker registries need the /v2/ health-check path (root returns no HTTP response)
+    const testTarget = tool === 'docker' ? base.replace(/\/$/, '') + '/v2/' : base;
+    try {
+      const res = await mirrorConfigApi.probeUrl(testTarget);
+      return res.latencyMs ?? Infinity;
+    } catch {
+      return Infinity;
+    }
+  }, []);
+
+  const runSpeedTest = useCallback(async () => {
+    setSpeedTesting(true);
+    setSpeedResults({});
+    const toolPresets: Record<string, { value: string }[]> = {
+      npm:    NPM_PRESETS,
+      git:    GITHUB_PRESETS.filter(p => p.value),
+      docker: DOCKER_PRESETS.filter(p => p.value && !p.value.includes('<your-id>')),
+      pip:    PIP_PRESETS,
+      go:     GO_PRESETS,
+    };
+    const allResults: Record<string, Record<string, number>> = {};
+    await Promise.all(
+      Object.entries(toolPresets).map(async ([tool, presets]) => {
+        const results: Record<string, number> = {};
+        await Promise.all(presets.map(async p => { results[p.value] = await probeUrl(p.value, tool); }));
+        allResults[tool] = results;
+      })
+    );
+    setSpeedResults(allResults);
+    // Auto-select the fastest reachable preset for each tool
+    const toolToKey: Record<string, keyof MirrorConfig> = {
+      npm: 'npmRegistry', git: 'githubProxy', docker: 'dockerMirror', pip: 'pipIndex', go: 'goProxy',
+    };
+    const updates: Partial<MirrorConfig> = {};
+    for (const [tool, results] of Object.entries(allResults)) {
+      const fastest = Object.entries(results)
+        .filter(([, ms]) => ms !== Infinity)
+        .sort(([, a], [, b]) => a - b)[0];
+      if (fastest) {
+        const key = toolToKey[tool];
+        if (key) (updates as any)[key] = fastest[0];
+      }
+    }
+    if (Object.keys(updates).length > 0) {
+      setCfg(prev => {
+        const next = { ...prev, ...updates, preset: 'custom' as const };
+        mirrorConfigApi.set(next).catch(() => {});
+        return next;
+      });
+    }
+    setSpeedTesting(false);
+    toast('success', m.speedTestDone || '测速完成，已自动选中最快镜像');
+  }, [probeUrl, toast, m]);
 
   const detectSystem = useCallback(async () => {
     setDetecting(true);
@@ -323,6 +417,20 @@ const MirrorSettings: React.FC<MirrorSettingsProps> = ({ s, m }) => {
             <p className="text-[11px] text-slate-600 dark:text-white/50 flex-1">{m.presetHint || '一键切换网络环境预设'}</p>
             <div className="flex gap-2">
               <button
+                onClick={runSpeedTest}
+                disabled={speedTesting || detecting}
+                className={`h-8 px-4 rounded-lg text-[11px] font-bold border transition-all flex items-center gap-1.5 ${
+                  speedTesting
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-400/30'
+                    : 'bg-white dark:bg-white/5 text-slate-600 dark:text-white/50 border-slate-200 dark:border-white/10 hover:border-emerald-400/40 hover:text-emerald-600 dark:hover:text-emerald-400'
+                } disabled:opacity-40`}
+              >
+                {speedTesting
+                  ? <><span className="material-symbols-outlined text-[12px] animate-spin">progress_activity</span>{m.speedTesting || '测速中...'}</>
+                  : <><span className="material-symbols-outlined text-[12px]">bolt</span>{m.speedTestBtn || '测速'}</>
+                }
+              </button>
+              <button
                 onClick={() => applyPreset('cn')}
                 className={`h-8 px-4 rounded-lg text-[11px] font-bold border transition-all flex items-center gap-1.5 ${
                   cfg.preset === 'cn'
@@ -351,7 +459,7 @@ const MirrorSettings: React.FC<MirrorSettingsProps> = ({ s, m }) => {
             <span className="text-[11px] text-slate-500 dark:text-white/40 flex-1">{m.detectHint || '检测当前系统已配置的镜像源'}</span>
             <button
               onClick={detectSystem}
-              disabled={detecting}
+              disabled={detecting || speedTesting}
               className="h-7 px-3 rounded-lg text-[10px] font-bold bg-white dark:bg-white/8 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/50 hover:border-primary/30 hover:text-primary disabled:opacity-40 flex items-center gap-1.5 transition-colors"
             >
               {detecting
@@ -372,6 +480,8 @@ const MirrorSettings: React.FC<MirrorSettingsProps> = ({ s, m }) => {
             systemValue={systemStatus?.npmRegistry}
             applying={applyingTool === 'npm'}
             applyResult={applyResults['npm']}
+            speedResults={speedResults['npm']}
+            fastestLabel={m.fastest || '最快'}
             onValueChange={v => updateField('npmRegistry', v)}
             onApply={() => applyTool('npm')}
           />
@@ -386,6 +496,8 @@ const MirrorSettings: React.FC<MirrorSettingsProps> = ({ s, m }) => {
             systemValue={systemStatus?.githubProxy}
             applying={applyingTool === 'git'}
             applyResult={applyResults['git']}
+            speedResults={speedResults['git']}
+            fastestLabel={m.fastest || '最快'}
             onValueChange={v => updateField('githubProxy', v)}
             onApply={() => applyTool('git')}
           />
@@ -400,6 +512,8 @@ const MirrorSettings: React.FC<MirrorSettingsProps> = ({ s, m }) => {
             systemValue={systemStatus?.dockerMirror}
             applying={applyingTool === 'docker'}
             applyResult={applyResults['docker']}
+            speedResults={speedResults['docker']}
+            fastestLabel={m.fastest || '最快'}
             onValueChange={v => updateField('dockerMirror', v)}
             onApply={() => applyTool('docker')}
           />
@@ -414,6 +528,8 @@ const MirrorSettings: React.FC<MirrorSettingsProps> = ({ s, m }) => {
             systemValue={systemStatus?.pipIndex}
             applying={applyingTool === 'pip'}
             applyResult={applyResults['pip']}
+            speedResults={speedResults['pip']}
+            fastestLabel={m.fastest || '最快'}
             onValueChange={v => updateField('pipIndex', v)}
             onApply={() => applyTool('pip')}
           />
@@ -428,6 +544,8 @@ const MirrorSettings: React.FC<MirrorSettingsProps> = ({ s, m }) => {
             systemValue={systemStatus?.goProxy}
             applying={applyingTool === 'go'}
             applyResult={applyResults['go']}
+            speedResults={speedResults['go']}
+            fastestLabel={m.fastest || '最快'}
             onValueChange={v => updateField('goProxy', v)}
             onApply={() => applyTool('go')}
           />

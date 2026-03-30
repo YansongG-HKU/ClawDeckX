@@ -155,6 +155,7 @@
   "svcWsReconnects": "重連次數",
   "svcWsBackoff": "退避",
   "svcWsLastError": "最近錯誤",
+  "svcWsAutoApproving": "正在自動處理裝置配對...",
   "wdFailCount": "失敗次數",
   "wdInterval": "檢查間隔",
   "wdLastOk": "上次成功",

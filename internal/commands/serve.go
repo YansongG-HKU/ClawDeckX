@@ -135,8 +135,8 @@ func RunServe(args []string) int {
 	gwHost := cfg.OpenClaw.GatewayHost
 	gwPort := cfg.OpenClaw.GatewayPort
 	gwToken := cfg.OpenClaw.GatewayToken
+	profileRepo := database.NewGatewayProfileRepo()
 	{
-		profileRepo := database.NewGatewayProfileRepo()
 		// Load user language preference before creating default profile
 		if lang, err := database.NewSettingRepo().Get("language"); err == nil && lang != "" {
 			i18n.SetLanguage(lang)
@@ -247,6 +247,34 @@ func RunServe(args []string) int {
 		if v != "false" && healthCheckApplicable {
 			gwClient.SetHealthCheckEnabled(true)
 		}
+	}
+	refreshGatewayAuth := func() bool {
+		if gwClient.RefreshTokenFromConfig() {
+			cfg := gwClient.GetConfig()
+			svc.GatewayHost = cfg.Host
+			svc.GatewayPort = cfg.Port
+			svc.GatewayToken = cfg.Token
+			return true
+		}
+
+		activeProfile, err := profileRepo.GetActive()
+		if err != nil || activeProfile == nil {
+			return false
+		}
+		current := gwClient.GetConfig()
+		if current.Host == activeProfile.Host && current.Port == activeProfile.Port && current.Token == activeProfile.Token {
+			return false
+		}
+
+		svc.GatewayHost = activeProfile.Host
+		svc.GatewayPort = activeProfile.Port
+		svc.GatewayToken = activeProfile.Token
+		gwClient.Reconnect(openclaw.GWClientConfig{
+			Host:  activeProfile.Host,
+			Port:  activeProfile.Port,
+			Token: activeProfile.Token,
+		})
+		return true
 	}
 	gwClient.Start()
 	defer gwClient.Stop()
@@ -572,6 +600,7 @@ func RunServe(args []string) int {
 	router.POST("/api/v1/gateway/profiles/test", gwProfileHandler.TestConnection)
 
 	gwProxy := handlers.NewGWProxyHandler(gwClient)
+	gwProxy.SetAuthRefreshCallback(refreshGatewayAuth)
 	router.GET("/api/v1/gw/status", gwProxy.Status)
 	router.POST("/api/v1/gw/reconnect", web.RequireAdmin(gwProxy.Reconnect))
 	router.GET("/api/v1/gw/health", gwProxy.Health)

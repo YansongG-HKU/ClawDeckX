@@ -17,11 +17,18 @@ import (
 
 // GWProxyHandler proxies Gateway WebSocket methods as REST APIs.
 type GWProxyHandler struct {
-	client *openclaw.GWClient
+	client            *openclaw.GWClient
+	refreshAuthOnFail func() bool
 }
 
 func NewGWProxyHandler(client *openclaw.GWClient) *GWProxyHandler {
 	return &GWProxyHandler{client: client}
+}
+
+// SetAuthRefreshCallback sets an optional callback used to refresh the cached
+// gateway auth state before retrying a history request after 401/403.
+func (h *GWProxyHandler) SetAuthRefreshCallback(fn func() bool) {
+	h.refreshAuthOnFail = fn
 }
 
 // Status returns Gateway WS client connection status and diagnostics.
@@ -406,8 +413,135 @@ func (h *GWProxyHandler) SessionsHistory(w http.ResponseWriter, r *http.Request)
 	web.OKRaw(w, r, data)
 }
 
-// SessionsHistoryPaginated returns paginated session history via the gateway's
-// HTTP /sessions/{key}/history endpoint which supports cursor-based pagination.
+type sessionHistoryPage struct {
+	SessionKey string            `json:"sessionKey"`
+	Messages   []json.RawMessage `json:"messages"`
+	Items      []json.RawMessage `json:"items"`
+	HasMore    bool              `json:"hasMore"`
+	NextCursor string            `json:"nextCursor,omitempty"`
+}
+
+func loadPaginatedHistoryFromRPC(h *GWProxyHandler, key, cursor string, limit int) (sessionHistoryPage, error) {
+	data, err := h.client.RequestWithTimeout("chat.history", map[string]interface{}{
+		"sessionKey": key,
+		"limit":      1000,
+	}, 30*time.Second)
+	if err != nil {
+		return sessionHistoryPage{}, err
+	}
+
+	var history sessionHistoryPage
+	if err := json.Unmarshal(data, &history); err != nil {
+		return sessionHistoryPage{}, err
+	}
+
+	messages := history.Messages
+	if len(messages) == 0 && len(history.Items) > 0 {
+		messages = history.Items
+	}
+	page, hasMore, nextCursor := paginateHistoryMessages(messages, limit, cursor)
+	result := sessionHistoryPage{
+		SessionKey: strings.TrimSpace(history.SessionKey),
+		Messages:   page,
+		Items:      page,
+	}
+	if result.SessionKey == "" {
+		result.SessionKey = key
+	}
+	result.HasMore = hasMore
+	result.NextCursor = nextCursor
+	return result, nil
+}
+
+func parseHistoryCursor(cursor string) int {
+	trimmed := strings.TrimSpace(cursor)
+	if trimmed == "" {
+		return 0
+	}
+	trimmed = strings.TrimPrefix(trimmed, "seq:")
+	n, err := strconv.Atoi(trimmed)
+	if err != nil || n < 1 {
+		return 0
+	}
+	return n
+}
+
+func paginateHistoryMessages(messages []json.RawMessage, limit int, cursor string) ([]json.RawMessage, bool, string) {
+	total := len(messages)
+	if total == 0 {
+		return []json.RawMessage{}, false, ""
+	}
+
+	endExclusive := total
+	if cursorSeq := parseHistoryCursor(cursor); cursorSeq > 0 {
+		endExclusive = cursorSeq - 1
+		if endExclusive < 0 {
+			endExclusive = 0
+		}
+		if endExclusive > total {
+			endExclusive = total
+		}
+	}
+
+	if limit <= 0 || limit > endExclusive {
+		limit = endExclusive
+	}
+	start := endExclusive - limit
+	if start < 0 {
+		start = 0
+	}
+	page := messages[start:endExclusive]
+	hasMore := start > 0
+	nextCursor := ""
+	if hasMore && len(page) > 0 {
+		nextCursor = strconv.Itoa(start + 1)
+	}
+	return page, hasMore, nextCursor
+}
+
+func buildHistoryPageRequest(req *http.Request, cfg openclaw.GWClientConfig, key string, limit int, cursor string) (*http.Request, error) {
+	gwURL := fmt.Sprintf("http://%s:%d/sessions/%s/history", cfg.Host, cfg.Port, url.PathEscape(key))
+	q := url.Values{}
+	if limit > 0 {
+		q.Set("limit", strconv.Itoa(limit))
+	}
+	if cursor != "" {
+		q.Set("cursor", cursor)
+	}
+	if qs := q.Encode(); qs != "" {
+		gwURL += "?" + qs
+	}
+
+	req, err := http.NewRequestWithContext(req.Context(), http.MethodGet, gwURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	if cfg.Token != "" {
+		req.Header.Set("Authorization", "Bearer "+cfg.Token)
+	}
+	req.Header.Set("Accept", "application/json")
+	return req, nil
+}
+
+func fetchHistoryPageViaHTTP(req *http.Request, cfg openclaw.GWClientConfig, key string, limit int, cursor string) (int, []byte, error) {
+	httpReq, err := buildHistoryPageRequest(req, cfg, key, limit, cursor)
+	if err != nil {
+		return 0, nil, err
+	}
+	resp, err := (&http.Client{Timeout: 30 * time.Second}).Do(httpReq)
+	if err != nil {
+		return 0, nil, err
+	}
+	defer resp.Body.Close()
+	body, readErr := io.ReadAll(resp.Body)
+	if readErr != nil {
+		return resp.StatusCode, nil, readErr
+	}
+	return resp.StatusCode, body, nil
+}
+
+// SessionsHistoryPaginated prefers the gateway's HTTP cursor-paginated history
+// endpoint and only falls back to RPC/local pagination when HTTP auth fails.
 // Query params: key (required), limit (optional), cursor (optional).
 func (h *GWProxyHandler) SessionsHistoryPaginated(w http.ResponseWriter, r *http.Request) {
 	key := r.URL.Query().Get("key")
@@ -415,57 +549,54 @@ func (h *GWProxyHandler) SessionsHistoryPaginated(w http.ResponseWriter, r *http
 		web.Fail(w, r, "INVALID_PARAMS", "key is required", http.StatusBadRequest)
 		return
 	}
+	limit := 0
+	if v := r.URL.Query().Get("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			limit = n
+		}
+	}
+	cursor := r.URL.Query().Get("cursor")
 
 	cfg := h.client.GetConfig()
-	if cfg.Host == "" || cfg.Port == 0 {
-		web.Fail(w, r, "GW_NOT_CONFIGURED", "gateway address not configured", http.StatusBadGateway)
-		return
+	if cfg.Host != "" && cfg.Port != 0 {
+		status, body, err := fetchHistoryPageViaHTTP(r, cfg, key, limit, cursor)
+		if err == nil {
+			switch status {
+			case http.StatusOK:
+				web.OKRaw(w, r, json.RawMessage(body))
+				return
+			case http.StatusNotFound:
+				web.OKRaw(w, r, json.RawMessage(`{"sessionKey":"","messages":[],"items":[],"hasMore":false}`))
+				return
+			case http.StatusUnauthorized, http.StatusForbidden:
+				if h.refreshAuthOnFail != nil && h.refreshAuthOnFail() {
+					cfg = h.client.GetConfig()
+					status, body, err = fetchHistoryPageViaHTTP(r, cfg, key, limit, cursor)
+					if err == nil {
+						switch status {
+						case http.StatusOK:
+							web.OKRaw(w, r, json.RawMessage(body))
+							return
+						case http.StatusNotFound:
+							web.OKRaw(w, r, json.RawMessage(`{"sessionKey":"","messages":[],"items":[],"hasMore":false}`))
+							return
+						}
+					}
+				}
+			}
+			if status != http.StatusUnauthorized && status != http.StatusForbidden {
+				web.Fail(w, r, "GW_SESSIONS_HISTORY_PAGINATED_FAILED", strings.TrimSpace(string(body)), http.StatusBadGateway)
+				return
+			}
+		}
 	}
 
-	// Build upstream URL
-	gwURL := fmt.Sprintf("http://%s:%d/sessions/%s/history", cfg.Host, cfg.Port, url.PathEscape(key))
-	q := url.Values{}
-	if limit := r.URL.Query().Get("limit"); limit != "" {
-		q.Set("limit", limit)
-	}
-	if cursor := r.URL.Query().Get("cursor"); cursor != "" {
-		q.Set("cursor", cursor)
-	}
-	if qs := q.Encode(); qs != "" {
-		gwURL += "?" + qs
-	}
-
-	req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, gwURL, nil)
-	if err != nil {
-		web.Fail(w, r, "GW_REQUEST_BUILD_FAILED", err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if cfg.Token != "" {
-		req.Header.Set("Authorization", "Bearer "+cfg.Token)
-	}
-	req.Header.Set("Accept", "application/json")
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
+	history, err := loadPaginatedHistoryFromRPC(h, key, cursor, limit)
 	if err != nil {
 		web.Fail(w, r, "GW_SESSIONS_HISTORY_PAGINATED_FAILED", err.Error(), http.StatusBadGateway)
 		return
 	}
-	defer resp.Body.Close()
-
-	body, readErr := io.ReadAll(resp.Body)
-	if readErr != nil {
-		web.Fail(w, r, "GW_SESSIONS_HISTORY_PAGINATED_READ_FAILED", readErr.Error(), http.StatusBadGateway)
-		return
-	}
-
-	// For non-200 upstream responses (e.g. 404 session not found), return empty history
-	if resp.StatusCode != http.StatusOK {
-		web.OKRaw(w, r, json.RawMessage(`{"sessionKey":"","messages":[],"items":[],"hasMore":false}`))
-		return
-	}
-
-	web.OKRaw(w, r, json.RawMessage(body))
+	web.OK(w, r, history)
 }
 
 // SkillsConfigure configures a skill (enable/disable/env vars etc.).

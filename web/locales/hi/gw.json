@@ -155,6 +155,7 @@
   "svcWsReconnects": "पुन: कनेक्शन",
   "svcWsBackoff": "बैकऑफ़",
   "svcWsLastError": "अंतिम त्रुटि",
+  "svcWsAutoApproving": "डिवाइस पेयरिंग स्वतः अनुमोदित हो रही है...",
   "wdFailCount": "विफलताएं",
   "wdInterval": "अंतराल",
   "wdLastOk": "अंतिम सफल",

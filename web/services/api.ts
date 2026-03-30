@@ -1700,6 +1700,10 @@ export const mirrorConfigApi = {
   detect: () => get<SystemMirrorStatus>('/api/v1/mirror-config/detect'),
   apply: (tools: string[], config: MirrorConfig) =>
     post<{ results: MirrorApplyResult[] }>('/api/v1/mirror-config/apply', { tools, config }),
+  probeUrl: (url: string) =>
+    get<{ status: number; latencyMs: number; reachable: boolean }>(
+      `/api/v1/network/test-mirror?url=${encodeURIComponent(url)}`
+    ),
 };
 
 export interface SkillFileReadResponse {

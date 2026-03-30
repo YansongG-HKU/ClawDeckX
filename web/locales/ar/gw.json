@@ -155,6 +155,7 @@
   "svcWsReconnects": "مرات إعادة الاتصال",
   "svcWsBackoff": "التراجع",
   "svcWsLastError": "آخر خطأ",
+  "svcWsAutoApproving": "جارٍ الموافقة التلقائية على إقران الجهاز...",
   "wdFailCount": "الإخفاقات",
   "wdInterval": "الفاصل الزمني",
   "wdLastOk": "آخر نجاح",

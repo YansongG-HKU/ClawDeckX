@@ -155,6 +155,7 @@
   "svcWsReconnects": "Koneksi ulang",
   "svcWsBackoff": "Mundur",
   "svcWsLastError": "Error terakhir",
+  "svcWsAutoApproving": "Menyetujui pemasangan perangkat secara otomatis...",
   "wdFailCount": "Kegagalan",
   "wdInterval": "Interval",
   "wdLastOk": "Terakhir sukses",

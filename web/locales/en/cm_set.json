@@ -465,7 +465,11 @@
       "applyAllPartial": "Some settings applied. Check individual tools for details.",
       "applyFailed": "Apply failed",
       "dockerRestartHint": "Docker mirror changes take effect after restarting the Docker daemon. Run `sudo systemctl restart docker` or restart from Docker Desktop.",
-      "scopeHint": "Apply to system = writes ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json"
+      "scopeHint": "Apply to system = writes ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json",
+      "speedTestBtn": "Speed Test",
+      "speedTesting": "Testing...",
+      "speedTestDone": "Speed test complete, fastest mirror selected",
+      "fastest": "Fastest"
     }
   },
   "hi": {

@@ -465,7 +465,11 @@
       "applyAllPartial": "Einige Einstellungen angewendet. Details bei einzelnen Tools prüfen.",
       "applyFailed": "Anwenden fehlgeschlagen",
       "dockerRestartHint": "Docker Mirror-Änderungen werden nach dem Neustart des Docker Daemons wirksam.",
-      "scopeHint": "Auf System anwenden = schreibt ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json"
+      "scopeHint": "Auf System anwenden = schreibt ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json",
+      "speedTestBtn": "Speedtest",
+      "speedTesting": "Teste...",
+      "speedTestDone": "Speedtest abgeschlossen, schnellsten Mirror ausgewählt",
+      "fastest": "Schnellste"
     }
   },
   "hi": {

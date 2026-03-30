@@ -155,6 +155,7 @@
   "svcWsReconnects": "再接続回数",
   "svcWsBackoff": "バックオフ",
   "svcWsLastError": "最新エラー",
+  "svcWsAutoApproving": "デバイスペアリングを自動承認中...",
   "wdFailCount": "失敗回数",
   "wdInterval": "検査間隔",
   "wdLastOk": "最終成功",

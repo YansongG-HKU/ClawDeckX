@@ -18,6 +18,7 @@ interface WsStatus {
   reconnect_count: number;
   backoff_ms: number;
   last_error: string;
+  pairing_auto_approve: boolean;
   health_enabled: boolean;
   fail_count: number;
   max_fails: number;
@@ -337,7 +338,16 @@ const ServicePanel: React.FC<ServicePanelProps> = ({ status, healthCheckEnabled,
               </div>
             </div>
 
-            {wsStatus.last_error && (
+            {wsStatus.pairing_auto_approve && (
+              <div className="px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[16px] text-amber-400 animate-spin">progress_activity</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-bold text-amber-400">{gw.svcWsAutoApproving || 'Auto-approving device pairing...'}</p>
+                  <p className="text-[9px] text-slate-400 dark:text-white/40 mt-0.5 font-mono">openclaw devices approve --latest</p>
+                </div>
+              </div>
+            )}
+            {wsStatus.last_error && !wsStatus.pairing_auto_approve && (
               <div className="px-3 py-2 rounded-lg bg-mac-red/5 border border-mac-red/20">
                 <p className="text-[9px] text-slate-400 dark:text-white/30 uppercase tracking-wider mb-0.5">{gw.svcWsLastError || 'Last Error'}</p>
                 <p className="text-[10px] font-mono text-mac-red/80 break-all">{wsStatus.last_error}</p>

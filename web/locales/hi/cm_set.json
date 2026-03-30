@@ -465,7 +465,11 @@
       "applyAllPartial": "कुछ सेटिंग लागू की गईं। विवरण के लिए अलग-अलग टूल जांचें।",
       "applyFailed": "लागू करने में विफल",
       "dockerRestartHint": "Docker मिरर परिवर्तन Docker daemon को पुनः प्रारंभ करने के बाद प्रभावी होते हैं।",
-      "scopeHint": "सिस्टम पर लागू करें = ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json लिखता है"
+      "scopeHint": "सिस्टम पर लागू करें = ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json लिखता है",
+      "speedTestBtn": "गति परीक्षण",
+      "speedTesting": "परीक्षण जारी है...",
+      "speedTestDone": "गति परीक्षण पूर्ण, सबसे तेज़ मिरर चुना गया",
+      "fastest": "सबसे तेज़"
     }
   },
   "hi": {

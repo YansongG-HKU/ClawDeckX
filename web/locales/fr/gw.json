@@ -155,6 +155,7 @@
   "svcWsReconnects": "Reconnexions",
   "svcWsBackoff": "Délai",
   "svcWsLastError": "Dernière erreur",
+  "svcWsAutoApproving": "Approbation automatique du jumelage...",
   "wdFailCount": "Échecs",
   "wdInterval": "Intervalle",
   "wdLastOk": "Dernier succès",

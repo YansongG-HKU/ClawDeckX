@@ -39,14 +39,22 @@ export interface ThinkingBlock {
 
 export type ContentBlock = TextBlock | ImageBlock | ToolUseBlock | ToolResultBlock | ThinkingBlock | Record<string, unknown>;
 
+/** Strip OpenClaw inline directive tags that should never be shown to users */
+const DIRECTIVE_TAG_RE = /\[\[\s*(?:reply_to_current|reply_to\s*:\s*[^\]\n]+|audio_as_voice)\s*\]\]/gi;
+function stripDirectiveTags(text: string): string {
+  return text.replace(DIRECTIVE_TAG_RE, '').replace(/^\s*\n/, '');
+}
+
 /** Extract concatenated text from content (string or block array) */
 export function extractText(content: unknown): string {
-  if (typeof content === 'string') return content;
+  if (typeof content === 'string') return stripDirectiveTags(content);
   if (!Array.isArray(content)) return '';
-  return content
-    .filter((b: ContentBlock) => b?.type === 'text')
-    .map((b: ContentBlock) => (b as TextBlock).text || '')
-    .join('\n');
+  return stripDirectiveTags(
+    content
+      .filter((b: ContentBlock) => b?.type === 'text')
+      .map((b: ContentBlock) => (b as TextBlock).text || '')
+      .join('\n')
+  );
 }
 
 /** Extract image URLs/data URIs from content */

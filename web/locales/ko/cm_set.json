@@ -465,7 +465,11 @@
       "applyAllPartial": "일부 설정이 적용되었습니다. 자세한 내용은 개별 도구를 확인하세요.",
       "applyFailed": "적용 실패",
       "dockerRestartHint": "Docker 미러 변경 사항은 Docker 데몬 재시작 후 적용됩니다.",
-      "scopeHint": "시스템에 적용 = ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json 업데이트"
+      "scopeHint": "시스템에 적용 = ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json 업데이트",
+      "speedTestBtn": "속도 테스트",
+      "speedTesting": "테스트 중...",
+      "speedTestDone": "속도 테스트 완료, 가장 빠른 미러 자동 선택",
+      "fastest": "가장 빠름"
     }
   },
   "hi": {

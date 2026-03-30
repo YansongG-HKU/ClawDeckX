@@ -465,7 +465,11 @@
       "applyAllPartial": "Beberapa pengaturan diterapkan. Periksa alat individual untuk detail.",
       "applyFailed": "Gagal menerapkan",
       "dockerRestartHint": "Perubahan mirror Docker berlaku setelah memulai ulang daemon Docker.",
-      "scopeHint": "Terapkan ke sistem = menulis ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json"
+      "scopeHint": "Terapkan ke sistem = menulis ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json",
+      "speedTestBtn": "Uji Kecepatan",
+      "speedTesting": "Menguji...",
+      "speedTestDone": "Uji kecepatan selesai, mirror tercepat dipilih",
+      "fastest": "Tercepat"
     }
   },
   "hi": {

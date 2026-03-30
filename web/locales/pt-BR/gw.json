@@ -155,6 +155,7 @@
   "svcWsReconnects": "Reconexões",
   "svcWsBackoff": "Recuo",
   "svcWsLastError": "Último erro",
+  "svcWsAutoApproving": "Aprovando emparelhamento do dispositivo automaticamente...",
   "wdFailCount": "Falhas",
   "wdInterval": "Intervalo",
   "wdLastOk": "Último sucesso",

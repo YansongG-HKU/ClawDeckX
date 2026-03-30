@@ -465,7 +465,11 @@
       "applyAllPartial": "一部の設定を適用しました。詳細は各ツールを確認してください。",
       "applyFailed": "適用に失敗しました",
       "dockerRestartHint": "Docker ミラーの変更は Docker daemon の再起動後に有効になります。",
-      "scopeHint": "システムに適用 = ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json を更新"
+      "scopeHint": "システムに適用 = ~/.npmrc · go env · ~/.pip/pip.conf · ~/.gitconfig · daemon.json を更新",
+      "speedTestBtn": "速度テスト",
+      "speedTesting": "テスト中...",
+      "speedTestDone": "速度テスト完了、最速ミラーを自動選択",
+      "fastest": "最速"
     }
   },
   "hi": {
