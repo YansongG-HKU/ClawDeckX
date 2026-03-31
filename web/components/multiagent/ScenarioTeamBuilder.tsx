@@ -256,6 +256,9 @@ const ScenarioTeamBuilder: React.FC<ScenarioTeamBuilderProps> = ({
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const templatePickerRef = useRef<HTMLDivElement>(null);
 
+  // Generation mode: false = agent session (default), true = direct LLM streaming
+  const [directLlm, setDirectLlm] = useState(false);
+
   // Model selector
   const [selectedModel, setSelectedModel] = useState('');
   const [modelOptions, setModelOptions] = useState<{ value: string; label: string }[]>([]);
@@ -393,6 +396,7 @@ Respond ONLY with a JSON object in this exact structure (no markdown, no explana
         workflowType,
         language,
         ...(selectedModel ? { modelId: selectedModel } : {}),
+        directLlm,
       } as any);
       setGenTaskId(taskId);
       onTaskSubmitted?.(taskId);
@@ -417,7 +421,7 @@ Respond ONLY with a JSON object in this exact structure (no markdown, no explana
       }
       setStep('prompt-review');
     }
-  }, [scenarioName, description, teamSize, workflowType, language, selectedModel, stb, onTaskSubmitted]);
+  }, [scenarioName, description, teamSize, workflowType, language, selectedModel, directLlm, stb, onTaskSubmitted]);
 
   const getEffectiveAgent = useCallback(
     (agentId: string) => editedAgents[agentId] ?? null,
@@ -752,6 +756,38 @@ Respond ONLY with a JSON object in this exact structure (no markdown, no explana
                     )}
                   </div>
                 </div>
+              </div>
+
+              {/* ── Generation Mode Toggle ── */}
+              <div className="flex items-center justify-between gap-3 py-2 px-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03]">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="material-symbols-outlined text-[15px] shrink-0 text-slate-400 dark:text-white/30">
+                    {directLlm ? 'bolt' : 'smart_toy'}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-bold text-slate-700 dark:text-white/70 truncate">
+                      {directLlm
+                        ? (stb.directLlmLabel || 'Direct LLM (streaming)')
+                        : (stb.agentSessionLabel || 'Agent session (default)')}
+                    </p>
+                    <p className="text-[10px] text-slate-400 dark:text-white/30 truncate">
+                      {directLlm
+                        ? (stb.directLlmDesc || 'Calls LLM directly — no tool execution, faster response')
+                        : (stb.agentSessionDesc || 'Routes through OpenClaw agent — supports richer context')}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setDirectLlm(v => !v)}
+                  className={`relative shrink-0 w-9 h-5 rounded-full transition-colors ${
+                    directLlm ? 'bg-violet-500' : 'bg-slate-300 dark:bg-white/15'
+                  }`}
+                  aria-label={stb.directLlmToggle || 'Toggle generation mode'}
+                >
+                  <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${
+                    directLlm ? 'start-[18px]' : 'start-0.5'
+                  }`} />
+                </button>
               </div>
 
               {/* ── Model Selector ── */}

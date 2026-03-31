@@ -1463,7 +1463,7 @@ export const multiAgentApi = {
     return post<MultiAgentGenerateResult>('/api/v1/multi-agent/generate', request, { signal: ctrl.signal })
       .finally(() => clearTimeout(timer));
   },
-  generateAsync: (request: MultiAgentGenerateRequest) =>
+  generateAsync: (request: MultiAgentGenerateRequest & { directLlm?: boolean }) =>
     post<{ taskId: string }>('/api/v1/multi-agent/generate-async', request),
   getGenerateTask: (taskId: string) =>
     get<GenTask>(`/api/v1/multi-agent/generate-task?taskId=${encodeURIComponent(taskId)}`),
