@@ -6,6 +6,7 @@ import {
   MultiAgentGenerateResult,
   MultiAgentDeployRequest,
   gwApi,
+  GenTask,
 } from '../../services/api';
 import { useToast } from '../Toast';
 import { resolveTemplateColor } from '../../utils/templateColors';
@@ -15,6 +16,11 @@ interface ScenarioTeamBuilderProps {
   language: Language;
   onClose: () => void;
   onReadyToDeploy: (deployRequest: MultiAgentDeployRequest, reasoning: string) => void;
+  /** If provided, restore a previously submitted async task (e.g. when user re-opens the minimized window) */
+  pendingTaskId?: string;
+  onTaskSubmitted?: (taskId: string) => void;
+  /** If provided, jump directly to preview with this already-completed result */
+  completedResult?: MultiAgentGenerateResult;
 }
 
 type BuilderStep = 'input' | 'prompt-review' | 'generating' | 'preview' | 'edit-agent';
@@ -72,6 +78,9 @@ const ScenarioTeamBuilder: React.FC<ScenarioTeamBuilderProps> = ({
   language,
   onClose,
   onReadyToDeploy,
+  pendingTaskId,
+  onTaskSubmitted,
+  completedResult,
 }) => {
   const t = useMemo(() => getTranslation(language) as any, [language]);
   const ma = (t.multiAgent || {}) as any;
@@ -90,18 +99,23 @@ const ScenarioTeamBuilder: React.FC<ScenarioTeamBuilderProps> = ({
   const [activeTab, setActiveTab] = useState<'agents' | 'workflow' | 'reasoning'>('agents');
   const [editablePrompt, setEditablePrompt] = useState('');
 
+  // Async task id for background generation
+  const [genTaskId, setGenTaskId] = useState<string | null>(pendingTaskId ?? null);
+  // Whether the user has minimized this window while generating
+  const [minimized, setMinimized] = useState(false);
+
   // Generation progress phases
   type GenPhase = 'connecting' | 'sending' | 'thinking' | 'parsing' | 'done';
   const [genPhase, setGenPhase] = useState<GenPhase>('connecting');
   const genTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-  // Server-confirmed elapsed seconds (from gen_progress WS events)
+  // Server-confirmed elapsed seconds (from gen_task WS events)
   const [genServerElapsed, setGenServerElapsed] = useState(0);
   // Client-side fallback elapsed ticker
   const [genClientElapsed, setGenClientElapsed] = useState(0);
   const genStartRef = useRef<number>(0);
-  // True once we've received at least one server-side gen_progress event
+  // True once we've received at least one server-side gen_task event
   const genServerActiveRef = useRef(false);
-  // SessionKey received from backend gen_progress — used to subscribe to chat deltas
+  // SessionKey received from backend gen_task — used to subscribe to chat deltas
   const genSessionKeyRef = useRef<string>('');
   // Live streaming token preview text
   const [genStreamText, setGenStreamText] = useState('');
@@ -131,22 +145,52 @@ const ScenarioTeamBuilder: React.FC<ScenarioTeamBuilderProps> = ({
     return () => clearInterval(iv);
   }, [step]);
 
-  // Subscribe to gen_progress + chat delta WS events from backend
+  // Jump to preview if a completed result is provided (background task finished while window was closed)
+  useEffect(() => {
+    if (!completedResult) return;
+    setGenerateResult(completedResult);
+    setEditedAgents({});
+    setStep('preview');
+  }, [completedResult]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Restore pending task on mount if pendingTaskId provided
+  useEffect(() => {
+    if (!pendingTaskId) return;
+    setGenTaskId(pendingTaskId);
+    setStep('generating');
+    setGenPhase('thinking');
+  }, [pendingTaskId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Subscribe to gen_task + chat delta WS events from backend
   useEffect(() => {
     if (step !== 'generating') return;
     const unsub = subscribeManagerWS((msg: any) => {
-      if (msg?.type === 'gen_progress') {
-        const { elapsed, phase, sessionKey: sk, errorCode, errorMsg } = msg.data ?? {};
+      if (msg?.type === 'gen_task') {
+        const { taskId, elapsed, phase, sessionKey: sk, status, result, errorCode, errorMsg } = msg.data ?? {};
+        // Only handle events for our task
+        if (genTaskId && taskId && taskId !== genTaskId) return;
         if (typeof sk === 'string' && sk) genSessionKeyRef.current = sk;
         if (typeof elapsed === 'number') {
           setGenServerElapsed(elapsed);
           genServerActiveRef.current = true;
         }
+        if (phase === 'sending') setGenPhase('sending');
         if (phase === 'thinking') setGenPhase('thinking');
         if (phase === 'parsing') setGenPhase('parsing');
-        if (phase === 'error' && errorCode) {
-          // Backend pushed error via WS — show immediately without waiting for HTTP response
+        if (status === 'failed' && errorCode) {
           setGenWsError({ code: errorCode, msg: errorMsg || errorCode });
+          return;
+        }
+        if (status === 'done' && result) {
+          genTimersRef.current.forEach(t => clearTimeout(t));
+          genTimersRef.current = [];
+          setGenPhase('parsing');
+          setTimeout(() => {
+            setGenerateResult(result as MultiAgentGenerateResult);
+            setEditedAgents({});
+            setStep('preview');
+            setGenTaskId(null);
+          }, 400);
         }
         return;
       }
@@ -328,41 +372,24 @@ Respond ONLY with a JSON object in this exact structure (no markdown, no explana
     setStep('generating');
     setGenPhase('connecting');
     setError(null);
-
-    // Clear any previous timers
     genTimersRef.current.forEach(t => clearTimeout(t));
     genTimersRef.current = [];
 
-    // Drive phase transitions by realistic time milestones:
-    // connecting (~0-3s): sessions.create round-trip
-    // sending   (~3s):    sessions.send dispatch
-    // thinking  (~5s+):   LLM processing (bulk of the wait)
-    // parsing   (late):   JSON parse — we flip this just before done
-    const schedule = (phase: GenPhase, ms: number) => {
-      const t = setTimeout(() => setGenPhase(phase), ms);
-      genTimersRef.current.push(t);
-    };
-    schedule('sending', 3000);
-    schedule('thinking', 5500);
-
     try {
-      const result = await multiAgentApi.generate({
+      const { taskId } = await multiAgentApi.generateAsync({
         scenarioName: scenarioName.trim(),
         description: description.trim(),
         teamSize,
         workflowType,
         language,
         ...(selectedModel ? { modelId: selectedModel } : {}),
-        prompt: editablePrompt || undefined,
       } as any);
-      // Clear scheduled timers and flip to parsing briefly before preview
-      genTimersRef.current.forEach(t => clearTimeout(t));
-      genTimersRef.current = [];
-      setGenPhase('parsing');
-      await new Promise(r => setTimeout(r, 600));
-      setGenerateResult(result);
-      setEditedAgents({});
-      setStep('preview');
+      setGenTaskId(taskId);
+      onTaskSubmitted?.(taskId);
+      // Drive phase hint for early seconds before first WS event
+      const t1 = setTimeout(() => setGenPhase('sending'), 2000);
+      const t2 = setTimeout(() => setGenPhase('thinking'), 5000);
+      genTimersRef.current = [t1, t2];
     } catch (err: any) {
       genTimersRef.current.forEach(t => clearTimeout(t));
       genTimersRef.current = [];
@@ -373,23 +400,14 @@ Respond ONLY with a JSON object in this exact structure (no markdown, no explana
         errMsg.includes('GATEWAY_DISCONNECTED') ||
         errMsg.includes('not connected') ||
         errMsg.includes('gateway is not connected');
-      const isTimeout =
-        !isGatewayDisconnected && (
-          err?.name === 'AbortError' ||
-          errMsg.includes('请求超时') ||
-          errMsg.includes('timeout') ||
-          errMsg.includes('sessions.send')
-        );
       if (isGatewayDisconnected) {
         setError('__gateway__');
-      } else if (isTimeout) {
-        setError('__timeout__');
       } else {
         setError(errMsg || stb.generateFailed || 'Generation failed');
       }
       setStep('prompt-review');
     }
-  }, [scenarioName, description, teamSize, workflowType, language, selectedModel, editablePrompt, stb]);
+  }, [scenarioName, description, teamSize, workflowType, language, selectedModel, stb, onTaskSubmitted]);
 
   const getEffectiveAgent = useCallback(
     (agentId: string) => editedAgents[agentId] ?? null,
@@ -492,6 +510,17 @@ Respond ONLY with a JSON object in this exact structure (no markdown, no explana
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Minimize button — only shown during background generation */}
+            {step === 'generating' && genTaskId && (
+              <button
+                onClick={() => { setMinimized(true); onClose(); }}
+                title={stb.minimizeBtn || 'Minimize — generation continues in background'}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-violet-500/30 text-violet-600 dark:text-violet-400 hover:bg-violet-500/10 transition-colors"
+              >
+                <span className="material-symbols-outlined text-[14px]">minimize</span>
+                <span className="hidden sm:inline">{stb.minimizeBtn || 'Minimize'}</span>
+              </button>
+            )}
             {/* Step indicator */}
             {(step === 'input' || step === 'prompt-review') && (
               <div className="hidden sm:flex items-center gap-1">
@@ -511,11 +540,18 @@ Respond ONLY with a JSON object in this exact structure (no markdown, no explana
               </div>
             )}
             <button
-              onClick={step === 'edit-agent' ? () => setStep('preview') : step === 'prompt-review' ? () => setStep('input') : onClose}
+              onClick={
+                step === 'edit-agent' ? () => setStep('preview')
+                : step === 'prompt-review' ? () => setStep('input')
+                : step === 'generating' && genTaskId ? () => { setMinimized(true); onClose(); }
+                : onClose
+              }
               className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 flex items-center justify-center transition-colors"
             >
               <span className="material-symbols-outlined text-[18px] text-slate-400">
-                {step === 'edit-agent' || step === 'prompt-review' ? 'arrow_back' : 'close'}
+                {step === 'edit-agent' || step === 'prompt-review' ? 'arrow_back'
+                  : step === 'generating' && genTaskId ? 'minimize'
+                  : 'close'}
               </span>
             </button>
           </div>
@@ -873,7 +909,7 @@ Respond ONLY with a JSON object in this exact structure (no markdown, no explana
           )}
 
           {/* ══ Step: Generating ══ */}
-          {step === 'generating' && (() => {
+          {step === 'generating' && !minimized && (() => {
             const phases: { key: typeof genPhase; icon: string; labelKey: string; fallback: string }[] = [
               { key: 'connecting', icon: 'electrical_services', labelKey: 'genPhaseConnecting', fallback: 'Connecting to AI gateway...' },
               { key: 'sending',    icon: 'send',                labelKey: 'genPhaseSending',    fallback: 'Sending prompt to AI...' },
@@ -1017,6 +1053,16 @@ Respond ONLY with a JSON object in this exact structure (no markdown, no explana
                       <p className="text-[10px] text-slate-400 dark:text-white/25 text-center max-w-[220px]">
                         {stb.genThinkingHint || 'This may take 30–90 seconds depending on team size and model.'}
                       </p>
+                    )}
+
+                    {/* Minimize hint */}
+                    {genTaskId && (
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-violet-500/15 bg-violet-500/5">
+                        <span className="material-symbols-outlined text-[13px] text-violet-400">info</span>
+                        <p className="text-[10px] text-violet-500/70">
+                          {stb.minimizeHint || 'You can minimize this window — generation continues in the background.'}
+                        </p>
+                      </div>
                     )}
                   </div>
                 )}
@@ -1264,10 +1310,19 @@ Respond ONLY with a JSON object in this exact structure (no markdown, no explana
         {/* ── Footer ── */}
         <div className="px-5 py-3.5 border-t border-slate-100 dark:border-white/5 flex items-center justify-between shrink-0">
           <button
-            onClick={step === 'edit-agent' ? () => setStep('preview') : step === 'prompt-review' ? () => setStep('input') : onClose}
+            onClick={
+              step === 'edit-agent' ? () => setStep('preview')
+              : step === 'prompt-review' ? () => setStep('input')
+              : step === 'generating' && genTaskId
+                ? () => { setMinimized(true); onClose(); }
+                : onClose
+            }
             className="px-4 py-2 rounded-lg text-[11px] font-bold text-slate-600 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
           >
-            {step === 'edit-agent' ? (stb.backToPreview || 'Back') : step === 'prompt-review' ? (stb.back || 'Back') : (stb.cancel || 'Cancel')}
+            {step === 'edit-agent' ? (stb.backToPreview || 'Back')
+              : step === 'prompt-review' ? (stb.back || 'Back')
+              : step === 'generating' && genTaskId ? (stb.minimizeBtn || 'Minimize')
+              : (stb.cancel || 'Cancel')}
           </button>
 
           <div className="flex items-center gap-2">

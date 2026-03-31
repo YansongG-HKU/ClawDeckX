@@ -1,8 +1,8 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Language } from '../../types';
 import { getTranslation } from '../../locales';
 import { templateSystem, MultiAgentTemplate } from '../../services/template-system';
-import { multiAgentApi, MultiAgentDeployRequest } from '../../services/api';
+import { multiAgentApi, MultiAgentDeployRequest, MultiAgentGenerateResult } from '../../services/api';
 import { useToast } from '../Toast';
 import { FileApplyConfirm, FileApplyRequest } from '../FileApplyConfirm';
 import WorkflowVisualizer from './WorkflowVisualizer';
@@ -10,6 +10,7 @@ import MultiAgentDeployWizard from './MultiAgentDeployWizard';
 import WorkflowRunner from './WorkflowRunner';
 import ScenarioTeamBuilder from './ScenarioTeamBuilder';
 import { resolveTemplateColor } from '../../utils/templateColors';
+import { subscribeManagerWS } from '../../services/manager-ws';
 
 interface MultiAgentCollaborationProps {
   language: Language;
@@ -36,6 +37,37 @@ const MultiAgentCollaborationV2: React.FC<MultiAgentCollaborationProps> = ({ lan
   const [workflowRunnerTemplate, setWorkflowRunnerTemplate] = useState<MultiAgentTemplate | null>(null);
   const [showTeamBuilder, setShowTeamBuilder] = useState(false);
   const [aiDeployRequest, setAiDeployRequest] = useState<{ request: MultiAgentDeployRequest; reasoning: string } | null>(null);
+  // Background generation task — persists even when builder window is closed
+  const [bgTaskId, setBgTaskId] = useState<string | null>(null);
+  const [bgTaskDone, setBgTaskDone] = useState<MultiAgentGenerateResult | null>(null);
+  const bgTaskIdRef = useRef<string | null>(null);
+  bgTaskIdRef.current = bgTaskId;
+
+  // Subscribe to gen_task WS events globally to handle background generation
+  useEffect(() => {
+    const unsub = subscribeManagerWS((msg: any) => {
+      if (msg?.type !== 'gen_task') return;
+      const { taskId, status, result } = msg.data ?? {};
+      if (!bgTaskIdRef.current || taskId !== bgTaskIdRef.current) return;
+      if (status === 'done' && result) {
+        setBgTaskDone(result as MultiAgentGenerateResult);
+        setBgTaskId(null);
+        // Show toast so user knows they can view the result
+        toast('success', (t.scenarioTeamBuilder as any)?.bgDoneToast || 'AI team generation complete — tap to view');
+      } else if (status === 'failed') {
+        setBgTaskId(null);
+        toast('error', (t.scenarioTeamBuilder as any)?.bgFailedToast || 'AI team generation failed');
+      }
+    });
+    return unsub;
+  }, [t, toast]);
+
+  // When bgTaskDone result arrives and builder is closed, auto-open builder so user sees preview
+  useEffect(() => {
+    if (bgTaskDone && !showTeamBuilder) {
+      setShowTeamBuilder(true);
+    }
+  }, [bgTaskDone]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load templates
   useEffect(() => {
@@ -566,12 +598,31 @@ ${blockEnd}
       {showTeamBuilder && (
         <ScenarioTeamBuilder
           language={language}
-          onClose={() => setShowTeamBuilder(false)}
+          onClose={() => { setShowTeamBuilder(false); setBgTaskDone(null); }}
           onReadyToDeploy={(request, reasoning) => {
             setShowTeamBuilder(false);
+            setBgTaskDone(null);
+            setBgTaskId(null);
             setAiDeployRequest({ request, reasoning });
           }}
+          pendingTaskId={bgTaskId && !bgTaskDone ? bgTaskId : undefined}
+          completedResult={bgTaskDone ?? undefined}
+          onTaskSubmitted={(taskId) => {
+            setBgTaskId(taskId);
+            setBgTaskDone(null);
+          }}
         />
+      )}
+
+      {/* Background generation in-progress indicator */}
+      {bgTaskId && !showTeamBuilder && (
+        <button
+          onClick={() => setShowTeamBuilder(true)}
+          className="fixed bottom-5 end-5 z-50 flex items-center gap-2 px-3 py-2 rounded-xl bg-violet-600 text-white text-[11px] font-bold shadow-lg shadow-violet-500/30 hover:bg-violet-700 transition-all animate-pulse"
+        >
+          <span className="material-symbols-outlined text-[15px]">auto_awesome</span>
+          {(t.scenarioTeamBuilder as any)?.bgRunningBadge || 'AI generating team...'}
+        </button>
       )}
 
       {/* AI-Generated Deploy Wizard */}

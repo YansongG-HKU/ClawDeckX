@@ -1442,6 +1442,20 @@ export interface MultiAgentGenerateResult {
   reasoning: string;
 }
 
+export type GenTaskStatus = 'pending' | 'running' | 'done' | 'failed' | 'canceled';
+
+export interface GenTask {
+  id: string;
+  status: GenTaskStatus;
+  phase?: string;
+  elapsed?: number;
+  result?: MultiAgentGenerateResult;
+  errorCode?: string;
+  errorMsg?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const multiAgentApi = {
   generate: (request: MultiAgentGenerateRequest, timeoutMs = 600_000) => {
     const ctrl = new AbortController();
@@ -1449,6 +1463,12 @@ export const multiAgentApi = {
     return post<MultiAgentGenerateResult>('/api/v1/multi-agent/generate', request, { signal: ctrl.signal })
       .finally(() => clearTimeout(timer));
   },
+  generateAsync: (request: MultiAgentGenerateRequest) =>
+    post<{ taskId: string }>('/api/v1/multi-agent/generate-async', request),
+  getGenerateTask: (taskId: string) =>
+    get<GenTask>(`/api/v1/multi-agent/generate-task?taskId=${encodeURIComponent(taskId)}`),
+  cancelGenerateTask: (taskId: string) =>
+    post<{ taskId: string; status: string }>('/api/v1/multi-agent/generate-cancel', { taskId }),
   deploy: (request: MultiAgentDeployRequest) => 
     post<MultiAgentDeployResult>('/api/v1/multi-agent/deploy', request),
   previewDeploy: (request: MultiAgentDeployRequest) => 

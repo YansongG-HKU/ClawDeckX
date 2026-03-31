@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"ClawDeckX/internal/i18n"
@@ -16,16 +17,86 @@ import (
 	"ClawDeckX/internal/web"
 )
 
+// genTaskStatus represents the lifecycle state of an async generation task.
+type genTaskStatus string
+
+const (
+	genTaskPending  genTaskStatus = "pending"
+	genTaskRunning  genTaskStatus = "running"
+	genTaskDone     genTaskStatus = "done"
+	genTaskFailed   genTaskStatus = "failed"
+	genTaskCanceled genTaskStatus = "canceled"
+)
+
+// genTask holds the state of a single async generation job.
+type genTask struct {
+	ID        string          `json:"id"`
+	Status    genTaskStatus   `json:"status"`
+	Phase     string          `json:"phase,omitempty"`   // connecting, sending, thinking, parsing, done
+	Elapsed   int             `json:"elapsed,omitempty"` // seconds since task started
+	Result    *GenerateResult `json:"result,omitempty"`  // set on done
+	ErrorCode string          `json:"errorCode,omitempty"`
+	ErrorMsg  string          `json:"errorMsg,omitempty"`
+	CreatedAt time.Time       `json:"createdAt"`
+	UpdatedAt time.Time       `json:"updatedAt"`
+	// internal
+	cancelCh chan struct{}
+}
+
+// genTaskStore is a simple in-memory store with TTL eviction.
+type genTaskStore struct {
+	mu    sync.RWMutex
+	tasks map[string]*genTask
+}
+
+func newGenTaskStore() *genTaskStore {
+	s := &genTaskStore{tasks: make(map[string]*genTask)}
+	go s.evictLoop()
+	return s
+}
+
+func (s *genTaskStore) set(t *genTask) {
+	s.mu.Lock()
+	s.tasks[t.ID] = t
+	s.mu.Unlock()
+}
+
+func (s *genTaskStore) get(id string) (*genTask, bool) {
+	s.mu.RLock()
+	t, ok := s.tasks[id]
+	s.mu.RUnlock()
+	return t, ok
+}
+
+// evictLoop removes tasks older than 30 minutes every 5 minutes.
+func (s *genTaskStore) evictLoop() {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+	for range ticker.C {
+		s.mu.Lock()
+		for id, t := range s.tasks {
+			if time.Since(t.CreatedAt) > 30*time.Minute {
+				delete(s.tasks, id)
+			}
+		}
+		s.mu.Unlock()
+	}
+}
+
 // MultiAgentHandler handles multi-agent deployment operations.
 type MultiAgentHandler struct {
-	client *openclaw.GWClient
-	wsHub  interface {
+	client    *openclaw.GWClient
+	taskStore *genTaskStore
+	wsHub     interface {
 		Broadcast(channel, msgType string, data interface{})
 	}
 }
 
 func NewMultiAgentHandler(client *openclaw.GWClient) *MultiAgentHandler {
-	return &MultiAgentHandler{client: client}
+	return &MultiAgentHandler{
+		client:    client,
+		taskStore: newGenTaskStore(),
+	}
 }
 
 // SetWSHub injects the WSHub for broadcasting generation progress events.
@@ -424,6 +495,359 @@ Respond ONLY with a JSON object in this exact structure (no markdown, no explana
 	}
 
 	web.OK(w, r, result)
+}
+
+// GenerateAsync submits a generation job and returns a taskId immediately.
+// The actual generation runs in a background goroutine and pushes WS events
+// of type "gen_task" on the "gw_event" channel with fields:
+//
+//	{ taskId, status, phase, elapsed, result?, errorCode?, errorMsg? }
+func (h *MultiAgentHandler) GenerateAsync(w http.ResponseWriter, r *http.Request) {
+	var req GenerateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		web.Fail(w, r, "INVALID_REQUEST", fmt.Sprintf("invalid request body: %v", err), http.StatusBadRequest)
+		return
+	}
+	if req.ScenarioName == "" || req.Description == "" {
+		web.Fail(w, r, "INVALID_REQUEST", "scenarioName and description are required", http.StatusBadRequest)
+		return
+	}
+	if !h.client.IsConnected() {
+		web.Fail(w, r, "GATEWAY_DISCONNECTED", "gateway is not connected", http.StatusServiceUnavailable)
+		return
+	}
+
+	taskID := fmt.Sprintf("gen-%d", time.Now().UnixNano())
+	task := &genTask{
+		ID:        taskID,
+		Status:    genTaskPending,
+		Phase:     "connecting",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		cancelCh:  make(chan struct{}),
+	}
+	h.taskStore.set(task)
+
+	// Respond immediately with the taskId so the frontend can minimize.
+	web.OK(w, r, map[string]string{"taskId": taskID})
+
+	// Run generation in background.
+	go h.runGenerateTask(task, req)
+}
+
+// runGenerateTask executes the AI generation for a task and broadcasts WS events.
+func (h *MultiAgentHandler) runGenerateTask(task *genTask, req GenerateRequest) {
+	broadcast := func(status genTaskStatus, phase string, elapsed int, result *GenerateResult, errCode, errMsg string) {
+		task.Status = status
+		task.Phase = phase
+		task.Elapsed = elapsed
+		task.UpdatedAt = time.Now()
+		if result != nil {
+			task.Result = result
+		}
+		if errCode != "" {
+			task.ErrorCode = errCode
+			task.ErrorMsg = errMsg
+		}
+		if h.wsHub != nil {
+			h.wsHub.Broadcast("gw_event", "gen_task", map[string]interface{}{
+				"taskId":    task.ID,
+				"status":    string(status),
+				"phase":     phase,
+				"elapsed":   elapsed,
+				"result":    result,
+				"errorCode": errCode,
+				"errorMsg":  errMsg,
+			})
+		}
+	}
+
+	// Defaults
+	if req.TeamSize == "" {
+		req.TeamSize = "medium"
+	}
+	if req.WorkflowType == "" {
+		req.WorkflowType = "collaborative"
+	}
+	if req.Language == "" {
+		req.Language = "en"
+	}
+
+	broadcast(genTaskRunning, "connecting", 0, nil, "", "")
+	start := time.Now()
+
+	elapsed := func() int { return int(time.Since(start).Seconds()) }
+
+	agentCountHint := "5 to 7"
+	switch req.TeamSize {
+	case "small":
+		agentCountHint = "3 to 4"
+	case "large":
+		agentCountHint = "8 to 10"
+	}
+	langHint := "English"
+	if req.Language == "zh" || req.Language == "zh-TW" {
+		langHint = "Chinese"
+	} else if req.Language == "ja" {
+		langHint = "Japanese"
+	} else if req.Language == "ko" {
+		langHint = "Korean"
+	}
+
+	prompt := fmt.Sprintf(`You are an AI system architect. Analyze the following scenario and generate a multi-agent team configuration in strict JSON format.
+
+Scenario Name: %s
+Scenario Description: %s
+Team Size: %s agents
+Workflow Type: %s
+Output Language for agent names/roles/descriptions: %s
+
+Requirements:
+1. Generate %s specialized AI agents appropriate for this scenario
+2. Each agent should have a distinct role with clear responsibilities
+3. Design a workflow that shows how agents collaborate
+4. Generate detailed SOUL.md content for each agent (their persona, responsibilities, working style)
+5. Generate AGENTS.md content for each agent (workspace startup instructions: which files to read, memory rules, red lines, group chat rules, heartbeat behavior — tailored to this agent's role)
+6. Generate USER.md content for each agent (profile of the human/team member this agent primarily serves — name placeholder, context about what this role needs from the user, preferences)
+7. Generate IDENTITY.md content for each agent (Name, Creature, Vibe, Emoji fields — fit the agent's personality)
+8. Generate HEARTBEAT.md checklist items for each agent
+9. Use lowercase kebab-case for agent IDs (e.g., "project-manager", "backend-dev")
+10. Choose appropriate Material Symbols icon names for each agent
+11. Choose appropriate Tailwind color classes (e.g., "from-blue-500 to-cyan-500")
+
+Respond ONLY with a JSON object in this exact structure (no markdown, no explanation outside JSON):
+{
+  "reasoning": "Brief explanation of why you chose these agents and this workflow",
+  "template": {
+    "id": "kebab-case-id-based-on-scenario-name",
+    "name": "Human-readable team name",
+    "description": "Team purpose description",
+    "agents": [
+      {
+        "id": "agent-id",
+        "name": "Agent Display Name",
+        "role": "One-line role description",
+        "description": "Detailed description of agent responsibilities",
+        "icon": "material_symbol_name",
+        "color": "from-blue-500 to-cyan-500",
+        "soul": "Full SOUL.md content in markdown — persona, responsibilities, working style",
+        "agentsMd": "Full AGENTS.md content — workspace startup instructions tailored to this agent",
+        "userMd": "Full USER.md content — profile template for the human this agent serves",
+        "identityMd": "Full IDENTITY.md content — Name/Creature/Vibe/Emoji for this agent",
+        "heartbeat": "- [ ] Task 1\n- [ ] Task 2"
+      }
+    ],
+    "workflow": {
+      "type": "%s",
+      "description": "How agents collaborate",
+      "steps": [
+        {
+          "agent": "agent-id",
+          "action": "What this agent does in this step"
+        }
+      ]
+    }
+  }
+}`, req.ScenarioName, req.Description, agentCountHint, req.WorkflowType, langHint, agentCountHint, req.WorkflowType)
+
+	// Create a temporary session
+	sessionParams := map[string]interface{}{
+		"agentId": "main",
+		"label":   fmt.Sprintf("__gen_team_%s", task.ID),
+	}
+	if req.ModelID != "" {
+		sessionParams["model"] = req.ModelID
+	}
+	sessionData, err := h.client.RequestWithTimeout("sessions.create", sessionParams, 10*time.Second)
+	if err != nil {
+		broadcast(genTaskFailed, "error", elapsed(), nil, "SESSION_CREATE_FAILED", err.Error())
+		return
+	}
+
+	var sessionResp struct {
+		SessionKey string `json:"sessionKey"`
+		Key        string `json:"key"`
+	}
+	if err := json.Unmarshal(sessionData, &sessionResp); err != nil {
+		broadcast(genTaskFailed, "error", elapsed(), nil, "SESSION_PARSE_FAILED", "failed to parse session response")
+		return
+	}
+	sessionKey := sessionResp.SessionKey
+	if sessionKey == "" {
+		sessionKey = sessionResp.Key
+	}
+	if sessionKey == "" {
+		broadcast(genTaskFailed, "error", elapsed(), nil, "SESSION_KEY_MISSING", "no session key returned")
+		return
+	}
+
+	broadcast(genTaskRunning, "sending", elapsed(), nil, "", "")
+
+	// Broadcast sessionKey so frontend can subscribe to streaming deltas.
+	if h.wsHub != nil {
+		h.wsHub.Broadcast("gw_event", "gen_task", map[string]interface{}{
+			"taskId":     task.ID,
+			"status":     string(genTaskRunning),
+			"phase":      "thinking",
+			"elapsed":    elapsed(),
+			"sessionKey": sessionKey,
+		})
+	}
+
+	// Keepalive ticker: push progress every 5s so frontend elapsed counter stays in sync.
+	progDone := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(5 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-progDone:
+				return
+			case <-task.cancelCh:
+				return
+			case <-ticker.C:
+				if h.wsHub != nil {
+					h.wsHub.Broadcast("gw_event", "gen_task", map[string]interface{}{
+						"taskId":  task.ID,
+						"status":  string(genTaskRunning),
+						"phase":   "thinking",
+						"elapsed": elapsed(),
+					})
+				}
+			}
+		}
+	}()
+
+	msgData, err := h.client.RequestWithTimeout("sessions.send", map[string]interface{}{
+		"sessionKey": sessionKey,
+		"message":    prompt,
+	}, 600*time.Second)
+	close(progDone)
+
+	// Clean up session asynchronously.
+	go func() {
+		h.client.Request("sessions.delete", map[string]interface{}{"key": sessionKey, "deleteTranscript": true}) //nolint:errcheck
+	}()
+
+	if err != nil {
+		errCode := "LLM_SEND_FAILED"
+		errMsg := err.Error()
+		switch {
+		case strings.Contains(errMsg, "not connected") ||
+			strings.Contains(errMsg, "connection closed") ||
+			strings.Contains(errMsg, "use of closed") ||
+			strings.Contains(errMsg, "broken pipe") ||
+			strings.Contains(errMsg, "EOF"):
+			errCode = "GATEWAY_DISCONNECTED"
+			errMsg = "Gateway connection lost during generation"
+		case strings.Contains(errMsg, "timeout") ||
+			strings.Contains(errMsg, "deadline") ||
+			strings.Contains(errMsg, "timed out"):
+			errCode = "TIMEOUT"
+			errMsg = "Generation timed out"
+		}
+		broadcast(genTaskFailed, "error", elapsed(), nil, errCode, errMsg)
+		return
+	}
+
+	broadcast(genTaskRunning, "parsing", elapsed(), nil, "", "")
+
+	var msgResp struct {
+		Content string `json:"content"`
+		Text    string `json:"text"`
+		Message struct {
+			Content string `json:"content"`
+			Text    string `json:"text"`
+		} `json:"message"`
+	}
+	if err := json.Unmarshal(msgData, &msgResp); err != nil {
+		broadcast(genTaskFailed, "error", elapsed(), nil, "LLM_PARSE_FAILED", "failed to parse LLM response")
+		return
+	}
+
+	rawContent := msgResp.Content
+	if rawContent == "" {
+		rawContent = msgResp.Text
+	}
+	if rawContent == "" {
+		rawContent = msgResp.Message.Content
+	}
+	if rawContent == "" {
+		rawContent = msgResp.Message.Text
+	}
+	if rawContent == "" {
+		broadcast(genTaskFailed, "error", elapsed(), nil, "LLM_EMPTY_RESPONSE", "LLM returned empty response")
+		return
+	}
+
+	jsonStr := extractJSON(rawContent)
+	if jsonStr == "" {
+		broadcast(genTaskFailed, "error", elapsed(), nil, "LLM_NO_JSON", "could not extract JSON from LLM response")
+		return
+	}
+
+	var result GenerateResult
+	if err := json.Unmarshal([]byte(jsonStr), &result); err != nil {
+		broadcast(genTaskFailed, "error", elapsed(), nil, "LLM_JSON_INVALID", fmt.Sprintf("LLM returned invalid JSON: %v", err))
+		return
+	}
+	if len(result.Template.Agents) == 0 {
+		broadcast(genTaskFailed, "error", elapsed(), nil, "LLM_NO_AGENTS", "LLM generated no agents")
+		return
+	}
+	if result.Template.ID == "" {
+		result.Template.ID = sanitizeID(req.ScenarioName)
+	}
+	if result.Template.Name == "" {
+		result.Template.Name = req.ScenarioName
+	}
+	if result.Template.Description == "" {
+		result.Template.Description = req.Description
+	}
+
+	broadcast(genTaskDone, "done", elapsed(), &result, "", "")
+	logger.Log.Info().Str("taskId", task.ID).Int("agents", len(result.Template.Agents)).Msg("async team generation completed")
+}
+
+// GetGenerateTask returns the current status and (if done) result of an async generation task.
+func (h *MultiAgentHandler) GetGenerateTask(w http.ResponseWriter, r *http.Request) {
+	taskID := r.URL.Query().Get("taskId")
+	if taskID == "" {
+		web.Fail(w, r, "MISSING_TASK_ID", "taskId query param required", http.StatusBadRequest)
+		return
+	}
+	task, ok := h.taskStore.get(taskID)
+	if !ok {
+		web.Fail(w, r, "TASK_NOT_FOUND", "task not found or expired", http.StatusNotFound)
+		return
+	}
+	web.OK(w, r, task)
+}
+
+// CancelGenerateTask cancels a running generation task.
+func (h *MultiAgentHandler) CancelGenerateTask(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		TaskID string `json:"taskId"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.TaskID == "" {
+		web.Fail(w, r, "MISSING_TASK_ID", "taskId required", http.StatusBadRequest)
+		return
+	}
+	task, ok := h.taskStore.get(req.TaskID)
+	if !ok {
+		web.Fail(w, r, "TASK_NOT_FOUND", "task not found or expired", http.StatusNotFound)
+		return
+	}
+	if task.Status == genTaskRunning || task.Status == genTaskPending {
+		select {
+		case <-task.cancelCh: // already closed
+		default:
+			close(task.cancelCh)
+		}
+		task.Status = genTaskCanceled
+		task.UpdatedAt = time.Now()
+	}
+	web.OK(w, r, map[string]string{"taskId": task.ID, "status": string(task.Status)})
 }
 
 // extractJSON extracts a JSON object from a string that may contain markdown code fences or extra text.
